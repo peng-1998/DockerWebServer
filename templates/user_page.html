@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+
+
+<head>
+
+
+    <style type="text/css">
+        html * {
+            font-family: STKaiti
+        }
+
+        .body {
+            background-color: #f6e5cc
+        }
+
+        .menutab {
+            overflow: hidden;
+            border: 1px solid #007a70;
+            background-color: #01847f;
+        }
+
+        .menutab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 25px;
+            font-family: STKaiti
+        }
+
+        .menutab button:hover {
+            background-color: #007a70;
+        }
+
+        .menutab button.active {
+            background-color: #278cd4;
+        }
+
+        .gpuinfotable {
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            font-size: 20px;
+
+        }
+
+        .gpuinfotable thead {
+            background-color: #01847f;
+            color: #FFFFFF;
+        }
+
+        .gpuinfotable thead th:nth-child(1) {
+            width: 100px;
+        }
+
+        .gpuinfotable thead th:nth-child(2) {
+            width: 300px;
+        }
+
+        .gpuinfotable thead th:nth-child(3) {
+            width: 230px;
+        }
+
+        .gpuinfotable thead th:nth-child(4) {
+            width: 150px;
+        }
+
+        .gpuinfotable thead th:nth-child(5) {
+            width: 150px;
+        }
+
+        .gpuinfotable tbody tr td {
+            text-align: center;
+            border: 1px solid #492422
+        }
+
+        .waitlist {
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            font-size: 20px;
+        }
+
+        .waitlist thead {
+            background-color: #01847f;
+            color: #FFFFFF;
+        }
+
+        .waitlist thead th:nth-child(1) {
+            width: 100px;
+        }
+
+        .waitlist thead th:nth-child(2) {
+            width: 75px;
+        }
+
+        .waitlist thead th:nth-child(3) {
+            width: 90px;
+        }
+
+        .waitlist thead th:nth-child(4) {
+            width: 285px;
+        }
+
+        .waitlist thead th:nth-child(5) {
+            width: 100px;
+        }
+
+        .waitlist thead th:nth-child(6) {
+            width: 285px;
+        }
+
+        .waitlist tbody tr td {
+            text-align: center;
+            border: 1px solid #492422
+        }
+
+        .currentItem {
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            font-size: 20px;
+        }
+
+        .currentItem thead {
+            background-color: #01847f;
+            color: #FFFFFF;
+        }
+
+        .currentItem thead th:nth-child(1) {
+            width: 75px;
+        }
+
+        .currentItem thead th:nth-child(2) {
+            width: 90px;
+        }
+
+        .currentItem thead th:nth-child(3) {
+            width: 90px;
+        }
+
+        .currentItem thead th:nth-child(4) {
+            width: 400px;
+        }
+
+        .currentItem thead th:nth-child(5) {
+            width: 100px;
+        }
+
+        .currentItem tbody tr td {
+            text-align: center;
+            border: 1px solid #492422
+        }
+
+        .currentItem tbody tr td button {
+            text-align: center;
+            background-color: inherit;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .currentItem tbody tr td button:hover {
+            background-color: #dcba88;
+        }
+
+        .requesthistory {
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            font-size: 20px;
+        }
+
+        .requesthistory thead {
+            background-color: #01847f;
+            color: #FFFFFF;
+        }
+
+        .requesthistory thead th:nth-child(1) {
+            width: 75px;
+        }
+
+        .requesthistory thead th:nth-child(2) {
+            width: 90px;
+        }
+
+        .requesthistory thead th:nth-child(3) {
+            width: 335px;
+        }
+
+        .requesthistory thead th:nth-child(4) {
+            width: 335px;
+        }
+
+        .requesthistory thead th:nth-child(5) {
+            width: 90px;
+        }
+
+        .requesthistory tbody tr td {
+            text-align: center;
+            border: 1px solid #492d22
+        }
+
+        .requesthistory thead tr th button {
+            text-align: center;
+            background-color: #7eeaf6;
+            font-size: 16px;
+            cursor: pointer;
+            color: #FFFFFF;
+            width: 100%;
+            height: 100%;
+            border: 0
+        }
+
+        .requesthistory thead tr th button:hover {
+            background-color: #007a70;
+        }
+
+        .requesthistory tbody tr td button {
+            text-align: center;
+            background-color: inherit;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            height: 100%;
+            border: 0
+        }
+
+        .requesthistory tbody tr td button:hover {
+            background-color: #dcba88;
+        }
+
+        .imagelist {
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            font-size: 20px;
+        }
+
+        .imagelist thead {
+            background-color: #007a70;
+            color: #FFFFFF;
+        }
+
+        .imagelist tbody tr td {
+            text-align: center;
+            border: 1px solid #492422
+        }
+
+        .imagelist thead th:nth-child(1) {
+            width: 200px;
+        }
+
+        .imagelist thead th:nth-child(2) {
+            width: 300px;
+        }
+
+        .imagelist thead th:nth-child(3) {
+            width: 300px;
+        }
+
+        .imagelist thead th:nth-child(4) {
+            width: 90px;
+        }
+
+        .imagelist tbody tr td button {
+            text-align: center;
+            background-color: #dcba88;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .imagelist tbody tr td button:hover {
+            background-color: inherit;
+        }
+
+        .mycontainer {
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            font-size: 20px;
+        }
+
+        .mycontainer thead {
+            background-color: #01847f;
+            color: #FFFFFF;
+        }
+
+        .mycontainer tbody tr td {
+            text-align: center;
+            border: 1px solid #492422
+        }
+
+        .mycontainer thead th:nth-child(1) {
+            width: 100px;
+        }
+
+        .mycontainer thead th:nth-child(2) {
+            width: 200px;
+        }
+
+        .mycontainer thead th:nth-child(3) {
+            width: 80px;
+        }
+
+        .mycontainer thead th:nth-child(4) {
+            width: 400px;
+        }
+
+        .mycontainer thead th:nth-child(5) {
+            width: 60px;
+        }
+
+        .containeroperationdropdown {
+            display: inline-block;
+            position: relative;
+            width: 100%;
+        }
+
+        .containeroperationdropdown-content {
+            display: none;
+            position: absolute;
+            width: 100%;
+            overflow: auto;
+            background-color: #dcba88;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .containeroperationdropdown:hover {
+            background-color: #f6e5cc;
+        }
+
+        .containeroperationdropdown:hover .containeroperationdropdown-content {
+            display: block;
+        }
+
+        .containeroperationdropdown button:hover {
+            background-color: inherit;
+        }
+
+        .containeroperationdropdown button {
+            text-align: center;
+            background-color: #f6e5cc;
+            cursor: pointer;
+            border: 0;
+            font-size: 18px;
+            width: 100%;
+            height: 100%
+        }
+        .quitbtn {
+            width: 250px;
+            height: 60px;
+            font-size: 45px;
+            background-color:crimson;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 100px;
+        }
+        .quitbtn:hover {
+            background-color:brown
+        }
+    </style>
+
+    <template id="containeroperation">
+        <div class="containeroperationdropdown">
+            <a>操作</a>
+            <div class="containeroperationdropdown-content">
+                <button onclick="containeropt(event,'start')">启动</button>
+                <button onclick="containeropt(event,'stop')">停止</button>
+                <button onclick="containeropt(event,'remove')">删除</button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        function changePages(event, pagename) {
+            document.getElementById("gpumanagerpage").style.display = "none";
+            document.getElementById("containermanagerpage").style.display = "none";
+            document.getElementById("settingpage").style.display = "none";
+
+            document.getElementById("gpumanagerbtn").className = document.getElementById("gpumanagerbtn").className.replace(" active", "");
+            document.getElementById("containermanagerbtn").className = document.getElementById("containermanagerbtn").className.replace(" active", "");
+            document.getElementById("settingbtn").className = document.getElementById("settingbtn").className.replace(" active", "");
+
+            document.getElementById(pagename + "page").style.display = "block";
+            event.currentTarget.className += " active"
+
+            if (pagename == "gpumanager") {
+                loadgpuinfo()
+                loadwaitlist()
+                loadcurrentitem()
+                loadrequesthistory()
+            }
+            if (pagename == "containermanager") {
+                loadimagelist()
+                loadmycontainer()
+            }
+            if (pagename == "setting") {
+                loademail()
+            }
+        }
+
+        function loadgpuinfo() {
+            var url = window.location.href + "gpumanager/gpuinfo"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var tbody = document.getElementById("gpuinfotbody")
+                    tbody.innerHTML = ""
+                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                        tbody.removeChild(tbody.childNodes[i])
+                    }
+                    if(data.length!=0){
+                        for (var i = 0; i < data.length; ++i) {
+                            var tr = document.createElement("tr")
+                            var td1 = document.createElement("td")
+                            td1.innerHTML = data[i].gpuid
+                            var td2 = document.createElement("td")
+                            td2.innerHTML = data[i].gputype
+                            var td3 = document.createElement("td")
+                            td3.innerHTML = data[i].memory
+                            var td4 = document.createElement("td")
+                            td4.innerHTML = data[i].currentuser
+                            var td5 = document.createElement("td")
+                            td5.innerHTML = data[i].waittime
+
+                            tr.appendChild(td1)
+                            tr.appendChild(td2)
+                            tr.appendChild(td3)
+                            tr.appendChild(td4)
+                            tr.appendChild(td5)
+                            tbody.appendChild(tr)
+                        }
+                    }else{
+                        var tr = document.createElement("tr")
+                        var td = document.createElement("td")
+                        td.setAttribute("colspan","5")
+                        td.setAttribute("style","text-align: center")
+                        td.innerHTML="无"
+                        tr.append(td)
+                        tbody.append(tr)
+                    }
+                }
+            }
+        }
+
+        function loadwaitlist() {
+            var url = window.location.href + "gpumanager/waitlist"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var tbody = document.getElementById("waitlisttbody")
+                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                        tbody.removeChild(tbody.childNodes[i])
+                    }
+                    
+                    if (data.length != 0) {
+                        for (var i = 0; i < data.length; ++i) {
+                            var tr = document.createElement("tr")
+                            var td1 = document.createElement("td")
+                            td1.innerHTML = data[i].user
+                            var td2 = document.createElement("td")
+                            td2.innerHTML = data[i].gpuid
+                            var td3 = document.createElement("td")
+                            td3.innerHTML = data[i].duration
+                            var td4 = document.createElement("td")
+                            td4.innerHTML = data[i].reason
+                            var td5 = document.createElement("td")
+                            td5.innerHTML = data[i].container
+                            var td6 = document.createElement("td")
+                            td6.innerHTML = data[i].cmd
+
+                            tr.appendChild(td1)
+                            tr.appendChild(td2)
+                            tr.appendChild(td3)
+                            tr.appendChild(td4)
+                            tr.appendChild(td5)
+                            tr.appendChild(td6)
+                            tbody.appendChild(tr)
+                        }
+                    }else{
+                        var tr = document.createElement("tr")
+                        var td = document.createElement("td")
+                        td.setAttribute("colspan","6")
+                        td.setAttribute("style","text-align: center")
+                        td.innerHTML="无"
+                        tr.append(td)
+                        tbody.append(tr)
+                    }
+                }
+            }
+        }
+
+        function loadcurrentitem() {
+            var url = window.location.href + "gpumanager/currentitem"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var tbody = document.getElementById("currentItemtbody")
+                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                        tbody.removeChild(tbody.childNodes[i])
+                    }
+                    if (data.length != 0) {
+                        
+                        for (var i = 0; i < data.length; ++i) {
+                            var tr = document.createElement("tr")
+                            var td1 = document.createElement("td")
+                            td1.innerHTML = data[i].gpuid
+                            var td2 = document.createElement("td")
+                            td2.innerHTML = data[i].duration
+                            var td3 = document.createElement("td")
+                            td3.innerHTML = data[i].status
+                            var td4 = document.createElement("td")
+                            td4.innerHTML = data[i].timeinfo
+                            var td5 = document.createElement("td")
+                            var td5_btn = document.createElement("button")
+                            if (data[i].status == "正在使用") {
+                                td5_btn.innerHTML = "提前结束"
+                                td5_btn.setAttribute("onclick", "stopearly(event)")
+                            } else {
+                                td5_btn.innerHTML = "取消申请"
+                                td5_btn.setAttribute("onclick", "cancleapplyfor(event)")
+                            }
+                            td5.appendChild(td5_btn)
+
+
+                            tr.appendChild(td1)
+                            tr.appendChild(td2)
+                            tr.appendChild(td3)
+                            tr.appendChild(td4)
+                            tr.appendChild(td5)
+                            tbody.appendChild(tr)
+                        }
+                    }else{
+                        var tr = document.createElement("tr")
+                        var td = document.createElement("td")
+                        td.setAttribute("colspan","5")
+                        td.setAttribute("style","text-align: center")
+                        td.innerHTML="无"
+                        tr.append(td)
+                        tbody.append(tr)
+                    }
+                }
+            }
+        }
+
+        function stopearly(event){
+            var gpuid = event.currentTarget.parentNode.parentNode.childNodes[0].innerHTML
+            var url = window.location.href + "gpumanager/stopearlyweb"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({
+                "gpuid":gpuid
+            }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(Http.responseText)
+                    loadgpuinfo()
+                    loadwaitlist()
+                    loadcurrentitem()
+                    loadrequesthistory()
+                }
+            }
+        }
+
+        function cancleapplyfor(event){
+            var gpuid = event.currentTarget.parentNode.parentNode.childNodes[0].innerHTML
+            var url = window.location.href + "gpumanager/cancleapplyfor"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({
+                "gpuid":gpuid
+            }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(Http.responseText)
+                    loadgpuinfo()
+                    loadwaitlist()
+                    loadcurrentitem()
+                    loadrequesthistory()
+                }
+            }
+        }
+
+        function loadrequesthistory() {
+            var url = window.location.href + "gpumanager/requesthistory"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var tbody = document.getElementById("requesthistorytbody")
+                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                        tbody.removeChild(tbody.childNodes[i])
+                    }
+                    if (data.length != 0) {
+                        
+                        for (var i = 0; i < data.length; ++i) {
+                            var tr = document.createElement("tr")
+                            var td1 = document.createElement("td")
+                            td1.innerHTML = data[i].gpuid
+                            var td2 = document.createElement("td")
+                            td2.innerHTML = data[i].duration
+                            var td3 = document.createElement("td")
+                            td3.innerHTML = data[i].reason
+                            var td4 = document.createElement("td")
+                            td4.innerHTML = data[i].cmd
+                            var td5 = document.createElement("td")
+                            var btn = document.createElement("button")
+                            btn.innerHTML = "再次申请"
+                            btn.setAttribute("onclick", "applyforgpu(event)")
+                            td5.appendChild(btn)
+
+                            tr.appendChild(td1)
+                            tr.appendChild(td2)
+                            tr.appendChild(td3)
+                            tr.appendChild(td4)
+                            tr.appendChild(td5)
+                            tbody.appendChild(tr)
+                        }
+                    }else{
+                        var tr = document.createElement("tr")
+                        var td = document.createElement("td")
+                        td.setAttribute("colspan","5")
+                        td.setAttribute("style","text-align: center")
+                        td.innerHTML="无"
+                        tr.append(td)
+                        tbody.append(tr)
+                    }
+                }
+            }
+        }
+
+        function applyforgpu(event) {
+            var currentItemlist =document.getElementById("currentItemtbody")
+            if(currentItemlist.childNodes[0].childNodes.length!=1){
+                alert("每人同时只能发起一次申请。")
+                return
+            }
+            var parenttag = event.currentTarget.parentNode.tagName
+            var grandparent = event.currentTarget.parentNode.parentNode
+            var gpu_count = document.getElementById("gpuinfotbody").childNodes.length
+            var applyforgpudialoggpuidselect = document.getElementById("applyforgpudialoggpuidselect")
+            applyforgpudialoggpuidselect.innerHTML = ""
+            for (var i = 0; i < gpu_count; i++) {
+                applyforgpudialoggpuidselect.innerHTML += "<option value='" + String(i) + "' style='font-size: 20px;'>GPU " + String(i) + "</option>"
+            }
+            if(parenttag=="TD"){
+                applyforgpudialoggpuidselect.value=grandparent.childNodes[0].innerHTML
+                document.getElementById("applyforgpudialogduration").value = grandparent.childNodes[1].innerHTML
+                document.getElementById("applyforgpudialogreason").value = grandparent.childNodes[2].innerHTML
+                document.getElementById("applyforgpudialogcmd").value = grandparent.childNodes[3].innerHTML
+            }
+
+            var url = window.location.href + "containermanager/mycontainer"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var applyforgpudialogcontainerselect = document.getElementById("applyforgpudialogcontainerselect")
+                    applyforgpudialogcontainerselect.innerHTML = "<option value='选择容器' style='font-size: 20px;'>选择容器</option>"
+                    for (var i = 0; i < data.length; ++i) {
+                        applyforgpudialogcontainerselect.innerHTML += "<option value='" + data[0].containername + "' style='font-size: 20px;'>" + data[0].containername + "</option>"
+                    }
+                }
+            }
+            document.getElementById("applyforgpudialog").showModal()
+        }
+
+        function postapplyforgpu(event) {
+            document.getElementById('applyforgpudialog').close()
+            var gpuid = document.getElementById("applyforgpudialoggpuidselect").value
+            var duration = document.getElementById("applyforgpudialogduration").value
+            var reason = document.getElementById("applyforgpudialogreason").value
+            var container = document.getElementById("applyforgpudialogcontainerselect").value
+            var cmd = document.getElementById("applyforgpudialogcmd").value
+
+            document.getElementById("applyforgpudialog").close()
+            var url = window.location.href + "gpumanager/applyforgpu"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({
+                "gpuid": gpuid,
+                "duration": duration,
+                "reason": reason,
+                "container": container,
+                "cmd": cmd
+            }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(Http.responseText)
+                    loadgpuinfo()
+                    loadwaitlist()
+                    loadcurrentitem()
+                    loadrequesthistory()
+                }
+            }
+        }
+
+        function loadimagelist() {
+            var url = window.location.href + "containermanager/imagelist"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var tbody = document.getElementById("imagelisttbody")
+                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                        tbody.removeChild(tbody.childNodes[i])
+                    }
+                    if (data.length != 0) {
+                        
+                        for (var i = 0; i < data.length; ++i) {
+                            var tr = document.createElement("tr")
+                            var td1 = document.createElement("td")
+                            td1.innerHTML = data[i].imagename
+                            var td2 = document.createElement("td")
+                            for (var j = 0; j < data[i].env.length; ++j) {
+                                var p = document.createElement('p')
+                                p.innerHTML = data[i].env[j]
+                                td2.appendChild(p)
+                            }
+                            var td3 = document.createElement("td")
+                            td3.innerHTML = data[i].useguide
+                            var td4 = document.createElement("td")
+                            var btn = document.createElement("button")
+                            btn.innerHTML = "申请容器"
+                            btn.setAttribute("onclick", "applyforcontainer(event)")
+                            td4.appendChild(btn)
+
+                            tr.appendChild(td1)
+                            tr.appendChild(td2)
+                            tr.appendChild(td3)
+                            tr.appendChild(td4)
+
+                            tbody.appendChild(tr)
+                        }
+                    }else{
+                        var tr = document.createElement("tr")
+                        var td = document.createElement("td")
+                        td.setAttribute("colspan","4")
+                        td.setAttribute("style","text-align: center")
+                        td.innerHTML="无"
+                        tr.append(td)
+                        tbody.append(tr)
+                    }
+                }
+            }
+        }
+
+        function loadmycontainer() {
+            var url = window.location.href + "containermanager/mycontainer"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(Http.responseText)
+                    var tbody = document.getElementById("mycontainertbody")
+                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                        tbody.removeChild(tbody.childNodes[i])
+                    }
+                    if (data.length != 0) {
+                        
+                        for (var i = 0; i < data.length; ++i) {
+                            var tr = document.createElement("tr")
+                            var td1 = document.createElement("td")
+                            td1.innerHTML = data[i].containername
+                            var td2 = document.createElement("td")
+                            td2.innerHTML = data[i].imagename
+                            var td3 = document.createElement("td")
+                            td3.innerHTML = data[i].status
+                            var td4 = document.createElement("td")
+                            td4.innerHTML = data[i].ports
+                            var td5 = document.createElement("td")
+                            td5.appendChild(document.importNode(containeroperation.content, true))
+
+                            tr.appendChild(td1)
+                            tr.appendChild(td2)
+                            tr.appendChild(td3)
+                            tr.appendChild(td4)
+                            tr.appendChild(td5)
+
+                            tbody.appendChild(tr)
+                        }
+                    }
+                    else{
+                        var tr = document.createElement("tr")
+                        var td = document.createElement("td")
+                        td.setAttribute("colspan","5")
+                        td.setAttribute("style","text-align: center")
+                        td.innerHTML="无"
+                        tr.append(td)
+                        tbody.append(tr)
+                    }
+                }
+            }
+        }
+
+        function applyforcontainer(event) {
+            var grandparent = event.currentTarget.parentNode.parentNode
+            var imagename = grandparent.childNodes[0].innerHTML
+            var mycontainer = document.getElementById("mycontainertbody")
+            var count = 0
+            for (var i = 0; i < mycontainer.childNodes.length; i++) {
+                if (mycontainer.childNodes[i].tagName == "TR") count++
+            }
+            if (count == 3) {
+                alert("每个人最多持有3个容器,请先删除一个容器之后再申请新的容器!")
+                return
+            }
+            var ports = prompt("需要映射的端口(22端口已经默认映射,端口以|分割)")
+            var url = window.location.href + "containermanager/applyforcontainer"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({ "imagename": imagename, "ports": ports }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(Http.responseText)
+                    loadmycontainer()
+                }
+            }
+        }
+
+        function containeropt(event, opt) {
+            var containername = event.currentTarget.parentNode.parentNode.parentNode.parentNode.childNodes[0].innerHTML
+
+            if (opt == "remove") {
+                if (!confirm("您正在删除容器,请再次确认!")) return
+            }
+
+            var url = window.location.href + "containermanager/containeropt"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({ "containername": containername, "opt": opt }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(Http.responseText)
+                    loadmycontainer()
+                }
+            }
+        }
+
+        function loademail() {
+            var useremaillabel = document.getElementById("useremaillabel")
+            var useremailbutton = document.getElementById("useremailbutton")
+            var url = window.location.href + "setting/loademail"
+            var Http = new XMLHttpRequest();
+            Http.open("GET", url);
+            Http.send();
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    if (Http.responseText != "None") {
+                        useremaillabel.innerHTML = Http.responseText
+                        useremailbutton.innerHTML = "修改邮箱"
+                    }
+                }
+            }
+        }
+
+
+        function setemail(email) {
+            var email = prompt("输入邮箱地址了:")
+            var url = window.location.href + "setting/setemail"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({ "email": email }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    if (event.currentTarget.innerHTML == "设置邮箱") {
+                        alert("设置成功")
+                        loademail()
+                    } else {
+                        alert("修改成功")
+                        loademail()
+                    }
+                }
+            }
+        }
+
+        function suggest() {
+            var suggesttextarea = document.getElementById("suggesttextarea")
+            content = suggesttextarea.innerHTML
+            var url = window.location.href + "setting/suggest"
+            var Http = new XMLHttpRequest();
+            Http.open("POST", url, true);
+            Http.setRequestHeader("Content-type", "application/json")
+            Http.send(JSON.stringify({ "content": content }));
+            Http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert(Http.responseText)
+                }
+            }
+
+        }
+
+        function quitlogin(){
+            var keys = document.cookie.match(/[^ =;]+(?=\=)/g);
+            if(keys) {
+                for(var i = keys.length; i--;)
+                    document.cookie = keys[i] + '=0;expires=' + new Date(0).toUTCString()
+            }
+            window.location.href=""
+        }
+    </script>
+
+
+
+</head>
+
+<body class="body">
+    <div id="menubar" class="menutab">
+        <button id="gpumanagerbtn" onclick="changePages(event,'gpumanager')">GPU管理</button>
+        <button id="containermanagerbtn" onclick="changePages(event,'containermanager')">容器管理</button>
+        <button id="settingbtn" onclick="changePages(event,'setting')">设置</button>
+        <button onclick="window.location.href='static/食用指北.html'">食用指北</button>
+    </div>
+
+    <div id="gpumanagerpage" style="width: 100%; height:2000px;display:none">
+        <h1 style="width: 100%; text-align:center">GPU 仪表盘</h1>
+        <table id="gpuinfolistview" class="gpuinfotable">
+            <thead>
+                <tr>
+                    <th>GPU ID</th>
+                    <th>型号</th>
+                    <th>显存</th>
+                    <th>当前使用</th>
+                    <th>预计等待</th>
+                </tr>
+            </thead>
+            <tbody id="gpuinfotbody">
+            </tbody>
+        </table>
+
+        <h1 style="width:100%;text-align: center">等待队列</h1>
+
+        <table id="waitlistview" class="waitlist">
+            <thead>
+                <tr>
+                    <th>申请人</th>
+                    <th>GPU ID</th>
+                    <th>申请时长</th>
+                    <th>申请说明</th>
+                    <th>容器</th>
+                    <th>托管指令</th>
+                </tr>
+            </thead>
+            <tbody id="waitlisttbody">
+            </tbody>
+        </table>
+
+        <h1 style="width:100%;text-align: center">正在进行的项目</h1>
+        <table id="currentItem" class="currentItem">
+            <thead>
+                <tr>
+                    <th>GPU ID</th>
+                    <th>申请时长</th>
+                    <th>状态</th>
+                    <th>预计时间</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="currentItemtbody">
+            </tbody>
+        </table>
+
+        <h1 style="width:100%;text-align: center">申请历史</h1>
+        <table id="requesthistoryview" class="requesthistory">
+            <thead>
+                <tr>
+                    <th>GPU ID</th>
+                    <th>申请时长</th>
+                    <th>申请说明</th>
+                    <th>托管指令</th>
+                    <th>
+                        <button onclick="applyforgpu(event)">申请GPU</button>
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="requesthistorytbody">
+            </tbody>
+        </table>
+        <dialog id="applyforgpudialog" class="applyforgpudialog" style="background-color:#F1FAFA">
+
+            <h3 style="text-align: center;font-size: 25px;">申请GPU</h3>
+            <p>
+                <select id="applyforgpudialoggpuidselect" default="0" style="font-size: 20px;">
+                    <!-- <option value="0" style="font-size: 20px;">GPU 0</option> -->
+                </select>
+                <input type="text" id="applyforgpudialogduration" placeholder="申请时长(小时)"
+                    onkeyup="value=value.replace(/[^\d]/g,'')" style="font-size: 20px;width:140px">
+            </p>
+            <p>
+                <input type="text" id="applyforgpudialogreason" placeholder="申请说明" style="font-size: 20px;width:220px">
+            </p>
+
+            <p>
+                <select id="applyforgpudialogcontainerselect" default="选择容器" style="font-size: 20px;"></select>
+            </p>
+
+            <p>
+                <input type="text" id="applyforgpudialogcmd" placeholder="托管指令" style="font-size: 20px;width:220px">
+            </p>
+
+
+
+            <br>
+            <menu>
+                <button type="reset" onclick="document.getElementById('applyforgpudialog').close()">取消</button>
+                <button onclick="postapplyforgpu(event)">确定</button>
+            </menu>
+        </dialog>
+    </div>
+
+    <div id="containermanagerpage" style="width: 100%; height:2000px;display:none">
+        <h1 style="width: 100%; text-align:center">镜像列表</h1>
+        <table id="imagelist" class="imagelist">
+            <thead>
+                <tr>
+                    <th>镜像名称</th>
+                    <th>软件环境说明</th>
+                    <th>使用说明</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="imagelisttbody">
+            </tbody>
+        </table>
+        <h1 style="width: 100%; text-align:center">我的容器</h1>
+        <table id="mycontainer" class="mycontainer">
+            <thead>
+                <tr>
+                    <th>容器名称</th>
+                    <th>镜像名称</th>
+                    <th>运行状态</th>
+                    <th>端口映射</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="mycontainertbody">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="settingpage" style="width: 100%; height:2000px;display:none">
+        <p style="margin-left: auto;margin-right: auto;font-size: 20px;">
+            邮箱:<label id="useremaillabel" style="font-size: 20px;width:200px">未设置邮箱</label>
+            <button id="useremailbutton" style="font-size: 20px;" onclick="setemail(event)">设置邮箱</button>
+        </p>
+        <div>
+            <h1>建议留言</h1>
+            <textarea id="suggesttextarea" style="width: 400px;height:300px;font-size: 20px;"></textarea>
+            <button id="suggestcommit" style="font-size: 20px;" onclick="suggest()">提交留言</button>
+        </div>
+        <button onclick="quitlogin()" class="quitbtn" >退出登录</button>
+    </div>
+
+
+
+    <script>
+        document.getElementById("gpumanagerbtn").click()
+    </script>
+
+</body>
+
+
+</html>

@@ -1,0 +1,35 @@
+[
+    [
+        "pytorch:torch112_cu116",
+        "pytorch_v1",
+        [
+            "Nvidia driver=470.141.03",
+            "cuda=11.6",
+            "python=3.8.10",
+            "pytorch=1.12.1+cu116",
+            "torchvision=0.13.1+cu116",
+            "numpy=1.23.1",
+            "scikit-learn=1.1.2",
+            "scikit-image=0.19.3",
+            "matplotlib=3.5.2",
+            "scipy=1.9.0"
+        ],
+        "此镜像基于nvidia/cuda:11.6.0-devel-ubuntu20.04,带有cuda开发环境,可以编译自定义的cuda算子,以及安装基于cu脚本的第三方扩展。默认端口为22和8888。",
+        [
+            22,
+            8888
+        ]
+    ],
+    [
+        "conda:py38_492",
+        "conda_v1",
+        [
+            "conda=py38 4.9.2",
+            "Nvidia driver=470.141.03"
+        ],
+        "此镜像基于ubuntu:20.04,只安装了Miniconda,包含基础虚拟环境base。适用于有特殊环境版本要求的复现工作。conda安装的pytorch只包含运行时。默认端口为22。",
+        [
+            22
+        ]
+    ]
+]
