@@ -189,6 +189,14 @@ def cancleapplyfor():
     return "申请已经撤销。"
 
 
+def remove_reapeted_request(requests: list):
+    r = []
+    for item in requests:
+        if item not in r:
+            r.append(item)
+    return r
+
+
 @app.route('/gpumanager/requesthistory')
 def requesthistory():
     uname = request.cookies.get('uname')
@@ -196,7 +204,7 @@ def requesthistory():
     for item in gpu_request_database.datas:
         if item.user == uname:
             r.append({"gpuid": item.gpuid, "duration": item.duration, "reason": item.reason, "cmd": item.cmd})
-
+    r = remove_reapeted_request(r)
     return json.dumps(r[::-1])
 
 
