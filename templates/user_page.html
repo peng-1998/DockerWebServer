@@ -362,17 +362,19 @@
             width: 100%;
             height: 100%
         }
+
         .quitbtn {
             width: 250px;
             height: 60px;
             font-size: 45px;
-            background-color:crimson;
+            background-color: crimson;
             text-align: center;
             cursor: pointer;
             margin-top: 100px;
         }
+
         .quitbtn:hover {
-            background-color:brown
+            background-color: brown
         }
     </style>
 
@@ -425,10 +427,10 @@
                     var data = JSON.parse(Http.responseText)
                     var tbody = document.getElementById("gpuinfotbody")
                     tbody.innerHTML = ""
-                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                    for (var i = 0; i < tbody.childNodes.length; ++i) {
                         tbody.removeChild(tbody.childNodes[i])
                     }
-                    if(data.length!=0){
+                    if (data.length != 0) {
                         for (var i = 0; i < data.length; ++i) {
                             var tr = document.createElement("tr")
                             var td1 = document.createElement("td")
@@ -449,12 +451,12 @@
                             tr.appendChild(td5)
                             tbody.appendChild(tr)
                         }
-                    }else{
+                    } else {
                         var tr = document.createElement("tr")
                         var td = document.createElement("td")
-                        td.setAttribute("colspan","5")
-                        td.setAttribute("style","text-align: center")
-                        td.innerHTML="无"
+                        td.setAttribute("colspan", "5")
+                        td.setAttribute("style", "text-align: center")
+                        td.innerHTML = "无"
                         tr.append(td)
                         tbody.append(tr)
                     }
@@ -471,10 +473,10 @@
                 if (this.readyState == 4 && this.status == 200) {
                     var data = JSON.parse(Http.responseText)
                     var tbody = document.getElementById("waitlisttbody")
-                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                    for (var i = 0; i < tbody.childNodes.length; ++i) {
                         tbody.removeChild(tbody.childNodes[i])
                     }
-                    
+
                     if (data.length != 0) {
                         for (var i = 0; i < data.length; ++i) {
                             var tr = document.createElement("tr")
@@ -499,12 +501,12 @@
                             tr.appendChild(td6)
                             tbody.appendChild(tr)
                         }
-                    }else{
+                    } else {
                         var tr = document.createElement("tr")
                         var td = document.createElement("td")
-                        td.setAttribute("colspan","6")
-                        td.setAttribute("style","text-align: center")
-                        td.innerHTML="无"
+                        td.setAttribute("colspan", "6")
+                        td.setAttribute("style", "text-align: center")
+                        td.innerHTML = "无"
                         tr.append(td)
                         tbody.append(tr)
                     }
@@ -521,11 +523,11 @@
                 if (this.readyState == 4 && this.status == 200) {
                     var data = JSON.parse(Http.responseText)
                     var tbody = document.getElementById("currentItemtbody")
-                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                    for (var i = 0; i < tbody.childNodes.length; ++i) {
                         tbody.removeChild(tbody.childNodes[i])
                     }
                     if (data.length != 0) {
-                        
+
                         for (var i = 0; i < data.length; ++i) {
                             var tr = document.createElement("tr")
                             var td1 = document.createElement("td")
@@ -555,12 +557,12 @@
                             tr.appendChild(td5)
                             tbody.appendChild(tr)
                         }
-                    }else{
+                    } else {
                         var tr = document.createElement("tr")
                         var td = document.createElement("td")
-                        td.setAttribute("colspan","5")
-                        td.setAttribute("style","text-align: center")
-                        td.innerHTML="无"
+                        td.setAttribute("colspan", "5")
+                        td.setAttribute("style", "text-align: center")
+                        td.innerHTML = "无"
                         tr.append(td)
                         tbody.append(tr)
                     }
@@ -568,14 +570,14 @@
             }
         }
 
-        function stopearly(event){
+        function stopearly(event) {
             var gpuid = event.currentTarget.parentNode.parentNode.childNodes[0].innerHTML
             var url = window.location.href + "gpumanager/stopearlyweb"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
             Http.send(JSON.stringify({
-                "gpuid":gpuid
+                "gpuid": gpuid
             }));
             Http.onreadystatechange = function () {
                 if (this.readyState == 4 && this.status == 200) {
@@ -588,14 +590,14 @@
             }
         }
 
-        function cancleapplyfor(event){
+        function cancleapplyfor(event) {
             var gpuid = event.currentTarget.parentNode.parentNode.childNodes[0].innerHTML
             var url = window.location.href + "gpumanager/cancleapplyfor"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
             Http.send(JSON.stringify({
-                "gpuid":gpuid
+                "gpuid": gpuid
             }));
             Http.onreadystatechange = function () {
                 if (this.readyState == 4 && this.status == 200) {
@@ -617,11 +619,11 @@
                 if (this.readyState == 4 && this.status == 200) {
                     var data = JSON.parse(Http.responseText)
                     var tbody = document.getElementById("requesthistorytbody")
-                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                    for (var i = 0; i < tbody.childNodes.length; ++i) {
                         tbody.removeChild(tbody.childNodes[i])
                     }
                     if (data.length != 0) {
-                        
+
                         for (var i = 0; i < data.length; ++i) {
                             var tr = document.createElement("tr")
                             var td1 = document.createElement("td")
@@ -645,12 +647,12 @@
                             tr.appendChild(td5)
                             tbody.appendChild(tr)
                         }
-                    }else{
+                    } else {
                         var tr = document.createElement("tr")
                         var td = document.createElement("td")
-                        td.setAttribute("colspan","5")
-                        td.setAttribute("style","text-align: center")
-                        td.innerHTML="无"
+                        td.setAttribute("colspan", "5")
+                        td.setAttribute("style", "text-align: center")
+                        td.innerHTML = "无"
                         tr.append(td)
                         tbody.append(tr)
                     }
@@ -659,8 +661,8 @@
         }
 
         function applyforgpu(event) {
-            var currentItemlist =document.getElementById("currentItemtbody")
-            if(currentItemlist.childNodes[0].childNodes.length!=1){
+            var currentItemlist = document.getElementById("currentItemtbody")
+            if (currentItemlist.childNodes[0].childNodes.length != 1) {
                 alert("每人同时只能发起一次申请。")
                 return
             }
@@ -672,8 +674,8 @@
             for (var i = 0; i < gpu_count; i++) {
                 applyforgpudialoggpuidselect.innerHTML += "<option value='" + String(i) + "' style='font-size: 20px;'>GPU " + String(i) + "</option>"
             }
-            if(parenttag=="TD"){
-                applyforgpudialoggpuidselect.value=grandparent.childNodes[0].innerHTML
+            if (parenttag == "TD") {
+                applyforgpudialoggpuidselect.value = grandparent.childNodes[0].innerHTML
                 document.getElementById("applyforgpudialogduration").value = grandparent.childNodes[1].innerHTML
                 document.getElementById("applyforgpudialogreason").value = grandparent.childNodes[2].innerHTML
                 document.getElementById("applyforgpudialogcmd").value = grandparent.childNodes[3].innerHTML
@@ -736,11 +738,11 @@
                 if (this.readyState == 4 && this.status == 200) {
                     var data = JSON.parse(Http.responseText)
                     var tbody = document.getElementById("imagelisttbody")
-                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                    for (var i = 0; i < tbody.childNodes.length; ++i) {
                         tbody.removeChild(tbody.childNodes[i])
                     }
                     if (data.length != 0) {
-                        
+
                         for (var i = 0; i < data.length; ++i) {
                             var tr = document.createElement("tr")
                             var td1 = document.createElement("td")
@@ -766,12 +768,12 @@
 
                             tbody.appendChild(tr)
                         }
-                    }else{
+                    } else {
                         var tr = document.createElement("tr")
                         var td = document.createElement("td")
-                        td.setAttribute("colspan","4")
-                        td.setAttribute("style","text-align: center")
-                        td.innerHTML="无"
+                        td.setAttribute("colspan", "4")
+                        td.setAttribute("style", "text-align: center")
+                        td.innerHTML = "无"
                         tr.append(td)
                         tbody.append(tr)
                     }
@@ -788,11 +790,11 @@
                 if (this.readyState == 4 && this.status == 200) {
                     var data = JSON.parse(Http.responseText)
                     var tbody = document.getElementById("mycontainertbody")
-                    for (var i = 0; i < tbody.childNodes.length; ++i){
+                    for (var i = 0; i < tbody.childNodes.length; ++i) {
                         tbody.removeChild(tbody.childNodes[i])
                     }
                     if (data.length != 0) {
-                        
+
                         for (var i = 0; i < data.length; ++i) {
                             var tr = document.createElement("tr")
                             var td1 = document.createElement("td")
@@ -815,12 +817,12 @@
                             tbody.appendChild(tr)
                         }
                     }
-                    else{
+                    else {
                         var tr = document.createElement("tr")
                         var td = document.createElement("td")
-                        td.setAttribute("colspan","5")
-                        td.setAttribute("style","text-align: center")
-                        td.innerHTML="无"
+                        td.setAttribute("colspan", "5")
+                        td.setAttribute("style", "text-align: center")
+                        td.innerHTML = "无"
                         tr.append(td)
                         tbody.append(tr)
                     }
@@ -915,6 +917,7 @@
         function suggest() {
             var suggesttextarea = document.getElementById("suggesttextarea")
             content = suggesttextarea.innerHTML
+            suggesttextarea.innerHTML = ""
             var url = window.location.href + "setting/suggest"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
@@ -925,16 +928,15 @@
                     alert(Http.responseText)
                 }
             }
-
         }
 
-        function quitlogin(){
+        function quitlogin() {
             var keys = document.cookie.match(/[^ =;]+(?=\=)/g);
-            if(keys) {
-                for(var i = keys.length; i--;)
+            if (keys) {
+                for (var i = keys.length; i--;)
                     document.cookie = keys[i] + '=0;expires=' + new Date(0).toUTCString()
             }
-            window.location.href=""
+            window.location.href = ""
         }
     </script>
 
@@ -1086,7 +1088,7 @@
             <textarea id="suggesttextarea" style="width: 400px;height:300px;font-size: 20px;"></textarea>
             <button id="suggestcommit" style="font-size: 20px;" onclick="suggest()">提交留言</button>
         </div>
-        <button onclick="quitlogin()" class="quitbtn" >退出登录</button>
+        <button onclick="quitlogin()" class="quitbtn">退出登录</button>
     </div>
 
 
