@@ -28,18 +28,18 @@ class GPUQueueManager:
             else:
                 yield queue[0]
 
-    def stopearly(self, gpuid: int):
-        self.gpu_wait_queues[gpuid].pop(0)
-        if len(self.gpu_wait_queues[gpuid]) != 0:
-            self.update_queue()
-            return self.gpu_wait_queues[gpuid][0]
-        return None
+    # def stopearly(self, gpuid: int):
+    #     self.gpu_wait_queues[gpuid].pop(0)
+    #     if len(self.gpu_wait_queues[gpuid]) != 0:
+    #         self.update_queue()
+    #         return self.gpu_wait_queues[gpuid][0]
+    #     return None
 
-    def stop(self, gpuid: int):
-        self.gpu_wait_queues[gpuid].pop(0)
-        if len(self.gpu_wait_queues[gpuid]) != 0:
-            return self.gpu_wait_queues[gpuid][0]
-        return None
+    # def stop(self, gpuid: int):
+    #     self.gpu_wait_queues[gpuid].pop(0)
+    #     if len(self.gpu_wait_queues[gpuid]) != 0:
+    #         return self.gpu_wait_queues[gpuid][0]
+    #     return None
 
     def update_queue(self) -> None:
         for queue in self.gpu_wait_queues:
@@ -54,7 +54,7 @@ class GPUQueueManager:
                     rq['end_time'] = rq['start_time'] + datetime.timedelta(hours=rq['duration'])
                     pre = rq
 
-    def now_stop(self, gpuid: int):
+    def stop(self, gpuid: int):
         """某一申请结束时的逻辑,执行时机:1 申请时间到达 2 从容器当中发出的通知 3 web端发出的通知
 
         Args:

@@ -705,7 +705,12 @@
             var reason = document.getElementById("applyforgpudialogreason").value
             var container = document.getElementById("applyforgpudialogcontainerselect").value
             var cmd = document.getElementById("applyforgpudialogcmd").value
-
+            if (container == "选择容器" || cmd == "") {
+                if (int(duration) > 4) {
+                    alert("无指令最多申请4小时！")
+                    return
+                }
+            }
             document.getElementById("applyforgpudialog").close()
             var url = window.location.href + "gpumanager/applyforgpu"
             var Http = new XMLHttpRequest();

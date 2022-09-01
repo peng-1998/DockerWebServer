@@ -144,7 +144,7 @@ def stopearlycontainer():
                     if item is not None and item['user'] == user:
                         if item['user'] in neteasy_email_manager.user_email:
                             neteasy_email_manager.send(f"{datetime.datetime.now().strftime( '%Y-%m-%d %H:%M:%S %f' )}程序运行完成通知", "你运行的实验进程已经运行完成，GPU不再可用，再次使用请重新申请。", item['user'])
-                        item: GPURequest = gpu_queue_manager.stopearly(idx)
+                        item: GPURequest = gpu_queue_manager.stop(idx)
                         if item is not None:
                             if item['container'] is not None and item['cmd'] is not None:
                                 docker_manager.run_exec(item['container'], item['cmd'], item['user'])
@@ -164,7 +164,7 @@ def stopearlyweb():
     uname = request.cookies.get('uname')
     if len(gpu_queue_manager.gpu_wait_queues[gpuid]) == 0 or gpu_queue_manager.gpu_wait_queues[gpuid][0]['user'] != uname:
         return "消息过时，请刷新网页！"
-    item: GPURequest = gpu_queue_manager.stopearly(gpuid)
+    item: GPURequest = gpu_queue_manager.stop(gpuid)
     if item is not None:
         if item['container'] is not None and item['cmd'] is not None:
             docker_manager.run_exec(item['container'], item['cmd'], item['user'])
