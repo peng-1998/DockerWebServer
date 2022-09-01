@@ -2,10 +2,9 @@ import datetime
 import json
 import os
 import time
-from crypt import methods
 from typing import List, NamedTuple, TypedDict
 
-from flask import Flask, current_app, redirect, render_template, request
+from flask import Flask, redirect, render_template, request
 
 import config
 from database import DataBase_NamedTuple, DataBase_TypedDict
@@ -15,7 +14,7 @@ from Login import login_bp
 from MailSender import NeteasyEmailMessager
 from NvidiaGPU import NVIDIA_GPU
 from TimeManager import TimeManager
-
+from utils import TestContainer
 # 定义数据类型
 gpu_request_database_item = NamedTuple('gpu_request_database_item', id=int, user=str, gpuid=int, duration=int, reason=str, container=str, cmd=str)
 docker_image = NamedTuple('docker_image', name=str, show_name=str, env_description=List[str], use_description=str, default_ports=List[int])
@@ -139,7 +138,7 @@ def stopearlycontainer():
     ip_addr = request.remote_addr
     containers = docker_manager.get_containers()
     for container in containers:
-        if user in container.name and ('a' in container.name or 'b' in container.name or 'c' in container.name):
+        if TestContainer(container.name, user):
             if container.ip == ip_addr:
                 for idx, item in enumerate(gpu_queue_manager.current_item()):
                     if item is not None and item['user'] == user:
@@ -215,7 +214,7 @@ def mycontainer():
     containers = docker_manager.all_containers
     r = []
     for container in containers:
-        if uname in container.name and ('a' in container.name or 'b' in container.name or 'c' in container.name):
+        if TestContainer(container.name, uname):
             r.append({"containername": container.name, "imagename": image_name_dict[container.image], "status": container.status, "ports": '|'.join([f"{port['container_port']}->{port['host_port']}" for port in container.ports])})
 
     return json.dumps(r)
@@ -232,7 +231,7 @@ def applyforcontainer():
     # 查找该用户已有的容器
     r = []
     for container in containers:
-        if uname in container.name and ('a' in container.name or 'b' in container.name or 'c' in container.name):
+        if TestContainer(container.name, uname):
             r.append(container.name)
         # 统计在docker系统当中已经被占用的端口
         ports_used += [_['host_port'] for _ in container.ports]

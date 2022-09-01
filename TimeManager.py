@@ -8,6 +8,7 @@ from DockerManager import DockerManager
 from GPUQueueManager import GPUQueueManager, GPURequest
 from MailSender import NeteasyEmailMessager
 from NvidiaGPU import NVIDIA_GPU
+from utils import TestContainer
 
 
 class TimeManager(threading.Thread):
@@ -46,7 +47,7 @@ class TimeManager(threading.Thread):
                 containers = self.docker_manager.get_containers()
                 containers_process = []
                 for container in containers:
-                    if user in container.name:
+                    if TestContainer(container.name, user):
                         containers_process += [_.PID for _ in self.docker_manager.query_process(container.name)]
                 for p in process:
                     if str(p.PID) not in containers_process:
