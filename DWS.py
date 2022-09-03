@@ -5,6 +5,7 @@ import time
 from typing import List, NamedTuple, TypedDict
 
 from flask import Flask, redirect, render_template, request
+from tinydb import Query, TinyDB
 
 import config
 from database import DataBase_NamedTuple, DataBase_TypedDict
@@ -15,31 +16,34 @@ from MailSender import NeteasyEmailMessager
 from NvidiaGPU import NVIDIA_GPU
 from TimeManager import TimeManager
 from utils import TestContainer
-# 定义数据类型
-gpu_request_database_item = NamedTuple('gpu_request_database_item', id=int, user=str, gpuid=int, duration=int, reason=str, container=str, cmd=str)
-docker_image = NamedTuple('docker_image', name=str, show_name=str, env_description=List[str], use_description=str, default_ports=List[int])
-user_info = TypedDict('user_info', name=str, email=str)
+
+database = TinyDB('data/database/database.json')
 # 初始化
 app = Flask("DSM")
 app.secret_key = 'DSM'
 app.register_blueprint(login_bp)
 # 加载数据库
-gpu_request_database = DataBase_NamedTuple(config.gpu_request_database_save_path, gpu_request_database_item)
-docker_image_database = DataBase_NamedTuple(config.docker_images_database_save_path, docker_image)
-user_info_database = DataBase_TypedDict(config.user_info_database_save_path)
+user_info_database = database.table('user_info')
+docker_image_database = database.table('docker_images')
+gpu_request_database = database.table('gpu_request_database')
+query = Query()
 # 创建管理器
 nvidia_gpu = NVIDIA_GPU()
 gpu_queue_manager = GPUQueueManager(nvidia_gpu.gpucount)
 docker_manager = DockerManager()
 user_email = {}
-for info in user_info_database.datas:
-    user_email[info['name']] = info['email']
+for info in user_info_database.all():
+    user_email[info['user']] = info['email']
 user_email['administrator'] = config.mail_user + "@m.scnu.edu.cn"
 neteasy_email_manager = NeteasyEmailMessager(config.mail_user, config.mail_pass, user_email)
 image_name_dict = {}
-for image in docker_image_database.datas:
-    image_name_dict[image.name] = image.show_name
+for image in docker_image_database.all():
+    image_name_dict[image['name']] = image['show_name']
 time_manager = TimeManager(nvidia_gpu, docker_manager, gpu_queue_manager, neteasy_email_manager)
+user2name = {}
+for info in user_info_database.all():
+    if info['name'] is not None:
+        user2name[info['user']] = info['name']
 
 
 @app.before_first_request
@@ -60,12 +64,12 @@ def gpuinfo():
     gpu_info = nvidia_gpu.gpu_info()  # 获取GPU信息
     for i in range(nvidia_gpu.gpucount):
         ginfo = gpu_info[i]
-        waitlist = gpu_queue_manager.gpu_wait_queues[i]
+        waitlist = gpu_queue_manager.gpu_wait_quefues[i]
         if len(waitlist) == 0:
             ginfo['currentuser'] = '无'
             ginfo['waittime'] = '无'
         else:
-            ginfo['currentuser'] = waitlist[0]['user']
+            ginfo['currentuser'] = user2name[waitlist[0]['user']] if waitlist[0]['user'] in user2name else waitlist[0]['user']
             d: datetime.timedelta = waitlist[-1]['end_time'] - datetime.datetime.now()  # 计算等待时间
             ginfo['waittime'] = f'{int(d.total_seconds()//3600)}小时{int((d.total_seconds()%3600)//60)}分钟'
     return json.dumps(gpu_info)
@@ -77,8 +81,8 @@ def waitlist():
     for idx, queue in enumerate(gpu_queue_manager.gpu_wait_queues):
         for item in queue:
             dbid = item['id']
-            dbitem: gpu_request_database_item = gpu_request_database.query('id', dbid, 1)[0]
-            reslist.append({'user': item['user'], 'gpuid': idx, 'duration': item['duration'], 'reason': dbitem.reason, 'container': '无' if item['container'] is None else item['container'], 'cmd': '无' if item['cmd'] is None else item['cmd']})
+            dbitem = gpu_request_database.search(query.id == dbid)[0]
+            reslist.append({'user': user2name[item['user']] if item['user'] in user2name else item['user'], 'gpuid': idx, 'duration': item['duration'], 'reason': dbitem.reason, 'container': '无' if item['container'] is None else item['container'], 'cmd': '无' if item['cmd'] is None else item['cmd']})
     return json.dumps(reslist)
 
 
@@ -106,13 +110,13 @@ def currentitem():
 def applyforgpu():
     attrs = request.json
     uname = request.cookies.get('uname')
-    id = len(gpu_request_database.datas)
+    id = len(gpu_request_database.all())
     container, cmd = attrs['container'], attrs['cmd']
     if container == "选择容器" or cmd == '':  # 没有设置容器和命令
         container = None
         cmd = None
     item: GPURequest = gpu_queue_manager.new_item(id, int(attrs['gpuid']), uname, int(attrs['duration']), container, cmd)
-    gpu_request_database.add(gpu_request_database_item(id=id, user=uname, gpuid=attrs['gpuid'], duration=int(attrs['duration']), reason=attrs['reason'], container=container, cmd=cmd))
+    gpu_request_database.insert({'id': id, 'user': uname, 'gpuid': int(attrs['gpuid']), 'duration': int(attrs['duration']), 'reason': attrs['reason'], 'container': container, 'cmd': cmd})
     r_str = '申请成功!'
     start_time: datetime.datetime = item['start_time']
     if start_time < datetime.datetime.now():
@@ -128,7 +132,6 @@ def applyforgpu():
             r_str += '你托管的指令将在GPU可用时自动执行.'
         else:
             r_str += '你没有托管指令,系统将在GPU可用时通过电子邮件通知.'
-
     return r_str
 
 
@@ -201,9 +204,8 @@ def remove_reapeted_request(requests: list):
 def requesthistory():
     uname = request.cookies.get('uname')
     r = []
-    for item in gpu_request_database.datas:
-        if item.user == uname:
-            r.append({"gpuid": item.gpuid, "duration": item.duration, "reason": item.reason, "cmd": item.cmd})
+    for item in gpu_request_database.search(query.user == uname):
+        r.append({"gpuid": item['gpuid'], "duration": item['duration'], "reason": item['reason'], "cmd": item['cmd']})
     r = remove_reapeted_request(r)
     return json.dumps(r[::-1])
 
@@ -211,8 +213,8 @@ def requesthistory():
 @app.route('/containermanager/imagelist')
 def imagelist():
     r = []
-    for image in docker_image_database.datas:
-        r.append({"imagename": image.show_name, "env": image.env_description, "useguide": image.use_description})
+    for image in docker_image_database.all():
+        r.append({"imagename": image['show_name'], "env": image['env_description'], "useguide": image['use_description']})
     return json.dumps(r)
 
 
@@ -254,10 +256,10 @@ def applyforcontainer():
     else:
         ports = []
     # 查找对应的镜像信息
-    image: docker_image = docker_image_database.query('show_name', imagename, 1)[0]
+    image = docker_image_database.search(query.show_name == imagename)[0]
     # 获取镜像的默认端口信息
-    default_ports = image.default_ports
-    image: str = image.name
+    default_ports = image['default_ports']
+    image: str = image['name']
     # 处理创建容器需要的文件
     if os.path.exists(f'data/user/{uname}/{containername}'):  # 如果存在旧文件则删除
         os.system(f'rm -r data/user/{uname}/{containername}')
@@ -337,7 +339,7 @@ def containeropt():
 @app.route('/setting/loademail')
 def loademail():
     uname = request.cookies.get('uname')
-    user = user_info_database.query('name', uname, 1)
+    user = user_info_database.search(query.user == uname)
     if len(user) == 0:
         return 'None'
     return user[0]['email']
@@ -346,14 +348,35 @@ def loademail():
 @app.route('/setting/setemail', methods=['POST'])
 def setemail():
     uname = request.cookies.get('uname')
-    query = user_info_database.query('name', uname, 1)
+    query = user_info_database.search(query.name == uname)
     email = request.json['email']
     if len(query) == 0:
-        user_info_database.add(user_info(name=uname, email=email))
+        user_info_database.insert({'user': uname, 'name': None, 'email': email})
     else:
         query[0]['email'] = email
     neteasy_email_manager.user_email[uname] = email
-    user_info_database.updateStorage()
+    return "成功"
+
+
+@app.route('/setting/loadname')
+def loadname():
+    uname = request.cookies.get('uname')
+    user = user_info_database.search(query.user == uname)
+    if len(user) == 0 or user[0]['name'] is None:
+        return 'None'
+    return user[0]['name']
+
+
+@app.route('/setting/setname', methods=['POST'])
+def setname():
+    uname = request.cookies.get('uname')
+    user = user_info_database.search(query.user == uname)
+    name = request.json['name']
+    user2name[uname] = name
+    if len(user) == 0:
+        user_info_database.insert({'user': uname, 'name': name, 'email': None})
+    else:
+        user[0]['name'] = name
     return "成功"
 
 
