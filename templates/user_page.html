@@ -706,7 +706,7 @@
             var container = document.getElementById("applyforgpudialogcontainerselect").value
             var cmd = document.getElementById("applyforgpudialogcmd").value
             if (container == "选择容器" || cmd == "") {
-                if (int(duration) > 4) {
+                if (parseInt(duration) > 4) {
                     alert("无指令最多申请4小时！")
                     return
                 }
