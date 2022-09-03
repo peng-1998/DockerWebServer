@@ -408,13 +408,10 @@ def suggest():
     return "提交成功!"
 
 
-@app.route('/setting/addimages', methods=['GET'])
+@app.route('/setting/addimages', methods=['GET', 'POST'])
 def addimages():
-    return ''
-
-
-@app.route('/setting/addimages', methods=['POST'])
-def addimages():
+    if request.method == 'GET':
+        return ''
     image = request.json['image']
     passwd = request.json['passwd']
     if passwd != config.administrator_passwd:
