@@ -410,7 +410,7 @@ def suggest():
 
 @app.route('/setting/addimages', methods=['GET'])
 def addimages():
-    ...
+    return ''
 
 
 @app.route('/setting/addimages', methods=['POST'])

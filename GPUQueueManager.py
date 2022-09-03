@@ -21,25 +21,12 @@ class GPUQueueManager:
         current_queue.append(item)
         return item
 
-    def current_item(self) -> GPURequest | None:
+    def current_item(self) -> GPURequest:
         for queue in self.gpu_wait_queues:
             if len(queue) == 0:
                 yield None
             else:
                 yield queue[0]
-
-    # def stopearly(self, gpuid: int):
-    #     self.gpu_wait_queues[gpuid].pop(0)
-    #     if len(self.gpu_wait_queues[gpuid]) != 0:
-    #         self.update_queue()
-    #         return self.gpu_wait_queues[gpuid][0]
-    #     return None
-
-    # def stop(self, gpuid: int):
-    #     self.gpu_wait_queues[gpuid].pop(0)
-    #     if len(self.gpu_wait_queues[gpuid]) != 0:
-    #         return self.gpu_wait_queues[gpuid][0]
-    #     return None
 
     def update_queue(self) -> None:
         for queue in self.gpu_wait_queues:
