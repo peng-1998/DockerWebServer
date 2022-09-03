@@ -418,7 +418,7 @@
         }
 
         function loadgpuinfo() {
-            var url = window.location.href + "gpumanager/gpuinfo"
+            var url = "/gpumanager/gpuinfo"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -465,7 +465,7 @@
         }
 
         function loadwaitlist() {
-            var url = window.location.href + "gpumanager/waitlist"
+            var url = "/gpumanager/waitlist"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -515,7 +515,7 @@
         }
 
         function loadcurrentitem() {
-            var url = window.location.href + "gpumanager/currentitem"
+            var url = "/gpumanager/currentitem"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -572,7 +572,7 @@
 
         function stopearly(event) {
             var gpuid = event.currentTarget.parentNode.parentNode.childNodes[0].innerHTML
-            var url = window.location.href + "gpumanager/stopearlyweb"
+            var url = "/gpumanager/stopearlyweb"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -592,7 +592,7 @@
 
         function cancleapplyfor(event) {
             var gpuid = event.currentTarget.parentNode.parentNode.childNodes[0].innerHTML
-            var url = window.location.href + "gpumanager/cancleapplyfor"
+            var url = "/gpumanager/cancleapplyfor"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -611,7 +611,7 @@
         }
 
         function loadrequesthistory() {
-            var url = window.location.href + "gpumanager/requesthistory"
+            var url = "/gpumanager/requesthistory"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -681,7 +681,7 @@
                 document.getElementById("applyforgpudialogcmd").value = grandparent.childNodes[3].innerHTML
             }
 
-            var url = window.location.href + "containermanager/mycontainer"
+            var url = "/containermanager/mycontainer"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -712,7 +712,7 @@
                 }
             }
             document.getElementById("applyforgpudialog").close()
-            var url = window.location.href + "gpumanager/applyforgpu"
+            var url = "/gpumanager/applyforgpu"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -735,7 +735,7 @@
         }
 
         function loadimagelist() {
-            var url = window.location.href + "containermanager/imagelist"
+            var url = "/containermanager/imagelist"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -787,7 +787,7 @@
         }
 
         function loadmycontainer() {
-            var url = window.location.href + "containermanager/mycontainer"
+            var url = "/containermanager/mycontainer"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -848,7 +848,7 @@
                 return
             }
             var ports = prompt("需要映射的端口(22端口已经默认映射,端口以|分割)")
-            var url = window.location.href + "containermanager/applyforcontainer"
+            var url = "/containermanager/applyforcontainer"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -868,7 +868,7 @@
                 if (!confirm("您正在删除容器,请再次确认!")) return
             }
 
-            var url = window.location.href + "containermanager/containeropt"
+            var url = "/containermanager/containeropt"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -884,7 +884,7 @@
         function loademail() {
             var useremaillabel = document.getElementById("useremaillabel")
             var useremailbutton = document.getElementById("useremailbutton")
-            var url = window.location.href + "setting/loademail"
+            var url = "/setting/loademail"
             var Http = new XMLHttpRequest();
             Http.open("GET", url);
             Http.send();
@@ -901,7 +901,7 @@
 
         function setemail(email) {
             var email = prompt("输入邮箱地址了:")
-            var url = window.location.href + "setting/setemail"
+            var url = "/setting/setemail"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -923,7 +923,7 @@
             var suggesttextarea = document.getElementById("suggesttextarea")
             content = suggesttextarea.innerHTML
             suggesttextarea.innerHTML = ""
-            var url = window.location.href + "setting/suggest"
+            var url = "/setting/suggest"
             var Http = new XMLHttpRequest();
             Http.open("POST", url, true);
             Http.setRequestHeader("Content-type", "application/json")
@@ -935,14 +935,6 @@
             }
         }
 
-        function quitlogin() {
-            var keys = document.cookie.match(/[^ =;]+(?=\=)/g);
-            if (keys) {
-                for (var i = keys.length; i--;)
-                    document.cookie = keys[i] + '=0;expires=' + new Date(0).toUTCString()
-            }
-            window.location.href = ""
-        }
     </script>
 
 
@@ -1093,7 +1085,7 @@
             <textarea id="suggesttextarea" style="width: 400px;height:300px;font-size: 20px;"></textarea>
             <button id="suggestcommit" style="font-size: 20px;" onclick="suggest()">提交留言</button>
         </div>
-        <button onclick="quitlogin()" class="quitbtn">退出登录</button>
+        <button onclick="window.location.href = '/setting/quit'" class="quitbtn">退出登录</button>
     </div>
 
 

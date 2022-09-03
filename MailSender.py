@@ -2,35 +2,41 @@ import smtplib
 from email.mime.text import MIMEText
 import time
 
-class NeteasyEmailMessager:
 
-    def __init__(self, mail_user: str, mail_pass: str, user_email: dict):
-        self.mail_user = mail_user
-        self.mail_pass = mail_pass
+class EmailMessager:
+
+    def __init__(self, mail_login_user: str, mail_password: str, mail_sender: str, user_email: dict, from_str: str, server_host: str, server_port: int, use_ssl: bool = False, max_resend_time: int = 5) -> None:
+        self.mail_login_user = mail_login_user
+        self.mail_password = mail_password
+        self.mail_sender = mail_sender
         self.user_email = user_email
-        self.sender = self.mail_user + '@m.scnu.edu.cn'
+        self.from_str = from_str
+        self.server_host = server_host
+        self.server_port = server_port
+        self.use_ssl = use_ssl
+        self.max_resend_time = max_resend_time
         self.send_queue = []
 
-    def send(self, subject: str, context: str, user: str)->None:
-        self.send_queue.append([subject,context,user])
-        
-    def _send(self)->None:
-        # smtpObj = smtplib.SMTP()
-        subject,context,user = self.send_queue.pop(0)
-        for i in range(5): # 最多尝试5次
+    def send(self, subject: str, context: str, user: str) -> None:
+        self.send_queue.append([subject, context, user])
+
+    def _send(self) -> None:
+        subject, context, user = self.send_queue.pop(0)
+        for i in range(self.max_resend_time):
             try:
-                # smtpObj.connect('smtp.163.com', 25)
-                smtpObj = smtplib.SMTP_SSL("smtp.exmail.qq.com", 465)
-                smtpObj.login(self.sender, self.mail_pass)
+                if self.use_ssl:
+                    server = smtplib.SMTP_SSL(self.server_host, self.server_port)
+                else:
+                    server = smtplib.SMTP(self.server_host, self.server_port)
+                server.login(self.mail_login_user, self.mail_password)
                 receiver = self.user_email[user]
-                if receiver is None:
-                    return
-                message = MIMEText(context, 'plain', 'utf-8')
-                message['Subject'] = subject
-                message['From'] = '李乡儒团队GPU服务器'
-                message['To'] = receiver
-                smtpObj.sendmail(self.sender, receiver, message.as_string())
-                smtpObj.quit()
+                msg = MIMEText(context, 'plain', 'utf-8')
+                msg['Subject'] = subject
+                msg['From'] = self.from_str
+                msg['To'] = receiver
+                server.sendmail(self.mail_sender, receiver, msg.as_string())
+                server.quit()
                 break
             except smtplib.SMTPException as e:
-                print('邮件发送失败', e) 
+                print('邮件发送失败', e)
+                time.sleep(1)

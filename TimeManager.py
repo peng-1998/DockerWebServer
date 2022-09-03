@@ -6,14 +6,14 @@ from typing import List
 
 from DockerManager import DockerManager
 from GPUQueueManager import GPUQueueManager, GPURequest
-from MailSender import NeteasyEmailMessager
+from MailSender import EmailMessager
 from NvidiaGPU import NVIDIA_GPU
 from utils import TestContainer
 
 
 class TimeManager(threading.Thread):
 
-    def __init__(self, nvidia_gpu: NVIDIA_GPU, docker_manager: DockerManager, gpu_queue_manager: GPUQueueManager, mail_manager: NeteasyEmailMessager):
+    def __init__(self, nvidia_gpu: NVIDIA_GPU, docker_manager: DockerManager, gpu_queue_manager: GPUQueueManager, mail_manager: EmailMessager):
         super().__init__()
         self.nvidia_gpu = nvidia_gpu
         self.docker_manager = docker_manager
