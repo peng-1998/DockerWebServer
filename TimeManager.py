@@ -30,7 +30,7 @@ class TimeManager(threading.Thread):
                     continue
                 q1: GPURequest = queue[0]
                 if q1['end_time'] < datetime.datetime.now():
-                    item: GPURequest = self.gpu_queue_manager.stop()
+                    item: GPURequest = self.gpu_queue_manager.stop(idx)
                     changed[idx] = True
                     next_item[idx] = item
 
