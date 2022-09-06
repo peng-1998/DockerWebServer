@@ -14,7 +14,7 @@ from NvidiaGPU import NVIDIA_GPU
 from TimeManager import TimeManager
 from utils import TestContainer, TestPasswd
 
-database = TinyDB('data/database/database.json')
+database = TinyDB('data/database/database.json',sort_keys=True, indent=4, separators=(',', ': '))
 # 初始化
 app = Flask("DSM")
 app.secret_key = 'DSM'
@@ -102,7 +102,7 @@ def waitlist():
         for item in queue:
             dbid = item['id']
             dbitem = gpu_request_database.search(query.id == dbid)[0]
-            reslist.append({'user': user2name[item['user']] if item['user'] in user2name else item['user'], 'gpuid': idx, 'duration': item['duration'], 'reason': dbitem.reason, 'container': '无' if item['container'] is None else item['container'], 'cmd': '无' if item['cmd'] is None else item['cmd']})
+            reslist.append({'user': user2name[item['user']] if item['user'] in user2name else item['user'], 'gpuid': idx, 'duration': item['duration'], 'reason': dbitem['reason'], 'container': '无' if item['container'] is None else item['container'], 'cmd': '无' if item['cmd'] is None else item['cmd']})
     return json.dumps(reslist)
 
 
