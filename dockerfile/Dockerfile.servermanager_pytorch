@@ -1,0 +1,35 @@
+FROM nvidia/cuda:11.6.0-devel-ubuntu20.04
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt -y update \
+    && apt -y install git \
+    && apt -y install vim \
+    && apt -y install curl \
+    && apt -y install wget \
+    && apt -y install python3-pip \
+    && apt -y install python3-dev \
+    && apt -y install openssh-server \
+    && apt -y install zsh \
+    && apt -y install unzip \
+    && apt -y install sudo \
+    && apt-get -y clean \
+    && ssh-keygen -A
+
+COPY ./src/.oh-my-zsh.zip /root/
+
+RUN unzip -q -d /root/ /root/.oh-my-zsh.zip && rm /root/.oh-my-zsh.zip
+
+COPY ./src/.zshrc /root/
+
+COPY ./src/jupyter_notebook_config.py /root/.jupyter/
+
+COPY ./src/sshd_config /etc/ssh/
+
+RUN pip install numpy scipy matplotlib scikit-learn scikit-image opencv-python jupyter tqdm \
+    && pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu116 \
+    && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 
+
+ENV PATH=/usr/local/cuda-11/bin;$PATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH
+
+RUN echo "root:scnu" | chpasswd 
