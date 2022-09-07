@@ -4,16 +4,17 @@ import threading
 import time
 from typing import List
 
+import config
 from DockerManager import DockerManager
-from GPUQueueManager import GPUQueueManager, GPURequest
+from GPUWaitQueue import GPURequest, GPUWaitQueue
 from MailSender import EmailMessager
 from NvidiaGPU import NVIDIA_GPU
 from utils import TestContainer
 
 
-class TimeManager(threading.Thread):
+class BackgroundThread(threading.Thread):
 
-    def __init__(self, nvidia_gpu: NVIDIA_GPU, docker_manager: DockerManager, gpu_queue_manager: GPUQueueManager, mail_manager: EmailMessager):
+    def __init__(self, nvidia_gpu: NVIDIA_GPU, docker_manager: DockerManager, gpu_queue_manager: GPUWaitQueue, mail_manager: EmailMessager):
         super().__init__()
         self.nvidia_gpu = nvidia_gpu
         self.docker_manager = docker_manager
@@ -70,7 +71,7 @@ class TimeManager(threading.Thread):
                 time.sleep(1)
                 self.mail_manager._send()
 
-            time.sleep(20)
+            time.sleep(config.check_interval)
 
     def kill_process(self, process: List[int]):
         for pid in process:

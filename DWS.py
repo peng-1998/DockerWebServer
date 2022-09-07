@@ -7,14 +7,14 @@ from flask import Flask, flash, redirect, request
 from tinydb import Query, TinyDB
 
 import config
+from BackgroundThread import BackgroundThread
 from DockerManager import DockerManager
-from GPUQueueManager import GPUQueueManager, GPURequest
+from GPUWaitQueue import GPURequest, GPUWaitQueue
 from MailSender import EmailMessager
 from NvidiaGPU import NVIDIA_GPU
-from TimeManager import TimeManager
 from utils import TestContainer, TestPasswd
 
-database = TinyDB('data/database/database.json',sort_keys=True, indent=4, separators=(',', ': '))
+database = TinyDB('data/database/database.json', sort_keys=True, indent=4, separators=(',', ': '))
 # 初始化
 app = Flask("DSM")
 app.secret_key = 'DSM'
@@ -25,7 +25,7 @@ gpu_request_database = database.table('gpu_request_database')
 query = Query()
 # 创建管理器
 nvidia_gpu = NVIDIA_GPU()
-gpu_queue_manager = GPUQueueManager(nvidia_gpu.gpucount)
+gpu_queue_manager = GPUWaitQueue(nvidia_gpu.gpucount)
 docker_manager = DockerManager()
 ## 读取所有用户邮件信息
 user_email = {}
@@ -43,7 +43,7 @@ user2name = {}
 for info in user_info_database.all():
     if info['name'] is not None:
         user2name[info['user']] = info['name']
-time_manager = TimeManager(nvidia_gpu, docker_manager, gpu_queue_manager, neteasy_email_manager)
+time_manager = BackgroundThread(nvidia_gpu, docker_manager, gpu_queue_manager, neteasy_email_manager)
 
 
 @app.before_first_request
@@ -52,7 +52,7 @@ def init():
 
 
 @app.route('/')
-def index():
+def start_point():
     if 'uname' in request.cookies:  # cookie中有uname项, 说明已经登录
         return redirect('/static/user_page.html')  # 跳转到用户页面
     else:
@@ -100,9 +100,7 @@ def waitlist():
     reslist = []
     for idx, queue in enumerate(gpu_queue_manager.gpu_wait_queues):
         for item in queue:
-            dbid = item['id']
-            dbitem = gpu_request_database.search(query.id == dbid)[0]
-            reslist.append({'user': user2name[item['user']] if item['user'] in user2name else item['user'], 'gpuid': idx, 'duration': item['duration'], 'reason': dbitem['reason'], 'container': '无' if item['container'] is None else item['container'], 'cmd': '无' if item['cmd'] is None else item['cmd']})
+            reslist.append({'user': user2name[item['user']] if item['user'] in user2name else item['user'], 'gpuid': idx, 'duration': item['duration'], 'reason': item['reason'], 'container': '无' if item['container'] is None else item['container'], 'cmd': '无' if item['cmd'] is None else item['cmd']})
     return json.dumps(reslist)
 
 
@@ -130,13 +128,13 @@ def currentitem():
 def applyforgpu():
     attrs = request.json
     uname = request.cookies.get('uname')
-    id = len(gpu_request_database.all())
     container, cmd = attrs['container'], attrs['cmd']
     if container == "选择容器" or cmd == '':  # 没有设置容器和命令
         container = None
         cmd = None
-    item: GPURequest = gpu_queue_manager.new_item(id, int(attrs['gpuid']), uname, int(attrs['duration']), container, cmd)
-    gpu_request_database.insert({'id': id, 'user': uname, 'gpuid': int(attrs['gpuid']), 'duration': int(attrs['duration']), 'reason': attrs['reason'], 'container': container, 'cmd': cmd})
+    item: GPURequest = gpu_queue_manager.new_item(int(attrs['gpuid']), uname, int(attrs['duration']), attrs['reason'], container, cmd)
+    if gpu_request_database.search(Query().field.fragment({'user': uname, 'gpuid': int(attrs['gpuid']), 'reason': attrs['reason'], 'container': container, 'cmd': cmd})) == []:
+        gpu_request_database.insert({'user': uname, 'gpuid': int(attrs['gpuid']), 'duration': int(attrs['duration']), 'reason': attrs['reason'], 'container': container, 'cmd': cmd})
     r_str = '申请成功!'
     start_time: datetime.datetime = item['start_time']
     if start_time < datetime.datetime.now():
@@ -212,42 +210,21 @@ def cancleapplyfor():
     return "申请已经撤销。"
 
 
-def remove_reapeted_request(requests: list):
-    r = []
-    for item in requests:
-        if item not in r:
-            r.append(item)
-    return r
-
-
 @app.route('/gpumanager/requesthistory')
-def requesthistory():
+def requesthistory() -> str:
     uname = request.cookies.get('uname')
-    r = []
-    for item in gpu_request_database.search(query.user == uname):
-        r.append({"gpuid": item['gpuid'], "duration": item['duration'], "reason": item['reason'], "cmd": item['cmd']})
-    r = remove_reapeted_request(r)
-    return json.dumps(r[::-1])
+    return json.dumps([{"gpuid": item['gpuid'], "duration": item['duration'], "reason": item['reason'], "container": item['container'], "cmd": item['cmd']} for item in gpu_request_database.search(query.user == uname)][::-1])
 
 
 @app.route('/containermanager/imagelist')
-def imagelist():
-    r = []
-    for image in docker_image_database.all():
-        r.append({"imagename": image['show_name'], "env": image['env_description'], "useguide": image['use_description']})
-    return json.dumps(r)
+def imagelist() -> str:
+    return json.dumps([{"imagename": image['show_name'], "env": image['env_description'], "useguide": image['use_description']} for image in docker_image_database.all()])
 
 
 @app.route('/containermanager/mycontainer')
-def mycontainer():
+def mycontainer() -> str:
     uname = request.cookies.get('uname')
-    containers = docker_manager.all_containers
-    r = []
-    for container in containers:
-        if TestContainer(container.name, uname):
-            r.append({"containername": container.name, "imagename": image_name_dict[container.image], "status": container.status, "ports": '|'.join([f"{port['container_port']}->{port['host_port']}" for port in container.ports])})
-
-    return json.dumps(r)
+    return json.dumps([{"containername": container.name, "imagename": image_name_dict[container.image], "status": container.status, "ports": '|'.join([f"{port['container_port']}->{port['host_port']}" for port in container.ports])} for container in docker_manager.all_containers if TestContainer(container.name, uname)])
 
 
 @app.route('/containermanager/applyforcontainer', methods=['POST'])
@@ -257,17 +234,15 @@ def applyforcontainer():
     imagename = attrs['imagename']
     ports = attrs['ports']
     containers = docker_manager.all_containers
-    ports_used = []
     # 查找该用户已有的容器
-    r = []
+    container_names = [container.name for container in containers if TestContainer(container.name, uname)]
+    # 统计在docker系统当中已经被占用的端口
+    ports_used = []
     for container in containers:
-        if TestContainer(container.name, uname):
-            r.append(container.name)
-        # 统计在docker系统当中已经被占用的端口
         ports_used += [_['host_port'] for _ in container.ports]
     # 选择不存在的容器名
     for i in ['a', 'b', 'c']:
-        if f'{uname}_{i}' not in r:
+        if f'{uname}_{i}' not in container_names:
             containername = f'{uname}_{i}'
             break
     # 处理额外端口
@@ -317,9 +292,9 @@ def applyforcontainer():
             ports.append(port)
     # 查找未使用的主机端口
     host_ports = []
-    for i in range(1000):
-        if i + 10000 not in ports_used:
-            host_ports.append(i + 10000)
+    for i in range(config.host_port_start, config.host_port_end):
+        if i not in ports_used:
+            host_ports.append(i)
         if len(host_ports) == len(ports):
             break
     # 设置文件映射
@@ -334,10 +309,10 @@ def applyforcontainer():
     ports_ = {}
     for p, q in zip(ports, host_ports):
         ports_[f'{p}/tcp'] = q
-    # 容器内用户的uid
+    # 获取用户uid
     uid = int(os.popen(f'id -u {uname}').read().replace('/n', ''))
     # 创建容器
-    docker_manager.image_instantiation(containername, uid, image, '4g', volumes, f'/home/{uname}/workspace', ports_, None, cmd=f'bash /home/{uname}/start.sh')
+    docker_manager.image_instantiation(containername, uid, image, config.shared_memory_size, volumes, f'/home/{uname}/workspace', ports_, None, cmd=f'bash /home/{uname}/start.sh')
     return "容器创建完成."
 
 
@@ -345,14 +320,7 @@ def applyforcontainer():
 def containeropt():
     # 执行容器启动/停止/删除操作
     attrs = request.json
-    containername = attrs['containername']
-    opt = attrs['opt']
-    if opt == 'stop':
-        docker_manager.stop_container(containername)
-    if opt == 'start':
-        docker_manager.start_container(containername)
-    if opt == 'remove':
-        docker_manager.remove_container(containername)
+    eval(f'docker_manager.{attrs["opt"]}_container({attrs["containername"]})')
     return "容器操作完成,请等待5s再进行操作."
 
 

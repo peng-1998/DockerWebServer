@@ -1,6 +1,6 @@
 import smtplib
-from email.mime.text import MIMEText
 import time
+from email.mime.text import MIMEText
 
 
 class EmailMessager:

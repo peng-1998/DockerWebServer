@@ -1,6 +1,7 @@
 from typing import List, NamedTuple, Tuple
-from pynvml.smi import nvidia_smi
+
 import pynvml
+from pynvml.smi import nvidia_smi
 
 GPUProcess = NamedTuple('GPUProcess', PID=int, memory=float)
 
