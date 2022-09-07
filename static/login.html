@@ -6,97 +6,98 @@
     <title>用户登录</title>
     <style type="text/css">
         body {
+            min-height: 100vh;
             margin: 0;
             padding: 0;
-            font-family: sana-fserif;
-            background: #34495e;
+            font-family: sans-serif, Helvetica, "PingFang SC", "Microsoft Yahei";
+            background: rgb(245, 246, 252);
+            display: grid;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-items: center;
         }
 
         .box {
-            width: 300px;
-            padding: 40px;
-            position: absolute;
-            /* 绝对定位，相对于父标签来进行定位 */
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #191919;
+            width: 60%;
+            max-width: 400px;
+            padding: 48px 28px;
+            box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.15);
+            border-radius: 24px;
+            background-color: white;
             text-align: center;
-            /*表单中内容居中*/
+            align-items: center;
         }
 
         .box h1 {
-            color: white;
-            /* 设置字体颜色 */
-            text-transform: uppercase;
-            /* 将字体全部设置成大写字母  */
+            color: #414873;
             font-weight: 500;
-            /*  设置字体粗细   */
         }
 
-        .box input[type="text"],
-        .box input[type="password"] {
-            border-radius: 24px;
-            border: 2px solid #3498db;
-            background: none;
-            display: block;
+        .input {
+            font-size: 16px;
             margin: 20px auto;
+            padding: 10px;
+            display: flex;
+            color: #414873;
+            box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.15); 
+            align-items: center;
             text-align: center;
-            padding: 14px 10px;
-            width: 200px;
-            outline: none;
-            color: white;
-            /* 设置输入框中竖线的颜色 */
-            transition: 0.25s;
-            /* 设置元素过渡效果 */
-        }
-
-        .box input[type="text"]:focus,
-        .box input[type="password"]:focus {
-            width: 280px;
-            border-color: #2ecc71;
-        }
-
-        .box input[type="submit"] {
+            border: none;
             border-radius: 24px;
-            border: 2px solid #2ecc71;
-            background: none;
-            display: block;
+        }
+
+        .input:focus {
+            border-color: #ff962d;
+            outline: 0;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(51,141,227,.6);
+        }
+
+
+
+        .button {
             margin: 20px auto;
+            padding: 10px 40px;
             text-align: center;
-            padding: 14px 40px;
-            outline: none;
+            font-size: 16px;
+            background-color: rgb(50,140,227);
             color: white;
-            /* 设置输入框中竖线的颜色 */
-            transition: 0.25s;
             cursor: pointer;
-            /* 设置光标的样式 */
+            border-radius: 24px;
+            border: none;
         }
 
-        .box input[type="submit"]:hover {
-            background: #2ecc71;
+        .button:hover {
+            background: rgb(22, 104, 186);
         }
 
-        .box label {
-            color: white;
-            /* 设置字体颜色 */
-            text-transform: uppercase;
-            /* 将字体全部设置成大写字母  */
+        .label {
+            font-size: 16px;
+            color: #414873;
             font-weight: 500;
-            /*  设置字体粗细   */
         }
     </style>
 
 </head>
 
 <body>
-    <form class="box" action="" method="POST">
-        <h1>Login</h1>
-        <input type="text" name="account" class="input" placeholder='输入用户名' required>
-        <input type="password" name="password" class="input" placeholder='输入密码' required>
-        <input type="checkbox" name="holdlogin" value="True" checked="checked">
-        <label for="cbox2">在这台电脑上保持登录</label>
-        <br>
-        <input type="submit" name="key" class="button" value="login"><br>
-    </form>
+    <div class="container">
+        <img src="static/images/Moby-logo.png" style="width: 40%; height:auto; margin-bottom: 20px;">
+        <form class="box" action="/login" method="POST">
+            <h1>服务器GPU资源管理</h1>
+            <input name="account" class="input" placeholder='用户名' required>
+            <input name="password" class="input" placeholder='密 码' required>
+            <p> <input type="checkbox" name="holdlogin" value="True" checked="checked">
+                <label>保持登陆</label>
+            </p>
+            
+            <button class="button">Sign In</button>
+        </form>
+    </div>
+
 </body>
