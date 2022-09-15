@@ -27,7 +27,7 @@ class GPUWaitQueue:
         current_queue.append(item)
         return item
 
-    def current_item(self) -> List(GPURequest):
+    def current_item(self) -> List[GPURequest]:
         return [queue[0] if len(queue) != 0 else None for queue in self.gpu_wait_queues]
 
     def update_queue(self) -> None:
