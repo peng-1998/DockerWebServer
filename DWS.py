@@ -76,7 +76,7 @@ def login():
             else:
                 flash("该用户名不存在或密码错误")
                 return redirect('/login')
-    return redirect('/static/login_live2d.html')
+    return redirect('/static/login.html')
 
 
 @app.route('/gpumanager/gpuinfo')
