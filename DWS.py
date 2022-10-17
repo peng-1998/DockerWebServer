@@ -12,7 +12,7 @@ from DockerManager import DockerManager
 from GPUWaitQueue import GPURequest, GPUWaitQueue
 from MailSender import EmailMessager
 from NvidiaGPU import NVIDIA_GPU
-from utils import TestContainer, TestPasswd
+from utils import TestContainer, TestPasswd, TestUser, user2md5
 
 database = TinyDB('data/database/database.json', sort_keys=True, indent=4, separators=(',', ': '))
 # 初始化
@@ -54,6 +54,12 @@ def init():
 @app.route('/')
 def start_point():
     if 'uname' in request.cookies:  # cookie中有uname项, 说明已经登录
+        uname = request.cookies.get('uname')
+        hashcode = request.cookies.get('hashcode')
+        if uname is None or hashcode is None:
+            return redirect('/login')
+        if TestUser(uname, hashcode):
+            return redirect('/login')
         return redirect('/static/user_page.html')  # 跳转到用户页面
     else:
         return redirect('/login')  # 跳转到登录页面
@@ -69,14 +75,27 @@ def login():
             if TestPasswd(user_name, passward):
                 resp = redirect('/')
                 if hold_login == 'True':
-                    resp.set_cookie('uname', user_name, 60 * 60 * 24 * 30)
+                    resp.set_cookie('uname', user_name, 60 * 60 * 24 * 30)  # 设置30天的Cookie
+                    resp.set_cookie('hashcode', user2md5(user_name), 60 * 60 * 24 * 30)
                 else:
                     resp.set_cookie('uname', user_name, 60 * 60)
+                    resp.set_cookie('hashcode', user2md5(user_name), 60 * 60)
                 return resp
             else:
                 flash("该用户名不存在或密码错误")
                 return redirect('/login')
     return redirect('/static/login.html')
+
+
+@app.route('/login/validation', methods=('GET'))
+def login_validation():
+    uname = request.cookies.get('uname')
+    hashcode = request.cookies.get('hashcode')
+    if uname is None or hashcode is None:
+        return False
+    if TestUser(uname, hashcode):
+        return 'True'
+    return 'False'
 
 
 @app.route('/gpumanager/gpuinfo')

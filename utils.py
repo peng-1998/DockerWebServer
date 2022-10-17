@@ -1,4 +1,5 @@
 import crypt
+import hashlib
 
 
 def TestPasswd(username: str, passwd: str) -> bool:
@@ -21,3 +22,13 @@ def TestContainer(container: str, username: str) -> bool:
         uname, id = container.split('_')
         return uname == username and id in ['a', 'b', 'c']
     return False
+
+
+def user2md5(uname: str):
+    m = hashlib.md5()
+    m.update('uname={uname}'.encode('utf-8'))
+    return m.hexdigest()
+
+
+def TestUser(uname: str, hashcode: str) -> bool:
+    return user2md5(uname) == hashcode
