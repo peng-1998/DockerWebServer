@@ -1,0 +1,349 @@
+<!doctype html>
+
+
+<head>
+    <title>GPU服务器管理</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <link id="csslink" rel="stylesheet" type="text/css" href="/static/userPageNew.css">
+    <link rel="shortcut icon" href="/static/images/thumbs-up.png">
+    <script src="/static/userPageNew.js"></script>
+
+    <template id="container-card-template">
+        <div class="container-card">
+            <label class="container-name"></label>
+            <div class="container-card-box1">
+                <div class="container-card-box1-left">
+                    <div>
+                        <label>镜像:</label>
+                        <p class="image-name"></p>
+                    </div>
+                    <div class="container-status">
+                        <label>状态:</label>
+                        <span class="containe-status-flag"></span>
+                        <p></p>
+                    </div>
+                </div>
+                <div class="container-card-box1-right">
+                    <button class="container-card-btn" onclick="startstopcontainer(event)">
+                        <div style="background-color:red;width:20px;height:20px;margin:10px;"></div>
+                    </button>
+                    <button class="container-card-btn" onclick="deletecontainer(event)">╳
+                        <span class="container-card-btn-tip">删除容器</span>
+                    </button>
+                </div>
+            </div>
+            <div class="container-card-box2">
+                <div>
+                    <label>端口:</label>
+                    <p></p>
+                </div>
+
+                <div>
+                    <label>SSH:</label>
+                    <p style="font-size: 12px"></p>
+                </div>
+                <div>
+                    <label>Jupyter:</label>
+                    <a style="font-size: 14px"></a>
+                </div>
+            </div>
+        </div>
+
+    </template>
+</head>
+
+
+<body>
+    <section class="modal-hidden">
+        <!-- 等待圈 -->
+        <div class="overlay">
+            <div class="loadingio-spinner-spinner-r2lxbkgz61j">
+                <div class="ldio-fdtstnum78v">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+        <!-- 信息弹窗 -->
+        <div class="overlay">
+            <div class="info-dialog">
+                <div class="info-dialog-title">
+                    <h2>提示</h2>
+                    <button class="info-dialog-close" onclick="closedialog(event)">╳</button>
+                </div>
+                <div class="info-dialog-content">
+                    <p>提示内容</p>
+                </div>
+                <button class="info-dialog-btn" onclick="closedialog(event)">确定</button>
+            </div>
+        </div>
+        <!-- 申请GPU -->
+        <div class="overlay">
+            <div class="apply-for-gpu-form">
+                <div class="apply-for-gpu-form-header">
+                    <h1>申请GPU</h1>
+                    <button class="apply-for-gpu-form-close-btn" onclick="closedialog(event)">╳</button>
+                </div>
+                <div class="apply-for-gpu-form-body">
+                    <div>
+                        <label>申请时长:</label>
+                        <input type="number" id="apply-time" value="1">
+                    </div>
+                    <div>
+                        <label>申请用途:</label>
+                        <input type="text" id="apply-purpose">
+                    </div>
+                    <div>
+                        <label>托管容器:</label>
+                        <select class="container-selecter" default="选择容器"></select>
+                    </div>
+                    <div>
+                        <label>托管指令:</label>
+                        <input id="sss" type="text">
+                    </div>
+                </div>
+                <button class="apply-for-gpu-form-commit">申请</button>
+
+
+            </div>
+        </div>
+        <!-- 申请容器 -->
+        <div class="overlay">
+            <div class="apply-for-container-form">
+                <div class="apply-for-container-form-header">
+                    <h1>申请容器</h1>
+                    <button class="apply-for-container-form-close-btn" onclick="closedialog(event)">╳</button>
+                </div>
+                <div class="apply-for-container-form-box1">
+                    <label>选择镜像:</label>
+                    <select class="image-selecter" default="选择镜像"></select>
+                </div>
+
+                <div class="apply-for-container-form-env">
+                    <p></p>
+                </div>
+
+                <div class="apply-for-container-form-dsc">
+                    <p></p>
+                </div>
+                <div class="apply-for-container-form-box2">
+                    <label>端口映射:</label>
+                    <input type="text" placeholder="以|分隔多个端口,默认端口不需要填">
+                </div>
+
+                <button class="apply-for-container-form-commit">申请</button>
+                <label class="apply-for-container-form-label1">环境:</label>
+                <label class="apply-for-container-form-label2">说明:</label>
+            </div>
+        </div>
+        <!-- 设置 -->
+        <div class="overlay">
+            <div class="setting-form">
+                <div class="setting-form-header">
+                    <h1>设置</h1>
+                    <button class="setting-form-close-btn" onclick="closedialog(event)">╳</button>
+                </div>
+                <div class="setting-form-body">
+                    <div>
+                        <label>姓名:</label>
+                        <input type="text">
+                    </div>
+                    <div>
+                        <label>邮箱:</label>
+                        <input type="text">
+                    </div>
+
+                </div>
+                <button class="setting-form-commit">提交</button>
+            </div>
+        </div>
+        <!-- 建议留言 -->
+        <div class="overlay">
+            <div class="suggestion">
+                <div class="suggestion-form-header">
+                    <h1>建议留言</h1>
+                    <button class="suggestion-form-close-btn" onclick="closedialog(event)">╳</button>
+                </div>
+                <textarea class="suggestion-form-text" cols="30" rows="10"></textarea>
+                <button class="suggestion-form-commit">提交</button>
+            </div>
+        </div>
+
+
+        <div class="style-switch" style="z-index: 100;">
+            <input class="testswitch-checkbox" id="onoffswitch" type="checkbox">
+            <label class="testswitch-label" for="onoffswitch">
+                <span class="testswitch-inner" data-on="dark" data-off="light"></span>
+                <span class="testswitch-switch"></span>
+            </label>
+        </div>
+
+        <div class="menu">
+            <button class="main-menu-btn" style="z-index: 100;">
+                <span class="main-menu-btn-line"></span>
+            </button>
+
+            <div class="main-menu" style="z-index: 100;">
+                <p>申请GPU</p>
+                <p>申请容器</p>
+                <p>设置信息</p>
+                <p>意见&bug</p>
+                <p>wiki</p>
+                <p>退出登录</p>
+            </div>
+        </div>
+        <div class="centerbox">
+            <div class="box1">
+                <div class="gpu-panel">
+
+
+                    <div style="height: 30px;"></div>
+                    <svg width="200" height="200" id="processbar">
+                        <circle fill="none" cx="100" cy="100" r="75" stroke="#EBEDF0" stroke-width="10" />
+
+                        <path fill="none" d="M 100, 25 A 75, 75, 0, 0, 0, 100, 175 A 75, 75, 0, 0, 0, 100, 25"
+                            stroke="#50D4AB" stroke-width="10" />
+                        <text x="50" y="110" style="font-size: 25px;" ></text>
+                    </svg>
+
+
+                    <div class="gpu-panel-info">
+                        <p>当前使用:</p>
+                        <p>预计等待:</p>
+
+                    </div>
+
+                    <p class="gpu-panel-memory"></p>
+                    <div class="curr-item">
+                        <div>
+                            <p></p>
+                        </div>
+                        <button class="cancel-gpu">取消申请</button>
+                    </div>
+                </div>
+                <div class="waitlist">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>申请人</th>
+                                <th>申请时长</th>
+                                <th>申请说明</th>
+                            </tr>
+                        </thead>
+                        <tbody class="waitlist-tbody">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mycontainers">
+                <label>我的容器</label>
+                <div class="containers-box">
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+
+</html>

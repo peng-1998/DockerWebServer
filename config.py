@@ -2,9 +2,7 @@
 hostName = ""
 serverPort = 9999
 
-gpu_request_database_save_path = 'data/database/gpu_request_database.json'
-docker_images_database_save_path = 'data/database/docker_images.json'
-user_info_database_save_path = 'data/database/user_info.json'
+
 
 
 mail_login_user = "2021023231@m.scnu.edu.cn"
@@ -33,3 +31,6 @@ max_dalay_time = 2
 host_port_start = 10000
 host_port_end = 21000
 shared_memory_size = "4g"
+
+max_container_num = 3
+container_flags = ['a','b','c'] # 容器名后缀,创建的容器名为用户名_后缀

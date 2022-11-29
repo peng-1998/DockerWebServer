@@ -60,7 +60,7 @@ def start_point():
             return redirect('/login')
         if TestUser(uname, hashcode):
             return redirect('/login')
-        return redirect('/static/user_page.html')  # 跳转到用户页面
+        return redirect('/static/userPageNew.html')  # 跳转到用户页面
     else:
         return redirect('/login')  # 跳转到登录页面
 

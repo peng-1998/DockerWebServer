@@ -1,9 +1,9 @@
 import crypt
 import hashlib
-
+from config import container_flags
 
 def TestPasswd(username: str, passwd: str) -> bool:
-    passFile = open('/etc/shadow')
+    passFile = open('/etc/shadow') # 需要root权限 或者单独为这个用户给读权限
     for line in passFile.readlines():
         if ":" in line:
             user = line.split(":")[0]
