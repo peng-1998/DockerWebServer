@@ -78,7 +78,7 @@ def login():
                     resp.set_cookie('uname', user_name, 60 * 60 * 24 * 30)  # 设置30天的Cookie
                     resp.set_cookie('hashcode', user2md5(user_name), 60 * 60 * 24 * 30)
                 else:
-                    resp.set_cookie('uname', user_name, 60 * 60)
+                    resp.set_cookie('uname', user_name, 60 * 60) # 不保持登陆，设置1小时的Cookie
                     resp.set_cookie('hashcode', user2md5(user_name), 60 * 60)
                 return resp
             else:
@@ -295,15 +295,15 @@ def applyforcontainer():
     os.system(f'cp data/image/{image}/start.sh data/user/{uname}/{containername}')
     os.system(f'chown {uname}:{uname} data/user/{uname}/{containername}/start.sh')
     # 如果没有workspace文件夹则创建
-    if not os.path.exists(f'/data/{uname}/workspace'):
-        os.makedirs(f'/data/{uname}/workspace')
-        os.system(f'chown -R {uname} /data/{uname}/workspace')
+    if not os.path.exists(os.path.join(config.user_data_path, f'{uname}/workspace')):
+        os.makedirs(os.path.join(config.user_data_path, f'{uname}/workspace'))
+        os.system(f'chown -R {uname} ' + os.path.join(config.user_data_path, f'{uname}/workspace'))
     # 所有路径转化为绝对路径
     group_path = os.path.abspath(f'data/user/{uname}/{containername}/group')
     shadow_path = os.path.abspath(f'data/user/{uname}/{containername}/shadow')
     passwd_path = os.path.abspath(f'data/user/{uname}/{containername}/passwd')
     sudoers_path = os.path.abspath(f'data/user/{uname}/{containername}/sudoers')
-    workspace = os.path.abspath(f'/data/{uname}/workspace')
+    workspace = os.path.abspath(os.path.join(config.user_data_path, f'{uname}/workspace'))
     start_file = os.path.abspath(f'data/user/{uname}/{containername}/start.sh')
     # 所有需要映射的端口
     for port in default_ports:
