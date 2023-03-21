@@ -92,7 +92,7 @@ def login_validation():
     uname = request.cookies.get('uname')
     hashcode = request.cookies.get('hashcode')
     if uname is None or hashcode is None:
-        return False
+        return 'False'
     if TestUser(uname, hashcode):
         return 'True'
     return 'False'
