@@ -3,19 +3,17 @@
 
 #include <QTcpServer>
 #include <QObject>
-
+#include <QList>
+#include "machine.h"
 class MachinePool : public QTcpServer
 {
 public:
-    class Machine
-    {
-    public:
-        Machine() {};
-    private:
-        QTcpSocket * socket;
-        QString _name;
-    };
-    MachinePool();
+    MachinePool(int port);
+    Machine * at(int);
+private:
+    QList<Machine*> _pool;
+private slots:
+    void newClient();
 };
 
 #endif // MACHINEPOOL_H

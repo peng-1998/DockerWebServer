@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS HttpServer)
+find_package(Qt6 REQUIRED COMPONENTS Network)
 add_executable(qtdockerwebserver
   main.cpp
   webserver.h
@@ -20,8 +21,9 @@ add_executable(qtdockerwebserver
   machinepool.cpp
   machine.h machine.cpp
   gpu.h gpu.cpp
+  container.h container.cpp
 )
-target_link_libraries(qtdockerwebserver Qt6::Core Qt6::HttpServer crypt)
+target_link_libraries(qtdockerwebserver PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network)
 
 install(TARGETS qtdockerwebserver
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
