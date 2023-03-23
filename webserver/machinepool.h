@@ -5,13 +5,18 @@
 #include <QObject>
 #include <QList>
 #include "machine.h"
-class MachinePool : public QTcpServer
-{
+class MachinePool : public QTcpServer {
 public:
     MachinePool(int port);
-    Machine * at(int);
+
+    QHash<QString, Machine *> pool() const;
+
+signals:
+    void newMachine(QString machine);
+    void delMachine(QString machine);
+
 private:
-    QList<Machine*> _pool;
+    QHash<QString, Machine *> _pool;
 private slots:
     void newClient();
 };

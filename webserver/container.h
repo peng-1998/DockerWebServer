@@ -7,6 +7,8 @@ class Container
 {
 public:
     Container();
+    Container(const QString &name, const QList<QPair<int, int> > &ports, const QString &image, bool stopped);
+
     QString name() const;
 
     QList<QPair<int, int> > ports() const;

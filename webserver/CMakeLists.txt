@@ -13,15 +13,17 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS HttpServer)
 find_package(Qt6 REQUIRED COMPONENTS Network)
+
 add_executable(qtdockerwebserver
   main.cpp
-  webserver.h
-  webserver.cpp
-  machinepool.h
-  machinepool.cpp
+  webserver.h webserver.cpp
+  machinepool.h machinepool.cpp
   machine.h machine.cpp
   gpu.h gpu.cpp
   container.h container.cpp
+  gpuwaitqueue.h gpuwaitqueue.cpp
+  database.h database.cpp
+  mailsender.h mailsender.cpp
 )
 target_link_libraries(qtdockerwebserver PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network)
 

@@ -2,65 +2,89 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-Machine::Machine(QObject *parent)
-    : QObject{parent}
-{
-
+#include <QEventLoop>
+#include <QCoreApplication>
+Machine::Machine(QObject *parent) :
+    QObject{parent} {
 }
 
-QList<GPU> Machine::gpus() const
-{
+QList<GPU> Machine::gpus() const {
     return _gpus;
 }
 
-QString Machine::name() const
-{
+QString Machine::name() const {
     return _name;
 }
 
-QList<QString> Machine::images() const
-{
+QList<QString> Machine::images() const {
     return _images;
 }
 
-QList<Container> Machine::containers() const
-{
+QList<Container> Machine::containers() const {
     return _containers;
 }
 
-void Machine::refreshData()
-{
-    this->_socket->write(QString("{\"type\"=\"refresh\"}").toUtf8());
+void Machine::refreshData() {
+    this->_socket->write(_msgRefresh);
 }
 
-void Machine::creatContainer(QJsonObject & data)
-{
-    QString msg = "{\"type\"=\"create\",\"data\"="+QJsonDocument(data).toJson(QJsonDocument::Compact)+"}";
-    this->_socket->write(msg.toUtf8());
+void Machine::creatContainer(QJsonObject &data) {
+    QJsonObject msgobj{
+        {"type", "create"},
+        {"data", data}};
+    this->_socket->write(QJsonDocument(msgobj).toJson(QJsonDocument::Compact));
 }
 
-void Machine::operationContainer(QString name, QString opt)
-{
-    assert(opt=="start"||opt=="stop"||opt=="remove");
-    QString msg = "{\"type\"=\"create\",\"data\"={\"name\"=\""+name+"\",\"opt\"=\""+opt+"\"}}";
-    this->_socket->write(msg.toUtf8());
+void Machine::operationContainer(QString name, QString opt) {
+    assert(opt == "start" || opt == "stop" || opt == "remove");
+    QJsonObject msgobj{
+        {"type", "operation"},
+        {"data", QJsonObject{{"name", name}, {"opt", opt}}}};
+    this->_socket->write(QJsonDocument(msgobj).toJson(QJsonDocument::Compact));
 }
 
-void Machine::exec(QString name, QString cmd)
-{
-    QString msg = "{\"type\"=\"exec\",\"data\"={\"name\"=\""+name+"\",\"cmd\"=\""+cmd+"\"}}";
-    this->_socket->write(msg.toUtf8());
+void Machine::exec(QString name, QString cmd) {
+    QJsonObject msgobj{
+        {"type", "exec"},
+        {"data", QJsonObject{{"name", name}, {"cmd", cmd}}}};
+    this->_socket->write(QJsonDocument(msgobj).toJson(QJsonDocument::Compact));
 }
 
-void Machine::readTransaction()
-{
-    auto data = this->_socket->readAll();
-    auto jsondata = QJsonDocument::fromJson(data).object();
-    if(jsondata.contains("name")){
-        this->_name = jsondata.value("name").toString();
+QString Machine::host() const {
+    return _host;
+}
+
+bool Machine::verifyAccount(QString account, QString password) {
+    QJsonObject msgobj{
+        {"type", "verify"},
+        {"data", QJsonObject{{"account", account}, {"password", password}}}};
+    this->_socket->write(QJsonDocument(msgobj).toJson(QJsonDocument::Compact));
+    QEventLoop loop;
+    bool result;
+    connect(this, &Machine::verifyAccountFinished, [&loop, &result](bool arg) {
+        result = arg;
+        loop.quit();
+    });
+    loop.exec();
+    while (loop.isRunning()) {
+        QCoreApplication::processEvents();
     }
-    if(jsondata.contains("gpus")){
-        auto jsonArray = jsondata.value("gpus").toArray();
+    return result;
+}
+
+void Machine::readTransaction() {
+    auto data = this->_socket->readAll();
+    auto jsondata = QJsonDocument::fromJson(data);
+    if (jsondata.isNull()) {
+        emit this->giveup(this);
+        return;
+    }
+    auto jsonobj = jsondata.object();
+    if (jsonobj.contains("heartbeat")) {
+        _lastHeartbeat = QDateTime::currentDateTime();
+    }
+    if (jsonobj.contains("gpus")) {
+        auto jsonArray = jsonobj.value("gpus").toArray();
         this->_gpus.clear();
         for (int i = 0; i < jsonArray.size(); i++) {
             auto obj = jsonArray[i].toObject();
@@ -70,25 +94,24 @@ void Machine::readTransaction()
                                    obj.value("used_memory").toDouble()));
         }
     }
-    if(jsondata.contains("images")){
-        auto jsonArray = jsondata.value("images").toArray();
+    if (jsonobj.contains("images")) {
+        auto jsonArray = jsonobj.value("images").toArray();
         this->_images.clear();
         for (int i = 0; i < jsonArray.size(); i++) {
             this->_images.append(jsonArray[i].toString());
         }
     }
-    if(jsondata.contains("containers")){
-        auto jsonArray = jsondata.value("containers").toArray();
+    if (jsonobj.contains("containers")) {
+        auto jsonArray = jsonobj.value("containers").toArray();
         this->_containers.clear();
         for (int i = 0; i < jsonArray.size(); i++) {
             auto obj = jsonArray[i].toObject();
-            QList<QPair<int, int> > ports;
+            QList<QPair<int, int>> ports;
             auto jsPorts = obj.value("ports").toArray();
-            for(int j=0;j<jsPorts.size();++j)
-            {
+            for (int j = 0; j < jsPorts.size(); ++j) {
                 auto port = jsPorts[i].toString();
                 auto pp = port.split(":");
-                ports.append(QPair<int,int>(pp[0].toInt(),pp[1].toInt()));
+                ports.append(QPair<int, int>(pp[0].toInt(), pp[1].toInt()));
             }
             this->_containers.append(Container(obj.value("name").toString(),
                                                ports,
@@ -96,11 +119,25 @@ void Machine::readTransaction()
                                                obj.value("stopped").toBool()));
         }
     }
+    if (jsonobj.contains("name")) {
+        this->_name = jsonobj.value("name").toString();
+        emit this->initialized(this);
+    }
+    if (jsonobj.contains("verify")) {
+        emit this->verifyAccountFinished(jsonobj.value("verify").toBool());
+    }
 }
 
-Machine::Machine(QTcpSocket *socket) : _socket(socket)
-{
-    _host=this->_socket->localAddress().toString();
-    connect(this->_socket,&QIODevice::readyRead,this,&Machine::readTransaction);
-    this->_socket->write(QString("{\"type\"=\"init\"}").toUtf8());
+Machine::Machine(QTcpSocket *socket) :
+    _socket(socket) {
+    _host = this->_socket->localAddress().toString();
+    connect(this->_socket, &QIODevice::readyRead, this, &Machine::readTransaction);
+    this->_socket->write(QJsonDocument(QJsonObject{{"type", "init"}}).toJson());
+    connect(this->_socket, &QAbstractSocket::disconnected, this, [this]() {
+        emit this->disconnected(this);
+    });
+}
+
+Machine::~Machine() {
+    delete this->_socket;
 }

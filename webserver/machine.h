@@ -6,12 +6,13 @@
 #include "gpu.h"
 #include "container.h"
 #include <QJsonObject>
-class Machine : public QObject
-{
+#include <QJsonDocument>
+class Machine : public QObject {
     Q_OBJECT
 public:
     explicit Machine(QObject *parent = nullptr);
     Machine(QTcpSocket *socket);
+    ~Machine();
 
     QList<GPU> gpus() const;
 
@@ -25,20 +26,29 @@ public:
 
     void creatContainer(QJsonObject &);
 
-    void operationContainer(QString,QString);
+    void operationContainer(QString, QString);
 
-    void exec(QString,QString);
+    void exec(QString, QString);
+
+    QString host() const;
+
+    bool verifyAccount(QString, QString);
 
 signals:
+    void giveup(Machine *);
+    void initialized(Machine *);
+    void disconnected(Machine *);
+    void verifyAccountFinished(bool);
 
 private:
-    QTcpSocket * _socket;
+    QTcpSocket *_socket;
     QString _host;
     QString _name;
     QList<GPU> _gpus;
     QList<QString> _images;
     QList<Container> _containers;
-
+    QByteArray _msgRefresh = QJsonDocument(QJsonObject{{"type", "refresh"}}).toJson(QJsonDocument::Compact);
+    QDateTime _lastHeartbeat;
 private slots:
     void readTransaction();
 };

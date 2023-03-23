@@ -1,7 +1,7 @@
 #ifndef GPU_H
 #define GPU_H
 #include <QString>
-
+#include <QJsonObject>
 class GPU
 {
 public:
@@ -19,7 +19,7 @@ public:
 
     int used_memory() const;
 
-
+    QJsonObject toJson();
 private:
     QString _type;
     int _gpuid;
