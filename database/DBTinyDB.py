@@ -80,7 +80,18 @@ class DB_TinyDB(BaseDB):
         return self._deleteitem_from_table('Container', search_key)
 
     def insert_machine(self, machine: dict) -> bool:
-        return self._insertitem_to_table('Machine', machine, BaseDB.machine_key)
+        for key, value in self.machine_key.items():
+            if key not in machine:
+                if value == str:
+                    machine[key] = ''
+                elif value == dict:
+                    machine[key] = {}
+                elif value == list:
+                    machine[key] = []
+                elif value == int:
+                    machine[key] = 0
+        item_id = self.db.table('Machine').insert(machine)
+        return bool(item_id)
 
     def get_machine(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         return self._getitem_from_table('Machine', search_key, return_key, limit)
