@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-
-
 '''
 Table User {
     id int [pk, increment]
@@ -13,18 +11,18 @@ Table User {
 }
 Table Image {
     id int [pk, increment]
-    show_name varchar
-    image_name varchar
+    showname varchar
+    imagename varchar
     tag varchar
     creat_args dict
     description dict
 }
 Table Container {
     id int [pk, increment]
-    show_name varchar
-    container_name varchar
-    machine_id int
-    port list
+    showname varchar
+    containername varchar
+    machineid int
+    portlist
     image int [ref: > Image.id]
 }
 Table Machine {
@@ -36,7 +34,12 @@ Table Machine {
 }
 '''
 
+
 class BaseDB(ABC):
+    user_key = {'id': int, 'username': str, 'realname': [str, None], 'password': str, 'email': [str, None], 'phone': [str, None], 'containers': list}
+    image_key = {'id': int, 'showname': str, 'imagename': str, 'tag': str, 'creat_args': dict, 'description': dict}
+    container_key = {'id': int, 'showname': str, 'containername': str, 'machineid': int, 'portlist': list, 'image': int}
+    machine_key = {'id': int, 'ip': str, 'Gpus': list, 'disk': dict, 'memory': dict}
 
     @abstractmethod
     def insert_user(self, user: dict) -> bool:
