@@ -36,7 +36,7 @@ Table Machine {
 
 
 class BaseDB(ABC):
-    user_key = {'id': int, 'username': str, 'realname': [str, None], 'password': str, 'email': [str, None], 'phone': [str, None], 'containers': list}
+    user_key = {'id': int, 'username': str, 'realname': str, 'password': str, 'email': str, 'phone': str, 'containers': list}
     image_key = {'id': int, 'showname': str, 'imagename': str, 'tag': str, 'creat_args': dict, 'description': dict}
     container_key = {'id': int, 'showname': str, 'containername': str, 'machineid': int, 'portlist': list, 'image': int}
     machine_key = {'id': int, 'ip': str, 'Gpus': list, 'disk': dict, 'memory': dict}
