@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 """
 Table User {
     id int [pk, increment]
@@ -70,9 +69,7 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_user(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_user(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         pass
 
     @abstractmethod
@@ -88,9 +85,7 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_image(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_image(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         pass
 
     @abstractmethod
@@ -106,9 +101,7 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_container(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_container(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         pass
 
     @abstractmethod
@@ -124,9 +117,7 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_machine(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_machine(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         pass
 
     @abstractmethod
