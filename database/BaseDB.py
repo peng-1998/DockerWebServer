@@ -43,7 +43,7 @@ class BaseDB(ABC):
         "realname": str,
         "password": str,
         "email": str,
-        "phone": str,
+        "phone": int,
         "containers": list,
         "photo": str,
     }
