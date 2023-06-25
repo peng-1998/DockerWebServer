@@ -8,3 +8,25 @@
 字段包含：id(主键，递增)，容器名，显示名称，机器id，镜像id，端口
 ## 机器
 字段包含：id(主键，递增，由GPU服务器给出)，ip，gpu，硬盘情况，内存情况
+
+
+
+# 镜像管理
+主服务器负责构建容器并充当镜像仓库，镜像仓库使用docker registry搭建
+在主服务器上运行：
+```
+docker run -d -p [port]:5000 --restart=always --name registry -v /path/to/save:/var/lib/registry registry
+```
+在主服务器上构建镜像：
+```
+docker build -t 127.0.0.1:[port]/[镜像名]:[tag] .
+```
+在主服务器上推送镜像：
+```
+docker push 127.0.0.1:[port]/[镜像名]:[tag]
+```
+在主服务器上删除镜像以减少空间占用,除非主服务器也是GPU服务器那就不要删除：
+```
+docker rmi 127.0.0.1:[port]/[镜像名]:[tag]
+```
+

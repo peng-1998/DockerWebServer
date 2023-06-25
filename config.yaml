@@ -1,0 +1,12 @@
+Database:
+  - DBTinyDB
+
+Components:
+  Mail:
+    enable: ture
+    sender_mail: XXXX@XXX.com
+    sender_name: XXXX
+    password: XXXXXXXXXX
+
+  Messenger:
+    server_port: 9999
