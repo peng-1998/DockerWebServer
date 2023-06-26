@@ -1,6 +1,6 @@
 import sqlite3
 from .BaseDB import BaseDB
-from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFOR
+from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFO
 
 
 class SqlLiteDB(BaseDB):
@@ -9,14 +9,14 @@ class SqlLiteDB(BaseDB):
         self.db = sqlite3.connect(db_path)
         # 数据库初始化建表，如果不存在则创建
         self.cursor = self.db.cursor()
-        for table_name in TABEL_INFOR.keys():
+        for table_name in TABEL_INFO.keys():
             self._create_table(table_name=table_name)
         self.db.commit()
 
     def _create_table(self, table_name: str):
-        assert table_name in TABEL_INFOR.keys()
+        assert table_name in TABEL_INFO.keys()
         self.cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFOR[table_name]}"
+            f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}"
         )
 
     def _insert(self, table_name: str, data_dict: dict):
