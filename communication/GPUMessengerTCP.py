@@ -8,7 +8,7 @@ from .BaseMessenger import BaseClient
 
 class GPUWebMessengerTCP(threading.Thread, BaseClient):
 
-    def __init__(self, host: str, port: int, data_handler: Callable, connect_handler: Callable = None, init_reconnect_interval: int = 1, max_reconnect_interval: int = 30, logger=print) -> None:
+    def __init__(self, host: str, port: int, data_handler: Callable, connect_handler: Callable = None, init_reconnect_interval: int = 1, max_reconnect_interval: int = 30, max_hreatbeat_timeout: float = 5.0, logger=print) -> None:
         threading.Thread.__init__(self)
         BaseClient.__init__(self, data_handler, logger)
         self.port = port
@@ -21,9 +21,12 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
         self.init_reconnect_interval = init_reconnect_interval
         self.max_reconnect_interval = max_reconnect_interval
         self.logger = logger
+        self.last_heartbeat_time = time.time()
+        self.max_hreatbeat_timeout = max_hreatbeat_timeout
 
     def run(self) -> None:
         reconnect_interval = self.init_reconnect_interval
+        threading.Thread(target=self.send_hreatbeat).start()
         while True:
             try:
                 self.server.connect((self.host, self.port))
@@ -47,3 +50,10 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
     def send(self, data: dict) -> None:
         data = json.dumps(data).encode()
         self.server.send(data)
+        self.last_heartbeat_time = time.time()
+
+    def send_hreatbeat(self):
+        while True:
+            if self.connected:
+                if time.time() - self.last_heartbeat_time > self.max_hreatbeat_timeout:
+                    self.send({"type": "heartbeat", "data": {}})

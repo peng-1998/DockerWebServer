@@ -1,14 +1,16 @@
-import threading
-import socket
-from typing import Callable
-from .BaseMessenger import BaseServer
 import json
+import socket
+import threading
+from typing import Callable
+
+from .BaseMessenger import BaseServer
+
 
 class WebMessengerTCP(threading.Thread, BaseServer):
 
-    def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, logger: Callable = print) -> None:
+    def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, unconnect_handler: Callable, logger: Callable = print) -> None:
         threading.Thread.__init__(self)
-        BaseServer.__init__(self, data_handler, connect_handler, logger)
+        BaseServer.__init__(self, data_handler, connect_handler, unconnect_handler, logger)
         self.port = port
         self.clients = {}
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,8 +31,9 @@ class WebMessengerTCP(threading.Thread, BaseServer):
                 data = client_socket.recv(1024)
                 if not data:
                     break
-                self.data_handler(data, client_socket, client_address)
+                self.data_handler(data, info['machine_id'])
             except ConnectionResetError:
+                self.unconnect_handler(info['machine_id'])
                 break
         client_socket.close()
         del self.clients[client_address]
