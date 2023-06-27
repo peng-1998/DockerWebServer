@@ -11,11 +11,11 @@ message format:
 
 class BaseServer(ABC):
 
-    def __init__(self, data_handler: Callable, connect_handler: Callable,unconnect_handler, logger: Callable = print) -> None:
+    def __init__(self, data_handler: Callable, connect_handler: Callable,disconnect_handler, logger: Callable = print) -> None:
         super().__init__()
         self.data_handler = data_handler
         self.connect_handler = connect_handler
-        self.unconnect_handler = unconnect_handler
+        self.disconnect_handler = disconnect_handler
         self.logger = logger
 
     @abstractmethod
