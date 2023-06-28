@@ -3,7 +3,7 @@ from .BaseDB import BaseDB
 from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFO
 
 
-class SqlLiteDB(BaseDB):
+class SQLiteDB(BaseDB):
     def __init__(self, db_path: str) -> None:
         super().__init__()
         self.db = sqlite3.connect(db_path)
@@ -12,6 +12,11 @@ class SqlLiteDB(BaseDB):
         for table_name in TABEL_INFO.keys():
             self._create_table(table_name=table_name)
         self.db.commit()
+    
+    # 线程安全的数据库操作，在API操作完成之后，关闭连接。
+    def close(self):
+        self.cursor.close()
+        self.db.close()
 
     def _create_table(self, table_name: str):
         assert table_name in TABEL_INFO.keys()
