@@ -1,6 +1,7 @@
 from tinydb import TinyDB, Query
 from .BaseDB import BaseDB
 from itertools import islice
+from readerwriterlock import rwlock
 
 class DB_TinyDB(BaseDB):
 
@@ -12,15 +13,18 @@ class DB_TinyDB(BaseDB):
         self.container_table = self.db.table('Container')
         self.machine_table = self.db.table('Machine')
         self.query = Query()
+        self.rw_lock = rwlock.RWLockWrite()
 
     def __insert_item(self, table: str, item: dict, keys: dict) -> bool:
         item = self.__setdefault(item, keys)
         item_id = self.db.table(table).insert(item)
-        self.db.table(table).update({'id': item_id}, doc_ids=item_id)
+        with self.rw_lock.gen_wlock():
+            self.db.table(table).update({'id': item_id}, doc_ids=item_id)
         return bool(item_id)
 
     def __get_item(self, table: str, search_key: dict, return_key: list = None, limit: int = None) -> list:
-        items = self.db.table(table).search(self.query.fragment(search_key))
+        with self.rw_lock.gen_rlock():
+            items = self.db.table(table).search(self.query.fragment(search_key))
         if return_key:
             items = [{key: item[key] for key in return_key} for item in items]
         if limit:
@@ -28,10 +32,14 @@ class DB_TinyDB(BaseDB):
         return items
 
     def __update_item(self, table: str, search_key: dict, update_key: dict) -> bool:
-        return bool(self.db.table(table).update(update_key, self.query.fragment(search_key)))
+        with self.rw_lock.gen_wlock():
+            res = self.db.table(table).update(update_key, self.query.fragment(search_key))
+        return bool(res)
 
     def __delete_item(self, table: str, search_key: dict) -> bool:
-        return bool(self.db.table(table).remove(self.query.fragment(search_key)))
+        with self.rw_lock.gen_wlock():
+            res = self.db.table(table).remove(self.query.fragment(search_key))
+        return bool(res)
 
     def __setdefault(self, item: dict, keys: dict) -> dict:
         for key, value in keys.items():
