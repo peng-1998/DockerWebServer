@@ -1,0 +1,22 @@
+FROM base:11.7 
+# 假设构建的基础镜像为base:11.7 
+
+# 安装pytorch，选择一条，其他注释
+# 最新的
+RUN pip3 install torch torchvision torchaudio
+
+# 1.13.1
+# CUDA 11.6
+RUN pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
+# CUDA 11.7
+RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+
+# 1.12.1
+# CUDA 11.6
+RUN pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu116
+# CUDA 11.3
+RUN pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+# CUDA 10.2
+RUN pip install torch==1.12.1+cu102 torchvision==0.13.1+cu102 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu102
+
+# 更多请参考 https://pytorch.org/get-started/previous-versions/#v182-with-lts-support

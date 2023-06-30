@@ -1,0 +1,57 @@
+FROM nvidia/cuda:11.7.0-devel-ubuntu22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG PASSWD = "passwd"
+
+# 替换成清华源 如果使用海外机器构建则不用换源
+RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list \
+    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list 
+
+# 安装必要软件 以及设置
+RUN apt -y update \
+    && apt -y install git vim curl python3-pip python3-dev openssh-server zsh unzip libgl1-mesa-glx \
+    && ssh-keygen -A \
+    && echo "PermitRootLogin yes" >> /etc/ssh/sshd_config \
+    && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+    && echo "PATH=/usr/local/cuda-11/bin\$PATH" >> /etc/profile \
+    && echo "LD_LIBRARY_PATH=/usr/local/cuda-11/lib64:\$LD_LIBRARY_PATH" >> /etc/profile
+
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+    && git clone --recursive https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
+    && git clone --recursive https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
+    && sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/g' ~/.zshrc
+
+# 设置 jupyter notebook password 使用自己的校验码,注意加\转义
+# RUN jupyter notebook --generate-config \
+#     && echo "c.NotebookApp.ip='*'" >> ~/.jupyter/jupyter_notebook_config.py \
+#     && echo "c.NotebookApp.password = 'argon2:xxxxx" >> ~/.jupyter/jupyter_notebook_config.py\
+#     && echo "c.NotebookApp.port = 8888" >> ~/.jupyter/jupyter_notebook_config.py \
+#     && echo "c.NotebookApp.allow_remote_access = True" >> ~/.jupyter/jupyter_notebook_config.py
+
+# 安装code-server 默认使用8080端口
+# RUN curl -fsSL https://code-server.dev/install.sh | sh \
+##     && sed -i 's/8080/**端口**/g' ~/.config/code-server/config.yaml \
+#     && sed -i 's/127.0.0.1/0.0.0.0/g' ~/.config/code-server/config.yaml \
+#     && sed -i '3c password: $PASSWD' ~/.config/code-server/config.yaml
+
+# 写入初始化指令时注意，最后一个指令必须是阻塞的，前面的指令必须是非阻塞的
+RUN && echo "root:$PASSWD" | chpasswd \
+    && echo "service ssh start" > /start.sh \
+    # && echo "code-server &" >> /start.sh \
+    # && echo "jupyter notebook &" >> /start.sh \ 
+    && echo "while true ; do sleep 10000 ; done" >> /start.sh 
+
+
+
+
+# Install Python pkg
+RUN pip install numpy scipy matplotlib scikit-learn scikit-image opencv-python jupyter tqdm 
+
+WORKDIR /root/workspace
+
+CMD sh /start.sh
+
