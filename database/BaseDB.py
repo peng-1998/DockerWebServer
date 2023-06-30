@@ -38,8 +38,8 @@ Table Machine {
 class BaseDB(ABC):
     user_key = {
         "id": int,
-        "username": str,
-        "realname": str,
+        "account": str,
+        "nickname": str,
         "password": str,
         "email": str,
         "phone": int,
