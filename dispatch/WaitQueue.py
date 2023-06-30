@@ -7,12 +7,20 @@ task format:
     "machine_id": int,
     "user_id": int,
     "duration": int,
-    "GPU": list,
+    "GPU": list | int, # GPU number or list of GPU numbers
     "CMD": dict{
         "container_name": str,
         "command": str,
     }
+}
+source format:
+{
+    # GPU_number: bool,
+    1: True,
+    2: True,
+}
 '''
+
 
 
 class WaitQueue:
@@ -47,15 +55,19 @@ class WaitQueue:
     def try_allot(self, machine_id: int | str) -> dict | None:
         with self.queue_rw_lock.gen_rlock():
             self.queues[machine_id].freeze()
-            result = self.scheduling_strategy(machine_id, self.queues[machine_id])
+            results: list[dict] = self.scheduling_strategy(self.queues[machine_id])
             self.queues[machine_id].unfreeze()
-        if result is not None:
+        if not results:
             return
-        with self.queue_rw_lock.gen_rlock():
-            task = self.queues[machine_id]['wait_queue'][result['task_id']]
         with self.queue_rw_lock.gen_wlock():
-            self.queues[machine_id]['running_set'][result['task_id']] = task
-            del self.queues[machine_id]['wait_queue'][result['task_id']]
+            for result in  results:
+                task = self.queues[machine_id]['wait_queue'][result['task_id']]
+                if isinstance(task['GPU'], int):
+                    task['GPU'] = result['GPU']
+                self.queues[machine_id]['running_set'][result['task_id']] = task
+                del self.queues[machine_id]['wait_queue'][result['task_id']]
+                for g in result['GPU']:
+                    self.queues[machine_id]['source'][g] = False
         self.logger(f'user {task["user_id"]} start task {task["task_id"]} on machine {machine_id}')
         self.run_handler(machine_id, task.copy())
 
@@ -67,6 +79,8 @@ class WaitQueue:
         with self.queue_rw_lock.gen_wlock():
             task = self.queues[machine_id]['running_set'][task_id]
             del self.queues[machine_id]['running_set'][task_id]
+            for g in task['GPU']:
+                self.queues[machine_id]['source'][g] = True
         with self.indices_rw_lock.gen_wlock():
             self.user_indices[task['user_id']][machine_id].remove(task_id)
         self.logger(f'user {task["user_id"]} finish task {task["task_id"]} on machine {machine_id}')
@@ -79,7 +93,7 @@ class WaitQueue:
                 self.logger(f'error: task {task_id} not in machine {machine_id} running set')
                 return
         with self.queue_rw_lock.gen_wlock():
-            task = self.queues[machine_id]['wait_queue'][task_id]   
+            task = self.queues[machine_id]['wait_queue'][task_id]
             del self.queues[machine_id]['wait_queue'][task_id]
         with self.indices_rw_lock.gen_wlock():
             self.user_indices[task['user_id']][machine_id].remove(task_id)
