@@ -1,54 +1,33 @@
 # DockerWebServer
 
-主要代码逻辑：peng-1998
+Docker Web Server is a app design for managing GPU server in Lab.
 
-UI：austiecodes
+## Dependencies
 
-# 使用
+We use Python flask as backend framework.
+To fetch the status of docker and GPU, we use docker and pynvml.
+This project also relies on `docker` and `nvidia-smi` for data, so please make sure these two commands are available.
 
-## 依赖
+We use react to build our web UI.
 
-### python库
-此项目使用flask框架作为后端, 并使用TinyDB存储数据.
-同时为了获取docker容器以及GPU情况, 还依赖于docker以及pynvml.
+**Check out our WebUI Repo** https://github.com/austiecodes/dws-ui
 
-### 软件
 
-项目依赖于docker和nvidia-smi获取数据, 因此请确保docker命令与nvidia-smi命令可用.
+### Software
 
-## 权限
 
-如果你无法以root身份运行此程序:
-  + 项目使用linux用户及密码进行登陆, 需要读取/etc/shadow文件以验证密码, 运行时请确保运行用户拥有读取权限
-  + 程序需要访问docker访问的权限, 请保证运行用户在docker用户组当中
 
-## 镜像
+## Permissions
 
-我们为容器设计了一个特殊配置, 以保证容器与宿主机当中用户拥有相同的权限, 因此对镜像环境有要求.
-最主要是要求容器当中安装sudo包.
+If you are unable to run the program as root.
+  + The project uses a linux user and password to log in, you need to read the /etc/shadow file to verify the password, make sure the running user has read access when running
+  + The program needs access to the docker access, please make sure the run user is in the docker user group
 
-接着, 需要从该镜像当中取出/etc/passwd, /etc/group, /etc/shadow, /etc/sudoers四个文件并放入data/image/{image name}/当中. 同时编写start.sh脚本, 主要工作为创建/home/{user}目录并使用shown命令将创建者变更为指定user, 并在最后执行一个一直运行的进程来保证容器处于运行状态(如:while true; do sleep 10000000; done). 可以参考data/image/conda:py38_492/start.sh
+## Mirroring
 
-镜像构建可以参考dockerfile/Dockerfile.servermanager_pytorch
+We have designed a special configuration for the container to ensure that the container has the same privileges as the user on the host, so there are requirements for the mirroring environment.
+The main requirement is that the sudo package is installed in the container.
 
-# 更新日志
+Then, the four files `/etc/passwd`, `/etc/group`,` /etc/shadow`, `/etc/sudoers` need to be extracted from the image and placed in `data/image/{image name}/`. Also you need to write the `start.sh` script, which creates the `/home/{user}` directory and changes the creator to the specified user using the shown command, and executes a running process at the end to keep the container running (e.g., `while true; do sleep 10000000; done`). You can refer to` data/image/conda:py38_492/start.sh`
 
-20220901：
-  + 添加无指令请求在非工作时间的顺延逻辑
-  + 添加工作时间优先执行无指令申请的逻辑
-  + 添加防止饥饿的逻辑
-  + 修改了一系列BUG, 这一系列BUG曾导致：某些用户可以看到其他用户的容器并使用, 某些用户申请的可执行时间内某些特定用户可以使用GPU
-  + 去除了历史申请队列当中的重复项
-
-20220903:
-  + 使用TinyDB代替原有的数据存储
-  + 更新了登陆UI
-
-20220906:
-  + 修复了一个bug, 该bug曾导致自然结束的申请未被结束
-  + 修复了一个容器bug, 该bug曾导致容器启动后自动关闭
-  + 发现一个待修复的UI bug, 该bug导致容器管理管理按钮除了最下面的按钮无法使用
-
-20220907:
-  + 创建devel分支
-  
+The image build can be found in `dockerfile/Dockerfile.servermanager_pytorch`
