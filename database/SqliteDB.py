@@ -4,6 +4,7 @@ from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFO
 
 
 class SQLiteDB(BaseDB):
+
     def __init__(self, db_path: str) -> None:
         super().__init__()
         self.db = sqlite3.connect(db_path)
@@ -12,18 +13,24 @@ class SQLiteDB(BaseDB):
         for table_name in TABEL_INFO.keys():
             self._create_table(table_name=table_name)
         self.db.commit()
-    
-    # 线程安全的数据库操作，在API操作完成之后，关闭连接。
-    def close(self):
-        self.cursor.close()
-        self.db.close()
 
+    # 线程安全的数据库操作，在API操作完成之后，关闭连接。
+    @staticmethod
+    def runthenclose(func):
+
+        def wrapper(self):
+            func(self)
+            self.cursor.close()
+            self.db.close()
+
+        return wrapper
+
+    @runthenclose
     def _create_table(self, table_name: str):
         assert table_name in TABEL_INFO.keys()
-        self.cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}"
-        )
+        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}")
 
+    @runthenclose
     def _insert(self, table_name: str, data_dict: dict):
         try:
             check_and_serialize(table_name, data_dict)
@@ -36,6 +43,7 @@ class SQLiteDB(BaseDB):
         except:
             return False
 
+    @runthenclose
     def _delete(self, table_name: str, search_key: dict):
         try:
             self.cursor.execute(
@@ -47,6 +55,7 @@ class SQLiteDB(BaseDB):
         except:
             return False
 
+    @runthenclose
     def _get(
         self,
         table_name: str,
@@ -65,6 +74,7 @@ class SQLiteDB(BaseDB):
         info = self.cursor.fetchall()
         return info
 
+    @runthenclose
     def _update(self, table_name: str, search_key: dict, update_key: dict):
         self.cursor.execute(
             f"UPDATE {table_name.lower()} SET {', '.join([f'{k} = ?' for k in update_key.keys()])} WHERE {f' AND '.join([f'{k} = ?' for k in search_key.keys()])}",
@@ -72,24 +82,16 @@ class SQLiteDB(BaseDB):
         )
         self.db.commit()
 
-    def get_user(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_user(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         return self._get("user", search_key, return_key, limit)
 
-    def get_image(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_image(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         return self._get("image", search_key, return_key, limit)
 
-    def get_container(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_container(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         return self._get("container", search_key, return_key, limit)
 
-    def get_machine(
-        self, search_key: dict, return_key: list = None, limit: int = None
-    ) -> list:
+    def get_machine(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
         return self._get("machine", search_key, return_key, limit)
 
     def insert_user(self, user: dict) -> bool:
