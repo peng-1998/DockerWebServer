@@ -1,8 +1,9 @@
 import importlib
 import json
 import socket
-from database import BaseDB
+from database import BaseDB, InfoCache
 from dispatch import WaitQueue
+from communication import BaseServer
 import bcrypt
 import yaml
 from flask import Flask, g, jsonify, make_response, request
@@ -13,28 +14,37 @@ app = Flask(__name__)
 CORS(app)
 
 
-def data_handler(data_j: dict):
+def data_handler_gpus(info: dict, machine_id: int | str):
+    g.gpus_cache.update(machine_id, info)
 
-    ...
+
+data_handler_funcs = {
+    'gpus': data_handler_gpus,
+}
+
+data_handler = lambda data, machine_id: data_handler_funcs[data['type']](data['data'], machine_id)
 
 
-def connect_handler_TCP(client_socket: socket.socket, client_address: tuple):
-    data = client_socket.recv(1024)
-    data = json.loads(data.decode())
-    machine_id = data['machine_id']
-    gpus = data['gpus']
-    machines = g.db.get_machine(search_key={'id': machine_id})
+def connect_handler(info, ip: tuple):
+    db: BaseDB = g.db
+    machine_id = info['machine_id']
+    gpus = info['gpus']
+    machines = db.get_machine(search_key={'id': machine_id})
     info = {'gpus': gpus}
     if len(machines) == 0:
-        g.db.insert_machine(machine={'id': machine_id, 'ip': client_address[0], 'machine_info': info})
+        db.insert_machine(machine={'id': machine_id, 'ip': ip, 'machine_info': info})
     else:
-        g.db.update_machine(search_key={'id': machine_id}, update_key={'machine_info': info, 'ip': client_address[0]})
+        db.update_machine(search_key={'id': machine_id}, update_key={'machine_info': info, 'ip': ip})
     g.wq.new_machine(machine_id, {i: True for i in range(len(gpus))})
-    ...
+    return info
 
 
 def run_handler(machine_id: int | str, task: dict):
-    ...
+    messenger: BaseServer = g.messenger
+    messenger.send({'type': 'task', 'data': task}, machine_id)
+
+
+disconnect_handler = lambda machine_id: g.wq.remove_machine(machine_id)
 
 
 def init():
@@ -44,18 +54,13 @@ def init():
     Scheduler_Class = importlib.import_module('dispatch.SchedulingStrategy.' + configs['Dispatch']['Class'])
     g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler)
 
-    # Messenger_Class = importlib.import_module('components.' + configs['Components']['Messenger']['Class'])
-    # g.messenger = Messenger_Class(**configs['Components']['Messenger']['args'])
+    Messenger_Class = importlib.import_module('components.' + configs['Components']['Messenger']['Class'])
+    g.messenger: BaseServer = Messenger_Class(**configs['Components']['Messenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
 
+    g.gpus_cache = InfoCache()
     if configs['Components']['Mail']['enable']:
         Mail_Class = importlib.import_module('components.MailBox.' + configs['Components']['Mail']['Class'])
         g.mail = Mail_Class(**configs['Components']['Mail']['args'])
-
-
-@app.teardown_appcontext
-def close_db(error):
-    if 'db' in g:
-        g.db.close()
 
 
 @app.route("/")
@@ -65,11 +70,11 @@ def hello_world():
 
 @app.route('/api/login', methods=('GET', 'POST'))
 def login():
-    data = request.get_json()
-    user_name = data.get('username')
+    data: dict = request.json
+    user_name: str = data['username']
     print(user_name)
-    database = get_db()
-    user_info_list = database.get_user(search_key={'username': user_name}, return_key=['password', 'salt'])
+    db: BaseDB = g.db
+    user_info_list = db.get_user(search_key={'username': user_name}, return_key=['password', 'salt'])
     if user_info_list:
         saved_password, salt = user_info_list[0]
         password = bcrypt.hashpw(data.get('password').encode(), salt.encode())
@@ -83,17 +88,17 @@ def login():
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    database = get_db()
-    data = request.get_json()
-    username = data.get('username')
-    hashed_password = data.get('password')
-    is_user_name_exists = database.get_user(search_key={'username': username})
+    db: BaseDB = g.db
+    data = request.json
+    username = data['username']
+    hashed_password = data['password']
+    is_user_name_exists = db.get_user(search_key={'username': username})
     if is_user_name_exists:
         return make_response(jsonify(success=False, message="用户已存在"), 409)
     else:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(hashed_password.encode(), salt)
-        database.insert_user(user={'username': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
+        db.insert_user(user={'username': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
         return make_response(jsonify(success=True, message="注册成功"), 200)
 
 

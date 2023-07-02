@@ -22,7 +22,6 @@ source format:
 '''
 
 
-
 class WaitQueue:
 
     def __init__(self, scheduling_strategy: Callable, run_handler: Callable, logger: Callable = print):
@@ -60,7 +59,7 @@ class WaitQueue:
         if not results:
             return
         with self.queue_rw_lock.gen_wlock():
-            for result in  results:
+            for result in results:
                 task = self.queues[machine_id]['wait_queue'][result['task_id']]
                 if isinstance(task['GPU'], int):
                     task['GPU'] = result['GPU']
@@ -112,7 +111,7 @@ class WaitQueue:
                 return res
         return None
 
-    def set_machine_offline(self, machine_id: int | str, online: bool) -> None:
+    def set_machine_offline(self, machine_id: int | str, online: bool = False) -> None:
         with self.queue_rw_lock.gen_wlock():
             self.queues[machine_id]['on_line'] = online
 

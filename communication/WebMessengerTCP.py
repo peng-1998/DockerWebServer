@@ -26,7 +26,11 @@ class WebMessengerTCP(threading.Thread, BaseServer):
             threading.Thread(target=self.__client_handler, args=(client_socket, client_address)).start()
 
     def __client_handler(self, client_socket: socket.socket, client_address: tuple) -> None:
-        info = self.connect_handler(client_socket, client_address)
+        data = client_socket.recv(1024)
+        data = json.loads(data.decode())
+        assert data['type'] == 'init'  f'the first message must be init, but got {data["type"]}'
+        ip, port = client_address
+        info = self.connect_handler(data['data'], ip)
         thread_id = threading.get_ident()
         self.clients[info['machine_id']] = {'socket': client_socket, 'thread_id': thread_id, 'last_heartbeat_time': time.time()}
         self.logger(f'Client {info["machine_id"]} (host: {client_address}) connected')
@@ -35,7 +39,9 @@ class WebMessengerTCP(threading.Thread, BaseServer):
                 data = client_socket.recv(1024)
                 if not data:
                     break
-                self.data_handler(data, info['machine_id'])
+                data = json.loads(data.decode())
+                if data['type'] != 'heartbeat':
+                    self.data_handler(data, info['machine_id'])
                 self.clients[info['machine_id']]['last_heartbeat_time'] = time.time()
             except ConnectionResetError:
                 break
