@@ -2,3 +2,5 @@
 ./__pycache__
 tst.ipynb
 test/
+__pycache__/
+*.pyc

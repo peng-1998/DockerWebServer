@@ -38,6 +38,7 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
                     data = self.server.recv(1024)
                     if not data:
                         break
+                    data = json.loads(data.decode())
                     self.data_handler(data)
             except socket.error:
                 self.connected = False
