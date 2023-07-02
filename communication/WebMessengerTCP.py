@@ -47,11 +47,16 @@ class WebMessengerTCP(threading.Thread, BaseServer):
                 break
         client_socket.close()
         self.disconnect_handler(info['machine_id'])
-        del self.clients[client_address]
+        del self.clients[info['machine_id']]
 
     def send(self, data: dict, machine_id: int | str) -> None:
         data = json.dumps(data).encode()
         self.clients[machine_id]['socket'].send(data)
+    
+    def send_all(self, data: dict) -> None:
+        data = json.dumps(data).encode()
+        for key in self.clients:
+            self.clients[key]['socket'].send(data)
 
     def __check_heartbeat(self):
         while True:

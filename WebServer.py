@@ -4,6 +4,7 @@ import socket
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
 from communication import BaseServer
+from docker import DockerController
 import bcrypt
 import yaml
 from flask import Flask, g, jsonify, make_response, request
@@ -49,6 +50,7 @@ disconnect_handler = lambda machine_id: g.wq.remove_machine(machine_id)
 
 def init():
     configs = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
+    g.repository = configs['Docker']['repository']
     DB_Class = importlib.import_module('database.' + configs['Database']['Class'])
     g.db: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
     Scheduler_Class = importlib.import_module('dispatch.SchedulingStrategy.' + configs['Dispatch']['Class'])
@@ -58,6 +60,7 @@ def init():
     g.messenger: BaseServer = Messenger_Class(**configs['Components']['Messenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
     g.max_task_id = 0
     g.gpus_cache = InfoCache()
+    g.docker = DockerController()
     if configs['Components']['Mail']['enable']:
         Mail_Class = importlib.import_module('components.MailBox.' + configs['Components']['Mail']['Class'])
         g.mail = Mail_Class(**configs['Components']['Mail']['args'])

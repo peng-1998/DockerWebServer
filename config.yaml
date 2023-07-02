@@ -2,6 +2,9 @@ Database:
   Class: SQLiteDB
   db_path: ./data/database.db
 
+Docker:
+  repository: 'abc.com/repository'
+
 Components:
   Mail:
     Class: QQMail
@@ -15,3 +18,4 @@ Components:
     Class: WebMessengerTCP
     args:
       server_port: 9999
+
