@@ -56,7 +56,7 @@ def init():
 
     Messenger_Class = importlib.import_module('components.' + configs['Components']['Messenger']['Class'])
     g.messenger: BaseServer = Messenger_Class(**configs['Components']['Messenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
-
+    g.max_task_id = 0
     g.gpus_cache = InfoCache()
     if configs['Components']['Mail']['enable']:
         Mail_Class = importlib.import_module('components.MailBox.' + configs['Components']['Mail']['Class'])

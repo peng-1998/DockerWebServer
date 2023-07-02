@@ -38,7 +38,8 @@ class WaitQueue:
             self.queues[machine_id] = {'wait_queue': OrderedDict(), 'running_set': {}, 'on_line': True, 'source': source}
         self.logger(f'create wait queue for machine {machine_id}')
 
-    def new_task(self, machine_id: int | str, task: dict) -> dict | None:
+    def new_task(self, task: dict) -> dict | None:
+        machine_id: int | str = task['machine_id']
         with self.queue_rw_lock.gen_wlock():
             self.queues[machine_id]['wait_queue'][task['task_id']] = task
         self.logger(f'user {task["user_id"]} add task {task["task_id"]} to machine {machine_id} wait queue')
@@ -115,7 +116,7 @@ class WaitQueue:
         with self.queue_rw_lock.gen_wlock():
             self.queues[machine_id]['on_line'] = online
 
-    def machine_tasks(self, machine_id: int | str) -> dict:
+    def machine_tasks(self, machine_id: int | str) -> list:
         with self.queue_rw_lock.gen_rlock():
             res = []
             machine = self.queues[machine_id]
@@ -125,4 +126,11 @@ class WaitQueue:
             for _, task in machine['running_set']:
                 res.append(task.copy())
                 res[-1]['status'] = 'running'
+            return res
+
+    def user_tasks(self, user_id: int | str, machine_id: int | str) -> list:
+        with self.indices_rw_lock.gen_rlock():
+            res = []
+            for task_id in self.user_indices[user_id][machine_id]:
+                res.append(self.find_task(machine_id, task_id))
             return res
