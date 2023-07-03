@@ -46,8 +46,10 @@ for info in user_info_database.all():
 time_manager = TimeManager(nvidia_gpu, docker_manager, gpu_queue_manager, neteasy_email_manager)
 
 
-@app.before_first_request
-def init():
+# @app.before_first_request # 该装饰器已经弃用
+# def init():
+#     time_manager.start()
+with app.app_context(): # 替代before_first_request
     time_manager.start()
 
 
