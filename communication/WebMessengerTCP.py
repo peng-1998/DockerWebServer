@@ -47,7 +47,7 @@ class WebMessengerTCP(threading.Thread, BaseServer):
                 break
         client_socket.close()
         self.disconnect_handler(info['machine_id'])
-        del self.clients[client_address]
+        del self.clients[info['machine_id']]
 
     def send(self, data: dict, machine_id: int | str) -> None:
         data = json.dumps(data).encode()
