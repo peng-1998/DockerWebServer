@@ -28,8 +28,8 @@ class WebMessengerTCP(threading.Thread, BaseServer):
     def __client_handler(self, client_socket: socket.socket, client_address: tuple) -> None:
         data = client_socket.recv(1024)
         data = json.loads(data.decode())
-        assert data['type'] == 'init'  f'the first message must be init, but got {data["type"]}'
-        ip, port = client_address
+        assert data['type'] == 'init'
+        ip, _ = client_address
         info = self.connect_handler(data['data'], ip)
         thread_id = threading.get_ident()
         self.clients[info['machine_id']] = {'socket': client_socket, 'thread_id': thread_id, 'last_heartbeat_time': time.time()}
@@ -53,15 +53,20 @@ class WebMessengerTCP(threading.Thread, BaseServer):
         data = json.dumps(data).encode()
         self.clients[machine_id]['socket'].send(data)
 
+    def send_all(self, data: dict) -> None:
+        data = json.dumps(data).encode()
+        for client in self.clients.values():
+            client['socket'].send(data)
+
     def __check_heartbeat(self):
         while True:
-            for key in self.clients:
-                if time.time() - self.clients[key]['last_heartbeat_time'] > self.max_hreatbeat_timeout:
+            for key, value in list(self.clients.items()):
+                if time.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
                     self.logger(f'{key} heartbeat timeout')
                     self.disconnect_handler(key)
-                    tr_id = self.clients[key]['thread_id']
+                    tr_id = value['thread_id']
                     for th in threading.enumerate():
                         if th.ident == tr_id:
                             th._stop()
                     del self.clients[key]
-            time.sleep(self.max_hreatbeat_timeout)
+            time.sleep(1)

@@ -1,41 +1,32 @@
-from flask import Blueprint , request
-
+from flask import Blueprint, request, g
+from database import BaseDB
 
 user = Blueprint('user', __name__, url_prefix='/user')
 
+
 @user.route('/', methods=['GET'])
-def index():
+def index(): # 写ui的时候再定义或删除
     ...
+
 
 @user.route('/info', methods=['GET'])
-def info():
+def info(): # 写ui的时候再定义
     ...
 
-@user.route('/set_email', methods=['POST'])
-def set_email():
-    email = request.json['email']
-    ...
 
-@user.route('/set_phone', methods=['POST'])
-def set_phone():
-    phone = request.json['phone']
-    ...
+@user.route('/set_profile', methods=['POST'])
+def set_profile(field):
+    attrs = request.json
+    db: BaseDB = g.db
+    db.update_user({'id': attrs['user_id']}, {attrs['field']: attrs['value']})
+    return {'status': 'success'}
 
-@user.route('/set_password', methods=['POST'])
-def set_password():
-    password = request.json['password']
-    ...
-
-@user.route('/set_nickname', methods=['POST'])
-def set_nickname():
-    nickname = request.json['nickname']
-    ...
 
 @user.route('/set_photo', methods=['POST'])
 def set_photo():
     photo = request.files['photo']
-    photo.save('path/to/location')
-    ...
-
-
-
+    user_id = request.json['user_id']
+    photo.save('./static/photo/' + str(user_id) + '.' + photo.filename.split('0')[-1])
+    db: BaseDB = g.db
+    db.update_user({'id': user_id}, {'photo': str(user_id) + '.' + photo.filename.split('0')[-1]})
+    return {'status': 'success'}

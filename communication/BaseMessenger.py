@@ -22,6 +22,12 @@ class BaseServer(ABC):
     def send(self, data: dict, machine_id: int | str) -> None:
         pass
 
+    @abstractmethod
+    def send_all(self, data: dict) -> None:
+        pass
+
+
+
 
 class BaseClient(ABC):
 
@@ -34,3 +40,5 @@ class BaseClient(ABC):
     @abstractmethod
     def send(self, data: dict) -> None:
         pass
+
+

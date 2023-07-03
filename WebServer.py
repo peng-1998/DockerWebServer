@@ -1,16 +1,17 @@
-import importlib
-import json
-import socket
+import yaml
+from flask import Flask, g
+from flask_cors import CORS
+
+import communication
+import database.SqliteDB
+import dispatch.SchedulingStrategy as SS
+from communication import BaseServer, DockerController
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
-from communication import BaseServer
-import bcrypt
-import yaml
-from flask import Flask, g, jsonify, make_response, request
-from flask_cors import CORS
-from werkzeug.security import check_password_hash, generate_password_hash
+from WebServerAuth import auth
 
 app = Flask(__name__)
+app.register_blueprint(auth, url_prefix="/api/auth")
 CORS(app)
 
 
@@ -46,20 +47,22 @@ def run_handler(machine_id: int | str, task: dict):
 
 disconnect_handler = lambda machine_id: g.wq.remove_machine(machine_id)
 
-
-def init():
+with app.app_context():
     configs = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
-    DB_Class = importlib.import_module('database.' + configs['Database']['Class'])
+    g.repository = configs['Docker']['repository']
+    DB_Class = getattr(database, configs['Database']['Class'])
     g.db: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
-    Scheduler_Class = importlib.import_module('dispatch.SchedulingStrategy.' + configs['Dispatch']['Class'])
+    Scheduler_Class = getattr(SS, configs['Dispatch']['Class'])
     g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler)
 
-    Messenger_Class = importlib.import_module('components.' + configs['Components']['Messenger']['Class'])
-    g.messenger: BaseServer = Messenger_Class(**configs['Components']['Messenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
+    Messenger_Class = getattr(communication, configs['Components']['WebMessenger']['Class'])
+    g.messenger: BaseServer = Messenger_Class(**configs['Components']['WebMessenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
     g.max_task_id = 0
     g.gpus_cache = InfoCache()
+    g.docker = DockerController()
     if configs['Components']['Mail']['enable']:
-        Mail_Class = importlib.import_module('components.MailBox.' + configs['Components']['Mail']['Class'])
+        import communication.MailBox as MB
+        Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
         g.mail = Mail_Class(**configs['Components']['Mail']['args'])
 
 
@@ -67,39 +70,6 @@ def init():
 def hello_world():
     return "<p>Hello, World!</p>"
 
-
-@app.route('/api/login', methods=('GET', 'POST'))
-def login():
-    data: dict = request.json
-    user_name: str = data['username']
-    print(user_name)
-    db: BaseDB = g.db
-    user_info_list = db.get_user(search_key={'username': user_name}, return_key=['password', 'salt'])
-    if user_info_list:
-        saved_password, salt = user_info_list[0]
-        password = bcrypt.hashpw(data.get('password').encode(), salt.encode())
-        if saved_password == password.decode():
-            return make_response(jsonify(success=True, message="Login Succeed"), 200)
-        else:
-            return make_response(jsonify(success=False, message="Wrong Password"), 401)
-    else:
-        return make_response(jsonify(success=False, message="User Not Found"), 404)
-
-
-@app.route('/api/register', methods=['POST'])
-def register():
-    db: BaseDB = g.db
-    data = request.json
-    username = data['username']
-    hashed_password = data['password']
-    is_user_name_exists = db.get_user(search_key={'username': username})
-    if is_user_name_exists:
-        return make_response(jsonify(success=False, message="用户已存在"), 409)
-    else:
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(hashed_password.encode(), salt)
-        db.insert_user(user={'username': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
-        return make_response(jsonify(success=True, message="注册成功"), 200)
 
 
 if __name__ == "__main__":

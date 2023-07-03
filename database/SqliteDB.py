@@ -18,14 +18,13 @@ class SQLiteDB(BaseDB):
     @staticmethod
     def runthenclose(func):
 
-        def wrapper(self):
-            func(self)
+        def wrapper(self, *args, **kwargs):
+            func(self, *args, **kwargs)
             self.cursor.close()
             self.db.close()
 
         return wrapper
 
-    @runthenclose
     def _create_table(self, table_name: str):
         assert table_name in TABEL_INFO.keys()
         self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}")
