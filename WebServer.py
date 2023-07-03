@@ -1,6 +1,6 @@
-import importlib
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
+import communication
 from communication import BaseServer
 from communication import DockerController
 import bcrypt
@@ -8,6 +8,8 @@ import yaml
 from flask import Flask, g, jsonify, make_response, request
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
+import database.SqliteDB
+import dispatch.SchedulingStrategy as SS
 
 app = Flask(__name__)
 CORS(app)
@@ -45,22 +47,22 @@ def run_handler(machine_id: int | str, task: dict):
 
 disconnect_handler = lambda machine_id: g.wq.remove_machine(machine_id)
 
-
-def init():
+with app.app_context():
     configs = yaml.load(open('config.yaml'), Loader=yaml.FullLoader)
     g.repository = configs['Docker']['repository']
-    DB_Class = importlib.import_module('database.' + configs['Database']['Class'])
+    DB_Class = getattr(database, configs['Database']['Class'])
     g.db: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
-    Scheduler_Class = importlib.import_module('dispatch.SchedulingStrategy.' + configs['Dispatch']['Class'])
+    Scheduler_Class = getattr(SS, configs['Dispatch']['Class'])
     g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler)
 
-    Messenger_Class = importlib.import_module('components.' + configs['Components']['Messenger']['Class'])
-    g.messenger: BaseServer = Messenger_Class(**configs['Components']['Messenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
+    Messenger_Class = getattr(communication, configs['Components']['WebMessenger']['Class'])
+    g.messenger: BaseServer = Messenger_Class(**configs['Components']['WebMessenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=print)
     g.max_task_id = 0
     g.gpus_cache = InfoCache()
     g.docker = DockerController()
     if configs['Components']['Mail']['enable']:
-        Mail_Class = importlib.import_module('components.MailBox.' + configs['Components']['Mail']['Class'])
+        import communication.MailBox as MB
+        Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
         g.mail = Mail_Class(**configs['Components']['Mail']['args'])
 
 
