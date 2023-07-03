@@ -1,10 +1,8 @@
 import importlib
-import json
-import socket
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
 from communication import BaseServer
-from docker import DockerController
+from communication import DockerController
 import bcrypt
 import yaml
 from flask import Flask, g, jsonify, make_response, request
