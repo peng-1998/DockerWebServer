@@ -1,17 +1,17 @@
-from database import BaseDB, InfoCache
-from dispatch import WaitQueue
-import communication
-from communication import BaseServer
-from communication import DockerController
-import bcrypt
 import yaml
-from flask import Flask, g, jsonify, make_response, request
+from flask import Flask, g
 from flask_cors import CORS
-from werkzeug.security import check_password_hash, generate_password_hash
+
+import communication
 import database.SqliteDB
 import dispatch.SchedulingStrategy as SS
+from communication import BaseServer, DockerController
+from database import BaseDB, InfoCache
+from dispatch import WaitQueue
+from WebServerAuth import auth
 
 app = Flask(__name__)
+app.register_blueprint(auth, url_prefix="/api/auth")
 CORS(app)
 
 
@@ -70,39 +70,6 @@ with app.app_context():
 def hello_world():
     return "<p>Hello, World!</p>"
 
-
-@app.route('/api/login', methods=('GET', 'POST'))
-def login():
-    data: dict = request.json
-    user_name: str = data['username']
-    print(user_name)
-    db: BaseDB = g.db
-    user_info_list = db.get_user(search_key={'username': user_name}, return_key=['password', 'salt'])
-    if user_info_list:
-        saved_password, salt = user_info_list[0]
-        password = bcrypt.hashpw(data.get('password').encode(), salt.encode())
-        if saved_password == password.decode():
-            return make_response(jsonify(success=True, message="Login Succeed"), 200)
-        else:
-            return make_response(jsonify(success=False, message="Wrong Password"), 401)
-    else:
-        return make_response(jsonify(success=False, message="User Not Found"), 404)
-
-
-@app.route('/api/register', methods=['POST'])
-def register():
-    db: BaseDB = g.db
-    data = request.json
-    username = data['username']
-    hashed_password = data['password']
-    is_user_name_exists = db.get_user(search_key={'username': username})
-    if is_user_name_exists:
-        return make_response(jsonify(success=False, message="用户已存在"), 409)
-    else:
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(hashed_password.encode(), salt)
-        db.insert_user(user={'username': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
-        return make_response(jsonify(success=True, message="注册成功"), 200)
 
 
 if __name__ == "__main__":
