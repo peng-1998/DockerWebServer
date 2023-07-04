@@ -20,35 +20,26 @@ class WebMassageWS(BaseServer,threading.Thread):
         await data_handler(data)
 
     async def _connect_handler(self, websocket: websockets.WebSocketServerProtocol, path: str) -> None:
+        data = 
+        self.clients_ws[data['machine_id']] = websocket
         while True:
             try:
                 data = await websocket.recv()
                 data = json.loads(data.decode())
-                self.clients_ws[data['machine_id']] = websocket
                 await self._data_handler(self.data_handler, data)
             except websockets.exceptions.ConnectionClosedError:
                 break
-    
+        
     async def run(self):
         server = await websockets.serve(self._connect_handler, "localhost", self.port)
         asyncio.run(server)
 
     def send(self, data: dict, machine_id: int | str) -> None:
         self.clients_ws['machine_id'].send(data)
-
     
-        
-
-
-        
-
-                
-
-
-        
-
-    
-    def run(self) -> None:
+    def send_all(self, data: dict) -> None:
+        for client in self.clients_ws.values():
+            client.send(data)
 
 
 

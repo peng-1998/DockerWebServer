@@ -8,7 +8,17 @@ from .BaseMessenger import BaseServer
 
 
 class WebMessengerTCP(threading.Thread, BaseServer):
-
+    """
+    Creating one thread for listening to the port.
+    Creating another thread for checking the heartbeat.
+    Once a client is connected, a new thread is created for the client.
+    __client_handler: 
+        input: client_socket (the object of the connected client's socket), client_address (the tuple address of the client)
+        logic: Polling the event loop whether there is connection request from the client, and if there is, receive the data from the client and call the data_handler.
+    send:
+        input: data (the data to be sent), machine_id (the id of the client)
+        logic: Send the data to the client with the given machine_id.
+    """
     def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable, max_hreatbeat_timeout: float = 10.0, logger: Callable = print) -> None:
         threading.Thread.__init__(self)
         BaseServer.__init__(self, data_handler, connect_handler, disconnect_handler, logger)
