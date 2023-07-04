@@ -4,9 +4,9 @@ from dispatch import WaitQueue
 machines = Blueprint('machines', __name__, url_prefix='/machines')
 
 
-@machines.route('/', methods=['GET'])
-def index():
-    ...
+# @machines.route('/', methods=['GET'])
+# def index():
+#     ...
 
 
 @machines.route('/info', methods=['GET'])

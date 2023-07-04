@@ -5,9 +5,9 @@ from communication import BaseServer
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
 
-@admin.route('/', methods=['GET'])
-def index():
-    ...
+# @admin.route('/', methods=['GET'])
+# def index():
+#     ...
 
 
 @admin.route('/build_image', methods=['POST'])

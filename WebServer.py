@@ -1,17 +1,26 @@
 import yaml
-from flask import Flask, g
+from flask import Flask, g, request, jsonify
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, verify_jwt_in_request
 
 import communication
 import database.SqliteDB
 import dispatch.SchedulingStrategy as SS
 from communication import BaseServer, DockerController
-from communication.Auth import auth
+from blueprints import auth, admin, containers, machines, user
+
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
 
 app = Flask(__name__)
 app.register_blueprint(auth, url_prefix="/api/auth")
+app.register_blueprint(admin, url_prefix="/api/admin")
+app.register_blueprint(containers, url_prefix="/api/containers")
+app.register_blueprint(machines, url_prefix="/api/machines")
+app.register_blueprint(user, url_prefix="/api/user")
+
+app.config['JWT_SECRECT_KEY'] = 'mycreditentials'
+jwt = JWTManager(app)
 CORS(app)
 
 
@@ -73,6 +82,14 @@ with app.app_context():
         Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
         g.mail = Mail_Class(**configs['Components']['Mail']['args'], logger=g.logger)
 
+@app.before_request
+def is_jwt_valid():
+    if request.endpoint in ['login', 'register']:
+        return
+    try:
+        verify_jwt_in_request()
+    except:
+        return jsonify({'message': 'Invalid token'}, 401)
 
 @app.route("/")
 def hello_world():
