@@ -15,7 +15,9 @@ class WebMessengerTCP(threading.Thread, BaseServer):
         self.port = port
         self.clients = {}
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind(('0.0.0.0', self.port))
+        self.daemon = True
         self.max_hreatbeat_timeout = max_hreatbeat_timeout
 
     def run(self) -> None:
@@ -65,6 +67,7 @@ class WebMessengerTCP(threading.Thread, BaseServer):
                     self.logger(f'{key} heartbeat timeout')
                     self.disconnect_handler(key)
                     tr_id = value['thread_id']
+                    value['socket'].close()
                     for th in threading.enumerate():
                         if th.ident == tr_id:
                             th._stop()

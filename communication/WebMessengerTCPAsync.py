@@ -5,7 +5,7 @@ import asyncio
 from asyncio.streams import StreamReader, StreamWriter
 
 from .BaseMessenger import BaseServer
-
+import websockets
 
 class WebMessengerTCPAsync(threading.Thread, BaseServer):
 
@@ -14,6 +14,7 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
         BaseServer.__init__(self, data_handler, connect_handler, disconnect_handler, logger)
         self.port = port
         self.clients = {}
+        self.daemon = True
         self.max_hreatbeat_timeout = max_hreatbeat_timeout
 
     def run(self) -> None:
@@ -69,6 +70,8 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
                 if loop.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
                     self.logger(f'{key} heartbeat timeout')
                     self.disconnect_handler(key)
+                    value['writer'].close()
+                    value['reader'].feed_eof()
                     value['task'].cancel()
                     del self.clients[key]
             await asyncio.sleep(1)
