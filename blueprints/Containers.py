@@ -3,9 +3,9 @@ from flask import Blueprint , request
 containers = Blueprint('containers', __name__, url_prefix='/containers')
 
 
-@containers.route('/', methods=['GET'])
-def index():
-    ...
+# @containers.route('/', methods=['GET'])
+# def index():
+#     ...
 
 @containers.route('/mycontainer/<user_id>', methods=['GET'])
 def mycontainer(user_id):

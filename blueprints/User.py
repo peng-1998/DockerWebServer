@@ -4,9 +4,9 @@ from database import BaseDB
 user = Blueprint('user', __name__, url_prefix='/user')
 
 
-@user.route('/', methods=['GET'])
-def index(): # 写ui的时候再定义或删除
-    ...
+# @user.route('/', methods=['GET'])
+# def index(): # 写ui的时候再定义或删除
+#     ...
 
 
 @user.route('/info', methods=['GET'])

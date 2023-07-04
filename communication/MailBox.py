@@ -1,16 +1,18 @@
-from abc import ABC, abstractmethod
 import smtplib
+from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from email.utils import formataddr
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 
 class BaseMail(ABC):
 
-    def __init__(self, sender_mail: str, sender_name: str, password: str) -> None:
+    def __init__(self, sender_mail: str, sender_name: str, password: str, resend_time: int = 5, logger: Callable = print) -> None:
         self.sender_mail = sender_mail
         self.sender_name = sender_name
         self.password = password
+        self.resend_time = resend_time
+        self.logger = logger
         self.send_queue: List[Tuple[str, str, str, str]] = []
 
     def append(self, receiver_mail: str, receiver_name: str, subject: str, content: str) -> None:
@@ -18,7 +20,13 @@ class BaseMail(ABC):
 
     def send_all(self) -> None:
         for receiver_mail, receiver_name, subject, content in self.send_queue:
-            self.send(receiver_mail, receiver_name, subject, content)
+            for _ in range(self.resend_time):
+                try:
+                    self.send(receiver_mail, receiver_name, subject, content)
+                    break
+                except Exception as e:
+                    self.logger(f'Failed to send mail to {receiver_mail} for {e}')
+                    continue
 
     @abstractmethod
     def send(self, receiver_mail: str, receiver_name: str, subject: str, content: str) -> None:
@@ -27,10 +35,10 @@ class BaseMail(ABC):
 
 class TencentEnterpriseMailbox(BaseMail):
 
-    def __init__(self, sender_mail: str, sender_name: str, password: str, smtp_server: str = 'smtp.exmail.qq.com', smtp_port: int = 465, ssl: bool = True) -> None:
-        super().__init__(sender_mail, sender_name, password)
-        self.smtp_server = smtp_server
-        self.smtp_port = smtp_port
+    def __init__(self, sender_mail: str, sender_name: str, password: str, resend_time: int = 5, ssl: bool = True, logger: Callable = print) -> None:
+        super().__init__(sender_mail, sender_name, password, resend_time, logger)
+        self.smtp_server = 'smtp.exmail.qq.com'
+        self.smtp_port = 465
         self.ssl = ssl
 
     def send(self, receiver_mail: str, receiver_name: str, subject: str, content: str) -> None:
@@ -48,9 +56,6 @@ class TencentEnterpriseMailbox(BaseMail):
 
 
 class GoogleMail(BaseMail):
-
-    def __init__(self, sender_mail: str, sender_name: str, password: str) -> None:
-        super().__init__(sender_mail, sender_name, password)
 
     def send(self, receiver_mail: str, receiver_name: str, subject: str, content: str) -> None:
         smtp_server = 'smtp.gmail.com'
@@ -78,9 +83,6 @@ class GoogleMail(BaseMail):
 
 
 class QQMail(BaseMail):
-
-    def __init__(self, sender_mail: str, sender_name: str, password: str) -> None:
-        super().__init__(sender_mail, sender_name, password)
 
     def send(self, receiver_mail: str, receiver_name: str, subject: str, content: str) -> None:
         smtp_server = 'smtp.qq.com'
