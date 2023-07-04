@@ -17,7 +17,12 @@ Components:
   WebMessenger:
     Class: WebMessengerTCP
     args:
-      port: 9999
+      port: 10001
+  
+  Logger:
+    enable: ture
+    args:
+      filename: ./data/log.txt
 
 Dispatch:
   Class: FCFS
