@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 """
 Table User {
     id int [pk, increment]
-    username varchar
-    realname varchar optional
+    account varchar
+    nickname varchar optional
     password varchar
     email varchar optional
     phone varchar optional
