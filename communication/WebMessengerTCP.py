@@ -19,9 +19,9 @@ class WebMessengerTCP(threading.Thread, BaseServer):
         input: data (the data to be sent), machine_id (the id of the client)
         logic: Send the data to the client with the given machine_id.
     """
-    def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable, max_hreatbeat_timeout: float = 10.0, logger: Callable = print) -> None:
+    def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable, max_hreatbeat_timeout: float = 10.0) -> None:
         threading.Thread.__init__(self)
-        BaseServer.__init__(self, data_handler, connect_handler, disconnect_handler, logger)
+        BaseServer.__init__(self, data_handler, connect_handler, disconnect_handler)
         self.port = port
         self.clients = {}
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -45,7 +45,6 @@ class WebMessengerTCP(threading.Thread, BaseServer):
         info = self.connect_handler(data['data'], ip)
         thread_id = threading.get_ident()
         self.clients[info['machine_id']] = {'socket': client_socket, 'thread_id': thread_id, 'last_heartbeat_time': time.time()}
-        self.logger(f'Client {info["machine_id"]} (host: {client_address}) connected')
         while True:
             try:
                 data = client_socket.recv(1024)
@@ -74,7 +73,6 @@ class WebMessengerTCP(threading.Thread, BaseServer):
         while True:
             for key, value in list(self.clients.items()):
                 if time.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
-                    self.logger(f'{key} heartbeat timeout')
                     self.disconnect_handler(key)
                     tr_id = value['thread_id']
                     value['socket'].close()

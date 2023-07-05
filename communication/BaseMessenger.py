@@ -11,7 +11,7 @@ message format:
 
 class BaseServer(ABC):
 
-    def __init__(self, data_handler: Callable, connect_handler: Callable,disconnect_handler) -> None:
+    def __init__(self, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable) -> None:
         super().__init__()
         self.data_handler = data_handler
         self.connect_handler = connect_handler
@@ -26,8 +26,6 @@ class BaseServer(ABC):
         pass
 
 
-
-
 class BaseClient(ABC):
 
     def __init__(self, data_handler: Callable, connect_handler: Callable) -> None:
@@ -38,5 +36,3 @@ class BaseClient(ABC):
     @abstractmethod
     def send(self, data: dict) -> None:
         pass
-
-

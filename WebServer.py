@@ -32,7 +32,7 @@ def data_handler_gpus(info: dict, machine_id: int | str):
     """ deal with the gpu info sent by the machine
 
     Args:
-        info (dict): the gpu info sent by the machine. e.g. {'0': {'type': 'Nvidia RTX 3060Ti', 'memory': 10240, 'memory_used': 2048, 'utilization': 0.96 }, ...}
+        info (dict): the gpu info sent by the machine. e.g. {'0': {'type': 'Nvidia RTX 3060Ti', 'memory_total': 10240, 'memory_used': 2048, 'utilization': 0.96 }, ...}
         machine_id (int | str): the id of the machine
     """
     g.gpus_cache.update(machine_id, info)

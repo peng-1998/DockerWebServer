@@ -5,13 +5,12 @@ import asyncio
 from asyncio.streams import StreamReader, StreamWriter
 
 from .BaseMessenger import BaseServer
-import websockets
 
 class WebMessengerTCPAsync(threading.Thread, BaseServer):
 
-    def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable, max_hreatbeat_timeout: float = 10.0, logger: Callable = print) -> None:
+    def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable, max_hreatbeat_timeout: float = 10.0) -> None:
         threading.Thread.__init__(self)
-        BaseServer.__init__(self, data_handler, connect_handler, disconnect_handler, logger)
+        BaseServer.__init__(self, data_handler, connect_handler, disconnect_handler)
         self.port = port
         self.clients = {}
         self.daemon = True
@@ -37,7 +36,6 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
         info = self.connect_handler(data['data'], ip)
         task = asyncio.current_task()
         self.clients[info['machine_id']] = {'reader': reader, 'writer': writer, 'task': task, 'last_heartbeat_time': loop.time()}
-        self.logger(f'Client {info["machine_id"]} (host: {ip}:{port}) connected')
         while True:
             try:
                 data = await reader.read(1024)
@@ -52,7 +50,6 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
         reader.feed_eof()
         writer.close()
         self.disconnect_handler(info['machine_id'])
-        self.logger(f'Client {info["machine_id"]} (host: {ip}:{port}) disconnected')
         del self.clients[info['machine_id']]
 
     def send(self, data: dict, machine_id: int | str) -> None:
@@ -68,7 +65,6 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
         while True:
             for key, value in list(self.clients.items()):
                 if loop.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
-                    self.logger(f'{key} heartbeat timeout')
                     self.disconnect_handler(key)
                     value['writer'].close()
                     value['reader'].feed_eof()
