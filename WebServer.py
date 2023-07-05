@@ -1,16 +1,20 @@
+import os
+
 import yaml
-from flask import Flask, g, request, jsonify
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
+from flask_jwt_extended.exceptions import NoAuthorizationError
 
 import communication
 import database.SqliteDB
 import dispatch.SchedulingStrategy as SS
+from blueprints import admin, auth, containers, machines, user
 from communication import BaseServer, DockerController
-from blueprints import auth, admin, containers, machines, user
-
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
+
+os.getcwd(os.path.dirname(__file__))
 
 app = Flask(__name__)
 app.register_blueprint(auth, url_prefix="/api/auth")
@@ -25,6 +29,12 @@ CORS(app)
 
 
 def data_handler_gpus(info: dict, machine_id: int | str):
+    """ deal with the gpu info sent by the machine
+
+    Args:
+        info (dict): the gpu info sent by the machine. e.g. {'0': {'type': 'Nvidia RTX 3060Ti', 'memory': 10240, 'memory_used': 2048, 'utilization': 0.96 }, ...}
+        machine_id (int | str): the id of the machine
+    """
     g.gpus_cache.update(machine_id, info)
 
 
@@ -37,20 +47,27 @@ data_handler = lambda data, machine_id: data_handler_funcs[data['type']](data['d
 disconnect_handler = lambda machine_id: g.wq.remove_machine(machine_id)
 
 
-def connect_handler(info, ip: str) -> dict:
-    # the info is a dict, is the first data sent by the machine
-    # info: {'machine_id': int, 'gpus': [{'type': str, 'memory': int, 'id': int}, ...],'cpu':{...},'memory':{...},'disk':{...},'url':str}
+def connect_handler(info: dict, ip: str) -> dict:
+    """ deal with the first data sent by the machine
+
+    Args:
+        info (dict): the info sent by the machine. e.g. {'machine_id': int, 'gpus': [...],'cpu':{...},'memory':{...},'disk':{...},'url':str}
+        ip (str): the ip of the machine
+
+    Returns:
+        dict: the info return to Messenger
+    """
     db: BaseDB = g.db
     machine_id = info['machine_id']
     del info['machine_id']
     gpus = info['gpus']
-    machines = db.get_machine(search_key={'id': machine_id})
-    if len(machines) == 0:
+    machines_list = db.get_machine(search_key={'id': machine_id})
+    if len(machines_list) == 0:
         db.insert_machine(machine={'id': machine_id, 'ip': ip, 'machine_info': info})
     else:
         db.update_machine(search_key={'id': machine_id}, update_key={'machine_info': info, 'ip': ip})
     g.wq.new_machine(machine_id, {i: True for i in range(len(gpus))})
-    return info
+    return {'machine_id': machine_id}
 
 
 def run_handler(machine_id: int | str, task: dict) -> None:
@@ -59,7 +76,7 @@ def run_handler(machine_id: int | str, task: dict) -> None:
 
 
 with app.app_context():
-    with open('config.yaml') as f:
+    with open('WebServerConfig.yaml') as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
     if configs['Components']['Logger']['enable']:
         from database import Logger
@@ -82,14 +99,20 @@ with app.app_context():
         Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
         g.mail = Mail_Class(**configs['Components']['Mail']['args'], logger=g.logger)
 
+
 @app.before_request
 def is_jwt_valid():
+    """ 
+    check if the jwt is valid, if not, return 401
+    except the login and register request
+    """
     if request.endpoint in ['login', 'register']:
         return
     try:
         verify_jwt_in_request()
-    except:
+    except NoAuthorizationError:
         return jsonify({'message': 'Invalid token'}, 401)
+
 
 @app.route("/")
 def hello_world():
