@@ -11,12 +11,11 @@ message format:
 
 class BaseServer(ABC):
 
-    def __init__(self, data_handler: Callable, connect_handler: Callable,disconnect_handler, logger: Callable = print) -> None:
+    def __init__(self, data_handler: Callable, connect_handler: Callable,disconnect_handler) -> None:
         super().__init__()
         self.data_handler = data_handler
         self.connect_handler = connect_handler
         self.disconnect_handler = disconnect_handler
-        self.logger = logger
 
     @abstractmethod
     def send(self, data: dict, machine_id: int | str) -> None:
@@ -31,11 +30,10 @@ class BaseServer(ABC):
 
 class BaseClient(ABC):
 
-    def __init__(self, data_handler: Callable, connect_handler: Callable, logger: Callable = print) -> None:
+    def __init__(self, data_handler: Callable, connect_handler: Callable) -> None:
         super().__init__()
         self.data_handler = data_handler
         self.connect_handler = connect_handler
-        self.logger = logger
 
     @abstractmethod
     def send(self, data: dict) -> None:
