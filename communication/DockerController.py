@@ -53,7 +53,7 @@ class DockerController:
         try:
             return self.client.containers.create(**kargs)
         except docker.errors.ImageNotFound as e:
-            return e 
+            return e
         except docker.errors.APIError as e:
             return e
 
@@ -73,22 +73,22 @@ class DockerController:
         '''
         resps = self.client.images.push(image_name, tag=tag)
 
-    def pull_image(self, image_name: str, tag: str) -> Image | None:
+    def pull_image(self, image_name: str, tag: str) -> Image | docker.errors.APIError:
         '''
         image_name: str = 'image_name',
         tag: str = 'tag',
         '''
         try:
             return self.client.images.pull(image_name, tag=tag)
-        except:
-            return None
+        except docker.errors.APIError as e:
+            return e
 
-    def remove_image(self, image_name: str, tag: str) -> bool:
+    def remove_image(self, image_name: str, tag: str) -> bool | docker.errors.APIError:
         '''
         image_name: str = 'image_name',
         '''
         try:
             self.client.images.remove(image_name + ':' + tag)
             return True
-        except:
-            return False
+        except docker.errors.APIError as e:
+            return e

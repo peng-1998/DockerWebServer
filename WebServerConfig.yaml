@@ -24,6 +24,11 @@ Components:
     args:
       filename: ./data/log.txt
 
+  ErrorLogger:
+    enable: ture
+    args:
+      filename: ./data/error.txt
+
 Dispatch:
   Class: FCFS
   args: {}

@@ -7,10 +7,14 @@ class InfoCache:
         self.cache = {}
         self.lock = rwlock.RWLockFair()
 
-    def update(self, machine_id: int | str, info: dict):
+    def update(self, key: int | str, info: dict):
         with self.lock.gen_wlock():
-            self.cache[machine_id] = info
+            self.cache[key] = info
 
-    def get(self, machine_id: int | str):
+    def get(self, key: int | str):
         with self.lock.gen_rlock():
-            return self.cache[machine_id]
+            return self.cache[key]
+    
+    def contains(self, key: int | str):
+        with self.lock.gen_rlock():
+            return key in self.cache

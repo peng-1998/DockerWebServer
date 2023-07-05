@@ -1,7 +1,8 @@
+import json
 import os
 
 import yaml
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, jsonify, request, make_response
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_jwt_extended.exceptions import NoAuthorizationError
@@ -13,6 +14,7 @@ from blueprints import admin, auth, containers, machines, user
 from communication import BaseServer, DockerController
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
+from queue import Queue
 
 os.chdir(os.path.dirname(__file__))
 print(os.getcwd())
@@ -37,6 +39,54 @@ def data_handler_gpus(info: dict, machine_id: int | str):
         machine_id (int | str): the id of the machine
     """
     g.gpus_cache.update(machine_id, info)
+
+
+def data_handler_image(data: dict, machine_id: int | str):
+    if data['status'] == 'failed':
+        g.error_logger(f'{machine_id} {data["opt"]} image:{data["image"]} failed, error info: {data["error"]}')
+        g.logger(f'{machine_id} {data["opt"]} image:{data["image"]} failed')
+        return
+    g.logger(f'{machine_id} {data["opt"]} image:{data["image"]} success')
+    if data['opt'] == 'pull':
+
+        ...
+    elif data['opt'] == 'remove':
+
+        ...
+
+
+def data_handler_container(data: dict, machine_id: int | str):
+    user_id = data['user_id']
+    massage_cache: InfoCache = g.massage_cache
+    if massage_cache.contains(user_id):
+        massage_queue: Queue = Queue()
+    else:
+        massage_queue: Queue = massage_cache.get(user_id)
+    massage_queue.put({'type': 'container', 'opt': data['opt'], "status": data["status"]})
+    massage_cache.update(user_id, massage_queue)
+
+    db: BaseDB = g.db
+    g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} success')
+    if data['opt'] == 'create':
+        if data['status'] == 'failed':
+            g.error_logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed, error info: {data["error"]} create args: {json.dumps(data["original_data"])}')
+            g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed')
+            return
+        g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} success')
+        original_data = data['original_data']
+        showname = original_data["name"].split('_')[-1][1:]
+        portlist = [[int(k.split('/')[0]), v] for k, v in original_data["ports"].items()]
+        image_id = db.get_image(search_key={"imagename": original_data["image"]}, return_key=['id'])[0]["id"]
+        db.insert_container({"showname": showname, "containername": data["name"], "userid": user_id, "machineid": machine_id, "portlist": portlist, "image": image_id, "runing": False})
+        return
+    if data['status'] == 'failed':
+        g.error_logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed, error info: {data["error"]}')
+        g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed')
+        return
+    if data['opt'] == 'remove':
+        db.delete_container(search_key={"containername": data["container"], "machineid": machine_id})
+    elif data['opt'] in ['start', 'stop', 'restart']:
+        db.update_container(search_key={"containername": data["container"], "machineid": machine_id}, update_key={"running": 'start' in data['opt']})
 
 
 # all functions get two parameters, the first is the data (json), the second is the machine_id
@@ -90,6 +140,12 @@ with app.app_context():
         g.logger = Logger(**configs['Components']['Logger']['args'])
     else:
         g.logger = print
+    if configs['Components']['ErrorLogger']['enable']:
+        from database import Logger
+        g.error_logger = Logger(**configs['Components']['ErrorLogger']['args'])
+    else:
+        g.error_logger = print
+
     g.repository = configs['Docker']['repository']
     DB_Class = getattr(database, configs['Database']['Class'])
     g.db: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
@@ -100,6 +156,7 @@ with app.app_context():
     g.messenger.start()  # start the messenger thread
     g.max_task_id = 0
     g.gpus_cache = InfoCache()
+    g.massage_cache = InfoCache()
     g.docker = DockerController()
     if configs['Components']['Mail']['enable']:
         import communication.MailBox as MB
@@ -119,6 +176,15 @@ def is_jwt_valid():
         verify_jwt_in_request()
     except NoAuthorizationError:
         return jsonify({'message': 'Invalid token'}, 401)
+
+
+@app.route("/api/massage/<user_id>", methods=['GET'])
+def get_massage(user_id: int):
+    msg_queue: Queue = g.massage_cache.get(user_id)
+    if msg_queue is None or len(msg_queue) == 0:
+        return make_response(jsonify({'message': 'no message'}), 404)
+    msg = msg_queue.get()
+    return make_response(jsonify(msg), 200)
 
 
 @app.route("/")

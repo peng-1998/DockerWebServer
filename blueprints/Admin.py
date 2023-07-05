@@ -1,9 +1,9 @@
 from flask import Blueprint, request, g, make_response
 from communication import DockerController
 from communication import BaseServer
+from database import BaseDB
 
-admin = Blueprint('admin', __name__, url_prefix='/admin')
-
+admin = Blueprint('admin', __name__)
 
 # @admin.route('/', methods=['GET'])
 # def index():
@@ -21,15 +21,17 @@ def build_image():
         print(e)
         return make_response({'success': False}, 400)
     messenger: BaseServer = g.messenger
-    messenger.send_all({'type': 'image', 'data': {'image': attrs['image'], 'tag': attrs['tag'], 'opt': 'pull'}}) # 非阻塞，需要自己监听是否完成拉取
+    messenger.send_all({'type': 'image', 'data': {'image': attrs['image'], 'opt': 'pull'}})  # 非阻塞，需要自己监听是否完成拉取
     return make_response({'success': True}, 200)
 
 
 @admin.route('/delete_image', methods=['POST'])
 def delete_image():
+    db: BaseDB = g.db
     attrs = request.json
     image_id = attrs['image_id']
     docker: DockerController = g.docker
-    docker.remove_image(image_id) # 该函数会阻塞到镜像删除完成，通常几秒钟
+    docker.remove_image(image_id)  # 该函数会阻塞到镜像删除完成，通常几秒钟
     messenger: BaseServer = g.messenger
-    messenger.send_all({'type': 'image', 'data': {'image': image_id, 'opt': 'remove'}}) # 非阻塞，需要自己监听是否完成删除
+    image = db.get_image({'id': image_id}, ['imagename'])[0]['imagename']
+    messenger.send_all({'type': 'image', 'data': {'image': image, 'opt': 'remove'}})  # 非阻塞，需要自己监听是否完成删除

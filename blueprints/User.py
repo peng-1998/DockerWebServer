@@ -1,7 +1,7 @@
 from flask import Blueprint, request, g
 from database import BaseDB
 
-user = Blueprint('user', __name__, url_prefix='/user')
+user = Blueprint('user', __name__)
 
 
 # @user.route('/', methods=['GET'])

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, g
 from dispatch import WaitQueue
 
-machines = Blueprint('machines', __name__, url_prefix='/machines')
+machines = Blueprint('machines', __name__)
 
 
 # @machines.route('/', methods=['GET'])

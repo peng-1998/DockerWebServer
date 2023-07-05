@@ -24,6 +24,7 @@ Table Container {
     machineid int
     portlist
     image int [ref: > Image.id]
+    running bool
 }
 Table Machine {
     id int [pk, increment]
@@ -43,26 +44,35 @@ class BaseDB(ABC):
         "password": str,
         "email": str,
         "phone": int,
-        "containers": list,
+        # "containers": list, # 废弃
         "photo": str,
     }
     image_key = {
         "id": int,
         "showname": str,
         "imagename": str,
-        "tag": str,
-        "init_args": dict,
-        "description": dict,
+        "init_args": dict, # {参数: 默认值（可能为字典或数组）}
+        "description": dict, # 可以考虑 字符串 或 字典
     }
     container_key = {
         "id": int,
-        "showname": str,
-        "containername": str,
+        "imageid": int,
         "machineid": int,
+        "userid": int,
+        "showname": str,
+        "containername": str,  # 容器名为u{user account}_c{showname(random string)}
         "portlist": list,
-        "image": int,
+        "running": bool,
     }
-    machine_key = {"id": int, "ip": str, "machine_info": dict}
+    machine_key = {
+        "id": int,
+        "ip": str,
+        "gpu": dict, # {0：{"tpye":"3060","memory":10240}}
+        "cpu": dict, # {"type":"i7-10700","core":8}
+        "disk": dict, # {"total":1024,"free":512}
+        "memory": dict, # {"total":1024,"free":512}
+        "online": bool, 
+    }
 
     @abstractmethod
     def insert_user(self, user: dict) -> bool:

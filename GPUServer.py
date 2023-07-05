@@ -3,7 +3,7 @@ import threading
 
 from docker.errors import APIError as DKAPIError
 import yaml
-from docker.models.containers import Container
+from docker.models.containers import Container, Image
 
 import communication
 from communication import NVIDIAGPU, BaseClient, DockerController
@@ -13,17 +13,21 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__))
 
     def pull_image(image: str, tag: str):
-        for i in range(3):
+        for _ in range(3):
             res = docker_controller.pull_image(image, tag)
-            if res:
+            if isinstance(res, Image):
                 messenger.send({'type': 'image', 'data': {'image': image, 'opt': 'pull', 'status': 'success'}})
                 break
+
         else:
-            messenger.send({'type': 'image', 'data': {'image': image, 'opt': 'pull', 'status': 'failed'}})
+            messenger.send({'type': 'image', 'data': {'image': image, 'opt': 'pull', 'status': 'failed', 'error': str(res)}})
 
     def remove_image(image: str, tag: str):
         res = docker_controller.remove_image(image, tag)
-        messenger.send({'type': 'image', 'data': {'image': image, 'opt': 'remove', 'status': 'success' if res else 'failed'}})
+        if isinstance(res, list):
+            messenger.send({'type': 'image', 'data': {'image': image, 'opt': 'remove', 'status': 'success'}})
+        else:
+            messenger.send({'type': 'image', 'data': {'image': image, 'opt': 'remove', 'status': 'failed', 'error': str(res)}})
 
     image_funcs = {'pull': pull_image, 'remove': remove_image}
 
@@ -32,15 +36,15 @@ if __name__ == '__main__':
 
     def data_handler_container(data: dict):
         if data['opt'] == 'create':
-            res = docker_controller.create_container(**data)
+            res = docker_controller.create_container(**data['create_args'])
             if isinstance(res, Container):
-                messenger.send({'type': 'container', 'data': {'opt': 'create', 'status': 'success', 'original_data': data}})
+                messenger.send({'type': 'container', 'data': {'opt': 'create', 'user_id': data['user_id'], 'status': 'success', 'original_data': data['create_args']}})
             else:
-                messenger.send({'type': 'container', 'data': {'opt': 'create', 'status': 'failed', 'error': str(res), 'original_data': data}})
+                messenger.send({'type': 'container', 'data': {'opt': 'create', 'user_id': data['user_id'], 'status': 'failed', 'error': str(res), 'original_data': data['create_args']}})
         else:
             container = docker_controller.get_container(data['container_name'])
             if not container:
-                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'status': 'failed', 'error': 'container not found', 'container_name': data['container_name']}})
+                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': 'container not found', 'container_name': data['container_name']}})
                 return
             try:
                 if (data['opt'] == 'start'):
@@ -51,8 +55,9 @@ if __name__ == '__main__':
                     container.remove(force=True)
                 elif (data['opt'] == 'restart'):
                     container.restart()
+                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
             except DKAPIError as e:
-                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'status': 'failed', 'error': str(e), 'container_name': data['container_name']}})
+                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': str(e), 'container_name': data['container_name']}})
 
     data_handler_funcs = {
         'image': data_handler_image,

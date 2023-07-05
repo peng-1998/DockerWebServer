@@ -1,9 +1,10 @@
+from queue import Queue
 from flask import Blueprint, request, g, make_response, jsonify
 import random
 import string
 from database import BaseDB
 
-containers = Blueprint('containers', __name__, url_prefix='/containers')
+containers = Blueprint('containers', __name__)
 
 # @containers.route('/', methods=['GET'])
 # def index():
@@ -12,7 +13,9 @@ containers = Blueprint('containers', __name__, url_prefix='/containers')
 
 @containers.route('/mycontainer/<user_id>', methods=['GET'])
 def mycontainer(user_id):
-    ...
+    db: BaseDB = g.db
+    containers = db.get_container({'userid': user_id}, return_key=['showname', 'portlist', 'containername', 'running'])
+    return make_response(jsonify(containers), 200)
 
 
 @containers.route('/create', methods=['POST'])
@@ -34,45 +37,57 @@ def create_container():
         'type': 'container',
         'data': {
             'opt': 'create',
-            'name': f'u{user_id}_c{random_string}',
-            'image': image['imagename'] + ':' + image['tag'],
-            'ports': ports,
-            'hostname': account,
-            **image['init_args'],
+            'user_id': user_id,
+            'create_args': {
+                'name': f'u{account}_c{random_string}',
+                'image': image['imagename'],
+                'ports': ports,
+                'hostname': account,
+                **image['init_args'],
+            }
         },
     }
     g.messenger.send(msg, machine_id)
-    
+    g.messenger.send(msg, machine_id)
+    msg_queue: Queue = g.massage_cache.get(user_id)
+    while True:
+        msg = msg_queue.get()
+        if msg['type'] == 'container' and msg['opt'] == 'create':
+            break
+        else:
+            msg_queue.put(msg)
+    if msg['status'] == 'success':
+        return make_response(jsonify(), 200)
+    else:
+        return make_response(jsonify(), 400)
 
 
-@containers.route('/delete', methods=['POST'])
-def delete_container():
+@containers.route('/operate', methods=['POST'])
+def container_operate():
     attrs = request.json
-    container_id = attrs['container_id']
-    ...
+    container_name = attrs['container_name']
+    user_id = attrs['user_id']
+    machine_id = attrs['machine_id']
+    opt = attrs['opt']  # start, stop, restart, remove
+    msg = {
+        'type': 'container',
+        'data': {
+            'opt': opt,
+            'container_name': container_name,
+            'user_id': user_id,
+        }
+    }
+    g.messenger.send(msg, machine_id)
+    msg_queue: Queue = g.massage_cache.get(user_id)
+    while True:
+        msg = msg_queue.get()
+        if msg['type'] == 'container' and msg['opt'] == opt:
+            break
+        else:
+            msg_queue.put(msg)
+    if msg['status'] == 'success':
+        return make_response(jsonify(), 200)
+    else:
+        return make_response(jsonify(), 400)
 
 
-@containers.route('/start', methods=['POST'])
-def start_container():
-    attrs = request.json
-    container_id = attrs['container_id']
-    ...
-
-
-@containers.route('/stop', methods=['POST'])
-def stop_container():
-    attrs = request.json
-    container_id = attrs['container_id']
-    ...
-
-
-@containers.route('/restart', methods=['POST'])
-def restart_container():
-    attrs = request.json
-    container_id = attrs['container_id']
-    ...
-
-
-@containers.route('/container/<container_id>', methods=['GET'])
-def container(container_id):
-    ...
