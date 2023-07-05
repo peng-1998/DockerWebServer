@@ -17,7 +17,6 @@ from dispatch import WaitQueue
 from queue import Queue
 
 os.chdir(os.path.dirname(__file__))
-print(os.getcwd())
 
 app = Flask(__name__)
 app.register_blueprint(auth, url_prefix="/api/auth")
@@ -89,10 +88,16 @@ def data_handler_container(data: dict, machine_id: int | str):
         db.update_container(search_key={"containername": data["container"], "machineid": machine_id}, update_key={"running": 'start' in data['opt']})
 
 
+def data_handler_task(data: dict, machine_id: int | str):
+    if data['status'] == 'failed' and data['opt'] == 'run':
+        g.error_logger(f'{machine_id} {data["opt"]} task failed, error info: {data["error"]}')
+        g.logger(f'{machine_id} {data["opt"]} task failed')
+        g.wq.finish_task(machine_id, data['task_id'])
+        return
+
+
 # all functions get two parameters, the first is the data (json), the second is the machine_id
-data_handler_funcs = {
-    'gpus': data_handler_gpus,
-}
+data_handler_funcs = {'gpus': data_handler_gpus, 'image': data_handler_image, 'container': data_handler_container, 'task': data_handler_task}
 # data: {'type': str, 'data': dict}
 data_handler = lambda data, machine_id: data_handler_funcs[data['type']](data['data'], machine_id)
 disconnect_handler = lambda machine_id: g.wq.remove_machine(machine_id)
@@ -127,9 +132,30 @@ def connect_handler(info: dict, ip: str) -> dict:
     return {'machine_id': machine_id}
 
 
+def run_finish_mail(task: dict):
+    return "", ""
+
+
 def run_handler(machine_id: int | str, task: dict) -> None:
     messenger: BaseServer = g.messenger
+    task['opt'] = 'run'
     messenger.send({'type': 'task', 'data': task}, machine_id)
+    if hasattr(g, 'mail'):
+        user_id = task['user_id']
+        user = g.db.get_user(search_key={'id': user_id}, return_key=[''])[0]
+        if user['email'] != '':
+            g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
+
+
+def finish_handler(machine_id: int | str, task: dict) -> None:
+    messenger: BaseServer = g.messenger
+    task['opt'] = 'finish'
+    messenger.send({'type': 'task', 'data': task}, machine_id)
+    if hasattr(g, 'mail'):
+        user_id = task['user_id']
+        user = g.db.get_user(search_key={'id': user_id}, return_key=[''])[0]
+        if user['email'] != '':
+            g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
 
 
 with app.app_context():
@@ -151,6 +177,7 @@ with app.app_context():
     g.db: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
     Scheduler_Class = getattr(SS, configs['Dispatch']['Class'])
     g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler, g.logger)
+    g.wq.start()
     Messenger_Class = getattr(communication, configs['Components']['WebMessenger']['Class'])
     g.messenger: BaseServer = Messenger_Class(**configs['Components']['WebMessenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler)
     g.messenger.start()  # start the messenger thread

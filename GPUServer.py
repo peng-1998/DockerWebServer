@@ -1,4 +1,5 @@
 import os
+import time
 import threading
 
 from docker.errors import APIError as DKAPIError
@@ -59,10 +60,29 @@ if __name__ == '__main__':
             except DKAPIError as e:
                 messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': str(e), 'container_name': data['container_name']}})
 
-    data_handler_funcs = {
-        'image': data_handler_image,
-        'container': data_handler_container,
-    }
+    def data_handler_task(data: dict):
+        container = docker_controller.get_container(data['container_name'])
+        if not container:
+            messenger.send({'type': 'task', 'data': {'status': 'failed', 'task_id': data['task_id'], 'user_id': data['user_id'], 'error': 'container not found', 'container_name': data['container_name']}})
+            return
+        if data['opt'] == 'finish':
+            container.stop()
+            messenger.send({'type': 'container', 'data': {'opt': 'stop', 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
+            time.sleep(0.5)
+            messenger.send({'type': 'task', 'data': {'status': 'success', 'task_id': data['task_id'], 'user_id': data['user_id'], 'container_name': data['container_name']}})
+            return
+        if container.status != 'running':
+            container.start()
+            messenger.send({'type': 'container', 'data': {'opt': 'start', 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
+        time.sleep(1)
+        try:
+            if data['cmd'] != '':
+                container.exec_run(data['cmd'])
+            messenger.send({'type': 'task', 'data': {'opt': 'run', 'status': 'success', 'task_id': data['task_id'], 'user_id': data['user_id'], 'container_name': data['container_name']}})
+        except DKAPIError as e:
+            messenger.send({'type': 'task', 'data': {'opt': 'run', 'status': 'failed', 'task_id': data['task_id'], 'error': str(e), 'user_id': data['user_id'], 'container_name': data['container_name']}})
+
+    data_handler_funcs = {'image': data_handler_image, 'container': data_handler_container, 'task': data_handler_task}
 
     def data_handler(data: dict):
         data_handler_funcs[data['type']](data['data'])

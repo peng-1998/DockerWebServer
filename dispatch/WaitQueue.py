@@ -1,5 +1,8 @@
 from typing import Callable, OrderedDict
 from readerwriterlock import rwlock
+import time
+from datetime import datetime, timedelta
+import threading
 '''
 task format:
 {
@@ -8,10 +11,9 @@ task format:
     "user_id": int,
     "duration": int,
     "GPU": list | int, # GPU number or list of GPU numbers
-    "CMD": dict{
-        "container_name": str,
-        "command": str,
-    }
+    "container_name": str,
+    "command": str,
+
 }
 source format:
 {
@@ -22,13 +24,15 @@ source format:
 '''
 
 
-class WaitQueue:
+class WaitQueue(threading.Thread):
 
-    def __init__(self, scheduling_strategy: Callable, run_handler: Callable, logger: Callable = print):
+    def __init__(self, scheduling_strategy: Callable, run_handler: Callable, finish_handler: Callable, logger: Callable = print):
+        super().__init__()
         self.queues = {}
         self.scheduling_strategy = scheduling_strategy
         self.logger = logger
         self.run_handler = run_handler
+        self.finish_handler = finish_handler
         self.user_indices = {}
         self.queue_rw_lock = rwlock.RWLockWrite()
         self.indices_rw_lock = rwlock.RWLockWrite()
@@ -62,6 +66,7 @@ class WaitQueue:
         with self.queue_rw_lock.gen_wlock():
             for result in results:
                 task = self.queues[machine_id]['wait_queue'][result['task_id']]
+                task['start_time'] = datetime.now()
                 if isinstance(task['GPU'], int):
                     task['GPU'] = result['GPU']
                 self.queues[machine_id]['running_set'][result['task_id']] = task
@@ -84,6 +89,7 @@ class WaitQueue:
         with self.indices_rw_lock.gen_wlock():
             self.user_indices[task['user_id']][machine_id].remove(task_id)
         self.logger(f'user {task["user_id"]} finish task {task["task_id"]} on machine {machine_id}')
+        self.finish_handler(machine_id, task.copy())
         self.try_allot(machine_id)
         return task
 
@@ -134,3 +140,13 @@ class WaitQueue:
             for task_id in self.user_indices[user_id][machine_id]:
                 res.append(self.find_task(machine_id, task_id))
             return res
+
+    def run(self) -> None:
+        while True:
+            self.queue_rw_lock.gen_rlock()
+            for machine_id, machine in self.queues:
+                if machine['on_line']:
+                    for task_id, task in machine['running_set']:
+                        if task['start_time'] + timedelta(hours=task['duration']) < datetime.now():
+                            self.finish_task(machine_id, task_id)
+            time.sleep(1)
