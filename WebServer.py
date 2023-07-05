@@ -14,7 +14,8 @@ from communication import BaseServer, DockerController
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
 
-os.getcwd(os.path.dirname(__file__))
+os.chdir(os.path.dirname(__file__))
+print(os.getcwd())
 
 app = Flask(__name__)
 app.register_blueprint(auth, url_prefix="/api/auth")
@@ -51,7 +52,13 @@ def connect_handler(info: dict, ip: str) -> dict:
     """ deal with the first data sent by the machine
 
     Args:
-        info (dict): the info sent by the machine. e.g. {'machine_id': int, 'gpus': [...],'cpu':{...},'memory':{...},'disk':{...},'url':str}
+        info (dict): the info sent by the machine. e.g. 
+            {'machine_id': 1, 
+                'gpus': {0: {'type': 'NVIDIA GeForce RTX 3060', 'memory_total': 12288.0, 'memory_used': 3187.25, 'utilization': 45}}, 
+                'cpu': {'type': ' Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz', 'logical_cpu_count': 12, 'physical_cpu_count': 6},
+                'memory': {'total': 62.71, 'free': 30.26}, 
+                'disk': {'total': 195.8, 'free': 112.51}, 
+                'url': 'www.sdasds.com'}
         ip (str): the ip of the machine
 
     Returns:
@@ -89,7 +96,7 @@ with app.app_context():
     Scheduler_Class = getattr(SS, configs['Dispatch']['Class'])
     g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler, g.logger)
     Messenger_Class = getattr(communication, configs['Components']['WebMessenger']['Class'])
-    g.messenger: BaseServer = Messenger_Class(**configs['Components']['WebMessenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler, logger=g.logger)
+    g.messenger: BaseServer = Messenger_Class(**configs['Components']['WebMessenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler)
     g.messenger.start()  # start the messenger thread
     g.max_task_id = 0
     g.gpus_cache = InfoCache()

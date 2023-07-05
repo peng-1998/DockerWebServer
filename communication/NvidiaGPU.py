@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple, Callable
 
 import pynvml
 from pynvml.smi import nvidia_smi
@@ -12,7 +12,7 @@ class NVIDIAGPU:
         self.gpuinstance = nvidia_smi.getInstance()
         self.gpucount = pynvml.nvmlDeviceGetCount()
 
-    def check_gpuid(func) -> None:
+    def check_gpuid(func: Callable) -> None:
 
         def wrapper(self, gpuid: int):
             if gpuid >= self.gpucount:

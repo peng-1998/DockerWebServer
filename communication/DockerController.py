@@ -33,7 +33,7 @@ class DockerController:
         except docker.errors.ImageNotFound:
             return None
 
-    def create_container(self, **kargs) -> Container:
+    def create_container(self, **kargs) -> Container | docker.errors.ImageNotFound | docker.errors.APIError:
         '''
         kwargs:
             image: str = 'ubuntu:latest',
@@ -50,7 +50,12 @@ class DockerController:
             volumes: dict = {'/host/path': {'bind': '/container/path', 'mode': 'rw'|'ro'}}|{'/host/path':/container/path},
             working_dir: str = '/path/to/workdir',
         '''
-        return self.client.containers.create(**kargs)
+        try:
+            return self.client.containers.create(**kargs)
+        except docker.errors.ImageNotFound as e:
+            return e 
+        except docker.errors.APIError as e:
+            return e
 
     def create_image(self, dockerfile_path: str, context_path: str, tag: str) -> Image:
         '''
@@ -68,17 +73,22 @@ class DockerController:
         '''
         resps = self.client.images.push(image_name, tag=tag)
 
-    def pull_image(self, image_name: str, tag: str) -> Image:
+    def pull_image(self, image_name: str, tag: str) -> Image | None:
         '''
         image_name: str = 'image_name',
         tag: str = 'tag',
         '''
-        return self.client.images.pull(image_name, tag=tag)
+        try:
+            return self.client.images.pull(image_name, tag=tag)
+        except:
+            return None
 
-    def remove_image(self, image_name: str) -> None:
+    def remove_image(self, image_name: str, tag: str) -> bool:
         '''
         image_name: str = 'image_name',
         '''
-        self.client.images.remove(image_name)
-
-    
+        try:
+            self.client.images.remove(image_name + ':' + tag)
+            return True
+        except:
+            return False
