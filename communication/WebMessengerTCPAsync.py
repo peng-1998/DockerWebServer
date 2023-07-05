@@ -6,6 +6,7 @@ from asyncio.streams import StreamReader, StreamWriter
 
 from .BaseMessenger import BaseServer
 
+
 class WebMessengerTCPAsync(threading.Thread, BaseServer):
 
     def __init__(self, port: int, data_handler: Callable, connect_handler: Callable, disconnect_handler: Callable, max_hreatbeat_timeout: float = 10.0) -> None:
@@ -32,18 +33,25 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
         data = await reader.read(1024)
         data = json.loads(data.decode())
         assert data['type'] == 'init'
-        ip, port = writer.get_extra_info('peername')
+        ip, _ = writer.get_extra_info('peername')
         info = self.connect_handler(data['data'], ip)
         task = asyncio.current_task()
         self.clients[info['machine_id']] = {'reader': reader, 'writer': writer, 'task': task, 'last_heartbeat_time': loop.time()}
+        content = b''
         while True:
             try:
                 data = await reader.read(1024)
                 if not data:
                     break
+                content += data
                 data = json.loads(data.decode())
-                if data['type'] != 'heartbeat':
-                    self.data_handler(data, info['machine_id'])
+                try:
+                    content_json = json.loads(content.decode())
+                    content = b''
+                except json.decoder.JSONDecodeError:
+                    continue
+                if content_json['type'] != 'heartbeat':
+                    self.data_handler(content_json, info['machine_id'])
                 self.clients[info['machine_id']]['last_heartbeat_time'] = loop.time()
             except ConnectionResetError:
                 break

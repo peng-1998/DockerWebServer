@@ -45,14 +45,20 @@ class WebMessengerTCP(threading.Thread, BaseServer):
         info = self.connect_handler(data['data'], ip)
         thread_id = threading.get_ident()
         self.clients[info['machine_id']] = {'socket': client_socket, 'thread_id': thread_id, 'last_heartbeat_time': time.time()}
+        content = b''
         while True:
             try:
                 data = client_socket.recv(1024)
                 if not data:
                     break
-                data = json.loads(data.decode())
-                if data['type'] != 'heartbeat':
-                    self.data_handler(data, info['machine_id'])
+                content += data
+                try:
+                    content_json = json.loads(content.decode())
+                    content = b''
+                except json.decoder.JSONDecodeError:
+                    continue
+                if content_json['type'] != 'heartbeat':
+                    self.data_handler(content_json, info['machine_id'])
                 self.clients[info['machine_id']]['last_heartbeat_time'] = time.time()
             except ConnectionResetError:
                 break
