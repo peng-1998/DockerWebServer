@@ -49,6 +49,8 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
                 while True:
                     data = self.server.recv(1024)
                     if not data: # 说明连接断开
+                        self.connected = False
+                        self.logger("server disconnected")
                         break
                     data = json.loads(data.decode())
                     self.data_handler(data)
