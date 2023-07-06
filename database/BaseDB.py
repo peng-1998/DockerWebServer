@@ -13,7 +13,6 @@ Table Image {
     id int [pk, increment]
     showname varchar
     imagename varchar
-    tag varchar
     creat_args dict
     description dict
 }
