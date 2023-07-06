@@ -57,38 +57,67 @@ class DockerController:
         except docker.errors.APIError as e:
             return e
 
-    def create_image(self, dockerfile_path: str, context_path: str, tag: str) -> Image:
+    def create_image(self, dockerfile_path: str, context_path: str, image: str) -> str | None:
         '''
         dockerfile_path: str = 'path/to/dockerfile',
         context_path: str = 'path/to/context',
-        tag: str = 'image_name:tag',
+        image: str = 'image_name:tag',
         '''
         dockerfile = open(dockerfile_path, 'rb').read()
-        return self.client.images.build(fileobj=BytesIO(dockerfile), dockerfile=context_path, tag=tag)[0]
+        try:
+            self.client.images.build(fileobj=BytesIO(dockerfile), dockerfile=context_path, tag=image)
+        except Exception as e:
+            return str(e)
 
-    def push_image(self, image_name: str, tag: str) -> None:
+    def push_image(self, image_name: str) -> docker.errors.APIError | None:
+        '''
+        image_name: str = 'image_name'
+        '''
+        image_name, tag = image_name.split(':')
+        try:
+            self.client.images.push(image_name, tag=tag)
+        except docker.errors.APIError as e:
+            return e
+
+    def pull_image(self, image_name: str) -> Image | docker.errors.APIError:
         '''
         image_name: str = 'image_name',
-        tag: str = 'tag',
         '''
-        resps = self.client.images.push(image_name, tag=tag)
-
-    def pull_image(self, image_name: str, tag: str) -> Image | docker.errors.APIError:
-        '''
-        image_name: str = 'image_name',
-        tag: str = 'tag',
-        '''
+        image_name, tag = image_name.split(':')
         try:
             return self.client.images.pull(image_name, tag=tag)
         except docker.errors.APIError as e:
             return e
 
-    def remove_image(self, image_name: str, tag: str) -> bool | docker.errors.APIError:
+    def remove_image(self, image_name: str) -> bool | docker.errors.APIError:
         '''
         image_name: str = 'image_name',
         '''
         try:
-            self.client.images.remove(image_name + ':' + tag)
+            self.client.images.remove(image_name)
             return True
         except docker.errors.APIError as e:
             return e
+
+    def remove_images(self, image_names: list[str]) -> bool | docker.errors.APIError:
+        '''
+        image_names: list[str] = ['image_name1', 'image_name2'],
+        '''
+        return [self.remove_image(image_name) for image_name in image_names]
+
+    def remove_container(self, container_name: str) -> bool | docker.errors.APIError:
+        '''
+        container_name: str = 'container_name',
+        '''
+        try:
+            container = self.get_container(container_name)
+            container.remove()
+            return True
+        except docker.errors.APIError as e:
+            return e
+
+    def remove_containers(self, container_names: list[str]) -> bool | docker.errors.APIError:
+        '''
+        container_names: list[str] = ['container_name1', 'container_name2'],
+        '''
+        return [self.remove_container(container_name) for container_name in container_names]

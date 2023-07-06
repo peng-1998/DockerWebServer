@@ -66,8 +66,8 @@ if __name__ == '__main__':
             messenger.send({'type': 'task', 'data': {'status': 'failed', 'task_id': data['task_id'], 'user_id': data['user_id'], 'error': 'container not found', 'container_name': data['container_name']}})
             return
         if data['opt'] == 'finish':
-            container.stop()
-            messenger.send({'type': 'container', 'data': {'opt': 'stop', 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
+            container.restart()
+            messenger.send({'type': 'container', 'data': {'opt': 'restart', 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
             time.sleep(0.5)
             messenger.send({'type': 'task', 'data': {'status': 'success', 'task_id': data['task_id'], 'user_id': data['user_id'], 'container_name': data['container_name']}})
             return

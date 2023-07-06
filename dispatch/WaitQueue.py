@@ -42,7 +42,7 @@ class WaitQueue(threading.Thread):
             self.queues[machine_id] = {'wait_queue': OrderedDict(), 'running_set': {}, 'on_line': True, 'source': source}
         self.logger(f'create wait queue for machine {machine_id}')
 
-    def new_task(self, task: dict) -> dict | None:
+    def new_task(self, task: dict) -> None:
         machine_id: int | str = task['machine_id']
         with self.queue_rw_lock.gen_wlock():
             self.queues[machine_id]['wait_queue'][task['task_id']] = task
@@ -54,7 +54,7 @@ class WaitQueue(threading.Thread):
             self.user_indices[user][machine_id] = []
         with self.indices_rw_lock.gen_wlock():
             self.user_indices[user][machine_id].append(task['task_id'])
-        return self.try_allot(machine_id)
+        self.try_allot(machine_id)
 
     def try_allot(self, machine_id: int | str) -> dict | None:
         with self.queue_rw_lock.gen_rlock():

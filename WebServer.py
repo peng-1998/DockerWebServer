@@ -161,6 +161,7 @@ def finish_handler(machine_id: int | str, task: dict) -> None:
 with app.app_context():
     with open('WebServerConfig.yaml') as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
+    g.configs = configs
     if configs['Components']['Logger']['enable']:
         from database import Logger
         g.logger = Logger(**configs['Components']['Logger']['args'])

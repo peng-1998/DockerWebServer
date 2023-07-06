@@ -4,6 +4,7 @@ Database:
 
 Docker:
   repository: 'abc.com/repository'
+  rmimageafterbuild: false
 
 Components:
   Mail:
