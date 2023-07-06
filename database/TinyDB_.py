@@ -56,6 +56,15 @@ class TinyDB_(BaseDB):
                     item[key] = False
         return item
 
+    def __all_item(self, table: str, return_key: list = None, limit: int = None) -> list:
+        with self.rw_lock.gen_rlock():
+            items = self.db.table(table).all()
+        if return_key:
+            items = [{key: item[key] for key in return_key} for item in items]
+        if limit:
+            items = islice(items, limit)
+        return items
+
     def insert_user(self, user: dict) -> bool:
         return self.__insert_item('User', user, BaseDB.user_key)
 
@@ -105,4 +114,16 @@ class TinyDB_(BaseDB):
 
     def delete_machine(self, search_key: dict) -> bool:
         return self.__delete_item('Machine', search_key)
+    
+    def all_user(self, return_key: list = None, limit: int = None) -> list:
+        return self.__all_item('User', return_key, limit)
+    
+    def all_image(self, return_key: list = None, limit: int = None) -> list:
+        return self.__all_item('Image', return_key, limit)
+    
+    def all_container(self, return_key: list = None, limit: int = None) -> list:
+        return self.__all_item('Container', return_key, limit)
+    
+    def all_machine(self, return_key: list = None, limit: int = None) -> list:
+        return self.__all_item('Machine', return_key, limit)
 
