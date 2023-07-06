@@ -136,3 +136,19 @@ class BaseDB(ABC):
     @abstractmethod
     def delete_machine(self, search_key: dict) -> bool:
         pass
+
+    @abstractmethod
+    def all_user(self, return_key: list = None, limit: int = None) -> list:
+        pass
+
+    @abstractmethod
+    def all_image(self, return_key: list = None, limit: int = None) -> list:
+        pass
+
+    @abstractmethod
+    def all_container(self, return_key: list = None, limit: int = None) -> list:
+        pass
+
+    @abstractmethod
+    def all_machine(self, return_key: list = None, limit: int = None) -> list:
+        pass

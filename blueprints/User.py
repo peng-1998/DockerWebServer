@@ -15,7 +15,7 @@ def info(): # 写ui的时候再定义
 
 
 @user.route('/set_profile', methods=['POST'])
-def set_profile(field):
+def set_profile():
     attrs = request.json
     db: BaseDB = g.db
     db.update_user({'id': attrs['user_id']}, {attrs['field']: attrs['value']})

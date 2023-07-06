@@ -52,6 +52,8 @@ class TinyDB_(BaseDB):
                     item[key] = []
                 elif value == int:
                     item[key] = 0
+                elif value == bool:
+                    item[key] = False
         return item
 
     def insert_user(self, user: dict) -> bool:
