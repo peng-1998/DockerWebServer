@@ -2,6 +2,7 @@ import bcrypt
 from flask import Blueprint, g, jsonify, make_response, request
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token
+
 from database import BaseDB
 
 auth = Blueprint('auth', __name__)
