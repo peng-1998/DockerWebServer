@@ -1,7 +1,9 @@
-from queue import Queue
-from flask import Blueprint, request, g, make_response, jsonify
 import random
 import string
+from queue import Queue
+
+from flask import Blueprint, g, jsonify, make_response, request
+
 from database import BaseDB
 
 containers = Blueprint('containers', __name__)
@@ -89,5 +91,28 @@ def container_operate():
         return make_response(jsonify(), 200)
     else:
         return make_response(jsonify(), 400)
+
+@containers.route('/commitimage', methods=['POST'])
+def commit_image():
+    attrs = request.json
+    container_name = attrs['container_name']
+    user_id = attrs['user_id']
+    machine_id = attrs['machine_id']
+    image_name = attrs['image_name']
+    father_image_id = attrs['father_image_id']
+
+    msg = {
+        'type': 'container',
+        'data': {
+            'opt': 'commit',
+            'container_name': container_name,
+            'user_id': user_id,
+            'image_name': image_name,
+            'father_image_id': father_image_id,
+        }
+    }
+    g.messenger.send(msg, machine_id)
+    ...
+
 
 

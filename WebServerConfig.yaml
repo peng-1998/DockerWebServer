@@ -3,7 +3,7 @@ Database:
   db_path: ./data/database.db
 
 Docker:
-  repository: 'abc.com/repository'
+  repository: '127.0.0.1:5000/'
   rmimageafterbuild: false
 
 Components:

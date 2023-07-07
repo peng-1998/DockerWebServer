@@ -160,7 +160,7 @@ def finish_handler(machine_id: int | str, task: dict) -> None:
         if user['email'] != '':
             g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
 
-
+# 初始化
 with app.app_context():
     with open('WebServerConfig.yaml') as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
