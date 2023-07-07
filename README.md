@@ -10,11 +10,7 @@ This project also relies on `docker` and `nvidia-smi` for data, so please make s
 
 We use react to build our web UI.
 
-**Check out our WebUI Repo** https://github.com/austiecodes/dws-ui
-
-
-### Software
-
+**Check out our WebUI Repo** [dws-ui](https://github.com/austiecodes/dws-ui)
 
 
 ## Permissions
@@ -23,7 +19,7 @@ If you are unable to run the program as root.
   + The project uses a linux user and password to log in, you need to read the /etc/shadow file to verify the password, make sure the running user has read access when running
   + The program needs access to the docker access, please make sure the run user is in the docker user group
 
-## Mirroring
+## Images
 
 We have designed a special configuration for the container to ensure that the container has the same privileges as the user on the host, so there are requirements for the mirroring environment.
 The main requirement is that the sudo package is installed in the container.
