@@ -88,7 +88,22 @@ if __name__ == '__main__':
         data_handler_funcs[data['type']](data['data'])
 
     def connect_handler():
-        init_data = {'type': 'init', 'data': {'machine_id': configs['MachineID'], 'gpus': nvidia_gpu.gpu_info, 'cpu': get_cpu_info(), 'memory': get_memory_info(), 'disk': get_disk_info(), 'url': configs['URL']}}
+        # send init data
+        containers: list[Container] = docker_controller.containers
+        container_data = [{'name': container.name, 'status': container.status == 'running'} for container in containers]
+
+        init_data = {
+            'type': 'init',
+            'data': {
+                'machine_id': configs['MachineID'],
+                'gpus': nvidia_gpu.gpu_info,
+                'cpu': get_cpu_info(),
+                'memory': get_memory_info(),
+                'disk': get_disk_info(),
+                'url': configs['URL'],
+                'containers': container_data,
+            }
+        }
         messenger.send(init_data)
 
     configs = yaml.load(open('GPUServerConfig.yaml', 'r', encoding='utf-8'), Loader=yaml.FullLoader)

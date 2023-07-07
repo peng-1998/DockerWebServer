@@ -129,6 +129,9 @@ def connect_handler(info: dict, ip: str) -> dict:
     else:
         db.update_machine(search_key={'id': machine_id}, update_key={'machine_info': info, 'ip': ip})
     g.wq.new_machine(machine_id, {i: True for i in range(len(gpus))})
+    containers = info['containers']
+    for container in containers:
+        db.update_container(search_key={'containername': container['name'], 'machineid': machine_id}, update_key={'running': container['running']})
     return {'machine_id': machine_id}
 
 

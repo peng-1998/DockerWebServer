@@ -38,25 +38,17 @@ class WebMessengerTCP(threading.Thread, BaseServer):
             threading.Thread(target=self.__client_handler, args=(client_socket, client_address)).start()
 
     def __client_handler(self, client_socket: socket.socket, client_address: tuple) -> None:
-        data = client_socket.recv(1024)
-        data = json.loads(data.decode())
-        assert data['type'] == 'init'
+        content_json = self.__read_msg(client_socket)
+        assert content_json['type'] == 'init'
         ip, _ = client_address
-        info = self.connect_handler(data['data'], ip)
+        info = self.connect_handler(content_json['data'], ip)
         thread_id = threading.get_ident()
         self.clients[info['machine_id']] = {'socket': client_socket, 'thread_id': thread_id, 'last_heartbeat_time': time.time()}
-        content = b''
         while True:
             try:
-                data = client_socket.recv(1024)
-                if not data:
+                content_json = self.__read_msg(client_socket)
+                if content_json is None:
                     break
-                content += data
-                try:
-                    content_json = json.loads(content.decode())
-                    content = b''
-                except json.decoder.JSONDecodeError:
-                    continue
                 if content_json['type'] != 'heartbeat':
                     self.data_handler(content_json, info['machine_id'])
                 self.clients[info['machine_id']]['last_heartbeat_time'] = time.time()
@@ -87,3 +79,16 @@ class WebMessengerTCP(threading.Thread, BaseServer):
                             th._stop()
                     del self.clients[key]
             time.sleep(1)
+
+    def __read_msg(self, client_socket: socket.socket) -> dict:
+        content = b''
+        while True:
+            data = client_socket.recv(1024)
+            if not data:
+                return None
+            content += data
+            try:
+                content_json = json.loads(content.decode())
+                return content_json
+            except json.decoder.JSONDecodeError:
+                pass

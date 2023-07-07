@@ -29,27 +29,18 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
             await server.serve_forever()
 
     async def __client_handler(self, reader: StreamReader, writer: StreamWriter):
-        loop = asyncio.get_running_loop()
-        data = await reader.read(1024)
-        data = json.loads(data.decode())
-        assert data['type'] == 'init'
+        content_json = await self.__read_msg(reader)
+        assert content_json['type'] == 'init'
         ip, _ = writer.get_extra_info('peername')
-        info = self.connect_handler(data['data'], ip)
+        info = self.connect_handler(content_json['data'], ip)
         task = asyncio.current_task()
         self.clients[info['machine_id']] = {'reader': reader, 'writer': writer, 'task': task, 'last_heartbeat_time': loop.time()}
         content = b''
         while True:
             try:
-                data = await reader.read(1024)
-                if not data:
+                content_json = await self.__read_msg(reader)
+                if content_json is None:
                     break
-                content += data
-                data = json.loads(data.decode())
-                try:
-                    content_json = json.loads(content.decode())
-                    content = b''
-                except json.decoder.JSONDecodeError:
-                    continue
                 if content_json['type'] != 'heartbeat':
                     self.data_handler(content_json, info['machine_id'])
                 self.clients[info['machine_id']]['last_heartbeat_time'] = loop.time()
@@ -79,3 +70,16 @@ class WebMessengerTCPAsync(threading.Thread, BaseServer):
                     value['task'].cancel()
                     del self.clients[key]
             await asyncio.sleep(1)
+
+    async def __read_msg(self, reader: StreamReader) -> dict | None:
+        content = b''
+        while True:
+            data = await reader.read(1024)
+            if not data:
+                return None
+            content += data
+            try:
+                content_json = json.loads(content.decode())
+                return content_json
+            except json.decoder.JSONDecodeError:
+                pass
