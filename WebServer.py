@@ -1,11 +1,13 @@
+import asyncio
 import json
 import os
+from queue import Queue
 
 import yaml
-from flask import Flask, g, jsonify, request, make_response
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager, verify_jwt_in_request
-from flask_jwt_extended.exceptions import NoAuthorizationError
+from quart import Quart, g, jsonify, request, websocket
+from quart_cors import cors
+from quart_jwt_extended import JWTManager, verify_jwt_in_request
+from quart_jwt_extended.exceptions import NoAuthorizationError
 
 import communication
 import database.SqliteDB
@@ -14,11 +16,10 @@ from blueprints import admin, auth, containers, machines, user
 from communication import BaseServer, DockerController
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
-from queue import Queue
 
 os.chdir(os.path.dirname(__file__))
 
-app = Flask(__name__)
+app = Quart(__name__)
 app.register_blueprint(auth, url_prefix="/api/auth")
 app.register_blueprint(admin, url_prefix="/api/admin")
 app.register_blueprint(containers, url_prefix="/api/containers")
@@ -27,7 +28,7 @@ app.register_blueprint(user, url_prefix="/api/user")
 
 app.config['JWT_SECRECT_KEY'] = 'mycreditentials'
 jwt = JWTManager(app)
-CORS(app)
+cors(app)
 
 
 def data_handler_gpus(info: dict, machine_id: int | str):
@@ -160,8 +161,9 @@ def finish_handler(machine_id: int | str, task: dict) -> None:
         if user['email'] != '':
             g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
 
-# 初始化
-with app.app_context():
+
+@app.before_serving
+def init():
     with open('WebServerConfig.yaml') as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
     g.configs = configs
@@ -196,7 +198,7 @@ with app.app_context():
 
 
 @app.before_request
-def is_jwt_valid():
+async def is_jwt_valid():
     """ 
     check if the jwt is valid, if not, return 401
     except the login and register request
@@ -209,18 +211,28 @@ def is_jwt_valid():
         return jsonify({'message': 'Invalid token'}, 401)
 
 
-@app.route("/api/massage/<user_id>", methods=['GET'])
-def get_massage(user_id: int):
-    msg_queue: Queue = g.massage_cache.get(user_id)
-    if msg_queue is None or len(msg_queue) == 0:
-        return make_response(jsonify({'message': 'no message'}), 404)
-    msg = msg_queue.get()
-    return make_response(jsonify(msg), 200)
+async def sending():
+    while True:
+        await websocket.send(...)
 
 
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+async def receiving():
+    while True:
+        data = await websocket.receive()
+        ...
+
+
+@app.websocket('/ws')
+async def ws():
+    # if (
+    #     websocket.authorization.username != USERNAME or
+    #     websocket.authorization.password != PASSWORD
+    # ):
+    #     return 'Invalid password', 403  # or abort(403)
+    g.clients[''] = websocket
+    producer = asyncio.create_task(sending())
+    consumer = asyncio.create_task(receiving())
+    await asyncio.gather(producer, consumer)
 
 
 if __name__ == "__main__":
