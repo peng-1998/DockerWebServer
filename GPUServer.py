@@ -37,28 +37,42 @@ if __name__ == '__main__':
 
     def data_handler_container(data: dict):
         if data['opt'] == 'create':
+            image_name = data['create_args']['image']
+            image = docker_controller.get_image(image_name)
+            if not image:
+                docker_controller.pull_image(image_name)
             res = docker_controller.create_container(**data['create_args'])
             if isinstance(res, Container):
                 messenger.send({'type': 'container', 'data': {'opt': 'create', 'user_id': data['user_id'], 'status': 'success', 'original_data': data['create_args']}})
             else:
                 messenger.send({'type': 'container', 'data': {'opt': 'create', 'user_id': data['user_id'], 'status': 'failed', 'error': str(res), 'original_data': data['create_args']}})
-        else:
-            container = docker_controller.get_container(data['container_name'])
-            if not container:
-                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': 'container not found', 'container_name': data['container_name']}})
-                return
+            return
+        container = docker_controller.get_container(data['container_name'])
+        if not container:
+            messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': 'container not found', 'container_name': data['container_name']}})
+            return
+        
+        if data['opt'] == 'commit':
             try:
-                if (data['opt'] == 'start'):
-                    container.start()
-                elif (data['opt'] == 'stop'):
-                    container.stop()
-                elif (data['opt'] == 'remove'):
-                    container.remove(force=True)
-                elif (data['opt'] == 'restart'):
-                    container.restart()
-                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
+                res:Image = container.commit(tag=data['account']+'/'+data['image_name']+':'+'latest')
+                docker_controller.push_image(res.tags)
+                messenger.send({'type': 'container', 'data': {'opt': 'commit', 'user_id': data['user_id'], 'status': 'success', 'original_data': data['create_args']}})
             except DKAPIError as e:
-                messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': str(e), 'container_name': data['container_name']}})
+                messenger.send({'type': 'container', 'data': {'opt': 'commit', 'user_id': data['user_id'], 'status': 'failed', 'error': str(e), 'original_data': data['create_args']}})
+            return
+        
+        try:
+            if (data['opt'] == 'start'):
+                container.start()
+            elif (data['opt'] == 'stop'):
+                container.stop()
+            elif (data['opt'] == 'remove'):
+                container.remove(force=True)
+            elif (data['opt'] == 'restart'):
+                container.restart()
+            messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'success', 'container_name': data['container_name']}})
+        except DKAPIError as e:
+            messenger.send({'type': 'container', 'data': {'opt': data['opt'], 'user_id': data['user_id'], 'status': 'failed', 'error': str(e), 'container_name': data['container_name']}})
 
     def data_handler_task(data: dict):
         container = docker_controller.get_container(data['container_name'])

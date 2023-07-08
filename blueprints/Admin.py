@@ -5,9 +5,9 @@ from database import BaseDB
 
 admin = Blueprint('admin', __name__)
 
-# @admin.route('/', methods=['GET'])
-# def index():
-#     ...
+@admin.route('/', methods=['GET'])
+def index():
+    ...
 
 
 @admin.route('/build_image', methods=['POST'])
@@ -53,5 +53,29 @@ def delete_webserver_container():
         else:
             response[c] = False
     return make_response(jsonify(response), 200)
+
+
+@admin.route('/alluser', methods=['GET'])
+def alluser():
+    db: BaseDB = g.db
+    users = db.all_user(return_key=['account', 'nickname', 'email', 'phone'])
+    return make_response(jsonify(users), 200)
+
+
+@admin.route('/allimage', methods=['GET'])
+def allimage():
+    db: BaseDB = g.db
+    images = db.all_image(return_key=['imagename', 'showname', 'description'])
+    return make_response(jsonify(images), 200)
+
+
+@admin.route('/allcontainer/<machine_id>', methods=['GET'])
+def allcontainer(machine_id):
+    db: BaseDB = g.db
+    containers = db.get_container(search_key={'machine_id': machine_id}, return_key=['showname', 'userid', 'imageid', 'running','portlist','containername'])
+    for c in containers:
+        c['username'] = db.get_user(search_key={'id': c['userid']}, return_key=['account'])[0]['account']
+        c['imagename'] = db.get_image(search_key={'id': c['imageid']}, return_key=['imagename'])[0]['imagename']
+    return make_response(jsonify(containers), 200)
 
 

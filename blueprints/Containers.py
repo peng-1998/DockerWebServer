@@ -96,23 +96,32 @@ def container_operate():
 def commit_image():
     attrs = request.json
     container_name = attrs['container_name']
-    user_id = attrs['user_id']
+    account = attrs['account']
     machine_id = attrs['machine_id']
     image_name = attrs['image_name']
     father_image_id = attrs['father_image_id']
-
     msg = {
         'type': 'container',
         'data': {
             'opt': 'commit',
             'container_name': container_name,
-            'user_id': user_id,
+            'account': account,
             'image_name': image_name,
             'father_image_id': father_image_id,
         }
     }
     g.messenger.send(msg, machine_id)
-    ...
+    msg_queue: Queue = g.massage_cache.get(account) 
+    while True:
+        msg = msg_queue.get() # 这里会阻塞，直到收到消息
+        if msg['type'] == 'container' and msg['opt'] == 'commit':
+            break
+        else:
+            msg_queue.put(msg)
+    if msg['status'] == 'success':
+        return make_response(jsonify(), 200)
+    else:
+        return make_response(jsonify(), 400)
 
 
 
