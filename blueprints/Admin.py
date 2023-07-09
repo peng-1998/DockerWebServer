@@ -1,15 +1,12 @@
-from flask import Blueprint, g, jsonify, make_response, request
+from quart import Blueprint, g, jsonify, make_response, request
 
 from communication import BaseServer, DockerController
 from database import BaseDB
 
 admin = Blueprint('admin', __name__)
 
-@admin.route('/', methods=['GET'])
-def index():
-    ...
 
-
+# 转移到ws
 @admin.route('/build_image', methods=['POST'])
 def build_image(): # 创建公共镜像
     db: BaseDB = g.db
@@ -28,7 +25,7 @@ def build_image(): # 创建公共镜像
     db.insert_image({'imagename': attrs['image'], 'init_args': attrs['init_args'], 'description': attrs['description'], 'showname': attrs['showname']})
     return make_response({'success': True}, 200)
 
-
+# 转移到ws
 @admin.route('/delete_image', methods=['POST'])
 def delete_image():
     attrs = request.json
@@ -39,7 +36,7 @@ def delete_image():
     messenger.send_all({'type': 'image', 'data': {'image': image_name, 'opt': 'remove'}})  # 非阻塞，需要自己监听是否完成删除
     return make_response({'success': True}, 200)
 
-
+# 转移到ws
 @admin.route('/delete_webserver_container', methods=['POST'])
 def delete_webserver_container():
     docker: DockerController = g.docker

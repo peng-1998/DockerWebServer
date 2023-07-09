@@ -2,7 +2,7 @@ import random
 import string
 from queue import Queue
 
-from flask import Blueprint, g, jsonify, make_response, request
+from quart import Blueprint, g, jsonify, make_response, request
 
 from database import BaseDB
 
@@ -20,6 +20,7 @@ def mycontainer(user_id):
     return make_response(jsonify(containers), 200)
 
 
+# 转移到ws
 @containers.route('/create', methods=['POST'])
 def create_container():
     db: BaseDB = g.db
@@ -50,7 +51,6 @@ def create_container():
         },
     }
     g.messenger.send(msg, machine_id)
-    g.messenger.send(msg, machine_id)
     msg_queue: Queue = g.massage_cache.get(user_id)
     while True:
         msg = msg_queue.get()
@@ -64,6 +64,7 @@ def create_container():
         return make_response(jsonify(), 400)
 
 
+# 转移到ws
 @containers.route('/operate', methods=['POST'])
 def container_operate():
     attrs = request.json
@@ -92,6 +93,8 @@ def container_operate():
     else:
         return make_response(jsonify(), 400)
 
+
+# 转移到ws
 @containers.route('/commitimage', methods=['POST'])
 def commit_image():
     attrs = request.json
@@ -111,9 +114,9 @@ def commit_image():
         }
     }
     g.messenger.send(msg, machine_id)
-    msg_queue: Queue = g.massage_cache.get(account) 
+    msg_queue: Queue = g.massage_cache.get(account)
     while True:
-        msg = msg_queue.get() # 这里会阻塞，直到收到消息
+        msg = msg_queue.get()  # 这里会阻塞，直到收到消息
         if msg['type'] == 'container' and msg['opt'] == 'commit':
             break
         else:
@@ -122,6 +125,3 @@ def commit_image():
         return make_response(jsonify(), 200)
     else:
         return make_response(jsonify(), 400)
-
-
-

@@ -1,7 +1,7 @@
 import bcrypt
-from flask import Blueprint, g, jsonify, make_response, request
-from flask_cors import CORS
-from flask_jwt_extended import create_access_token
+from quart import Blueprint, g, jsonify, make_response, request
+from quart_cors import CORS
+from quart_jwt_extended import create_access_token
 
 from database import BaseDB
 
@@ -9,7 +9,7 @@ auth = Blueprint('auth', __name__)
 CORS(auth)
 
 @auth.route('/login', methods=(['POST']))
-def login():
+async def login():
     database: BaseDB = g.db
     data = request.get_json()
     username = data.get('username')
@@ -27,7 +27,7 @@ def login():
 
 
 @auth.route('/register', methods=['POST'])
-def register():
+async def register():
     database: BaseDB = g.db
     data = request.get_json()
     username = data.get('username')
