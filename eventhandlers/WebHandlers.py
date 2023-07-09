@@ -1,4 +1,3 @@
-
 import json
 import random
 import string
@@ -7,6 +6,7 @@ from communication.BaseMessenger import BaseServer
 from database import BaseDB
 
 from utils.AsyncStructure import AsyncDict, AsyncQueue
+
 
 async def data_handler_gpus(info: dict, machine_id: int | str):
     """ deal with the gpu info sent by the machine
@@ -69,11 +69,9 @@ async def data_handler_task(data: dict, machine_id: int | str):
 
 # all functions get two parameters, the first is the data (json), the second is the machine_id
 data_handler_funcs = {'gpus': data_handler_gpus, 'image': data_handler_image, 'container': data_handler_container, 'task': data_handler_task}
+
+
 # data: {'type': str, 'data': dict}
-
-
-
-
 async def connect_handler(info: dict, ip: str) -> dict:
     """ deal with the first data sent by the machine
 
@@ -105,8 +103,10 @@ async def connect_handler(info: dict, ip: str) -> dict:
         db.update_container(search_key={'containername': container['name'], 'machineid': machine_id}, update_key={'running': container['running']})
     return {'machine_id': machine_id}
 
+
 async def disconnect_handler(machine_id: int | str):
     g.wq.remove_machine(machine_id)
+
 
 async def data_handler(data: dict, machine_id: int | str):
     """ deal with the data sent by the machine
@@ -144,7 +144,7 @@ def finish_handler(machine_id: int | str, task: dict) -> None:
             g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
 
 
-async def ws_handler_container(data: dict,uuid: str):
+async def ws_handler_container(data: dict, uuid: str):
     db: BaseDB = g.db
     if data['opt'] == 'create':
         user_id = data['user_id']
@@ -171,7 +171,7 @@ async def ws_handler_container(data: dict,uuid: str):
             },
         }
         g.messenger.send(msg, machine_id)
-    elif data['opt'] in ['start','stop','restart','remove']:
+    elif data['opt'] in ['start', 'stop', 'restart', 'remove']:
         msg = {
             'type': 'container',
             'data': {
@@ -182,7 +182,8 @@ async def ws_handler_container(data: dict,uuid: str):
             }
         }
         g.messenger.send(msg, machine_id)
-    
-ws_handlers = {
+
+
+ws_clinet_data_handlers = {
     'container': ws_handler_container,
 }

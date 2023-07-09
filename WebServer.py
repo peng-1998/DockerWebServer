@@ -16,7 +16,8 @@ from communication import BaseServer, DockerController
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
 from utils.AsyncStructure import AsyncDict
-from eventhandlers.WebHandlers import run_handler, data_handler, connect_handler, disconnect_handler, finish_handler, ws_handlers
+from communication.ServerManager import ServerManager
+from eventhandlers.WebHandlers import run_handler, data_handler, connect_handler, disconnect_handler, finish_handler, ws_clinet_data_handlers
 
 os.chdir(os.path.dirname(__file__))
 
@@ -54,14 +55,11 @@ async def init():
     Scheduler_Class = getattr(SS, configs['Dispatch']['Class'])
     g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler, finish_handler, g.logger)
     g.wq.start()
-    Messenger_Class = getattr(communication, configs['Components']['WebMessenger']['Class'])
-    g.messenger: BaseServer = Messenger_Class(**configs['Components']['WebMessenger']['args'], data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler)
-    g.messenger.start()  # start the messenger thread
     g.max_task_id = 0
     g.gpus_cache = AsyncDict()
-    g.massage_cache = InfoCache()
     g.docker = DockerController()
     g.clients = AsyncDict()
+    g.servers = ServerManager(data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler)
     if configs['Components']['Mail']['enable']:
         import communication.MailBox as MB
         Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
@@ -82,17 +80,8 @@ async def is_jwt_valid():
         return jsonify({'message': 'Invalid token'}, 401)
 
 
-async def receiving(uuid: str, ws: Websocket):
-    try:
-        while True:
-            data = await ws.receive_json()
-            await ws_handlers[data['type']](data['data'], uuid)
-    finally:
-        del g.clients[uuid]
-
-
-@app.websocket('/ws')
-async def ws():
+@app.websocket('/ws/client')
+async def ws_client():
     # if (
     #     websocket.authorization.username != USERNAME or
     #     websocket.authorization.password != PASSWORD
@@ -100,9 +89,19 @@ async def ws():
     #     return 'Invalid password', 403  # or abort(403)
     # 生成一个随机的uuid作为key
     key = str(uuid.uuid4())
-    g.clients['key'] = websocket
-    consumer = asyncio.create_task(receiving(uuid, websocket))
-    await consumer
+    g.clients[key] = websocket
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await ws_clinet_data_handlers[data['type']](data['data'], key)
+    finally:
+        del g.clients[uuid]
+
+
+@app.websocket('/ws/server')
+async def ws_server():
+    machine_id = websocket.headers.get('machine_id', '')
+    g.servers[machine_id] = websocket
 
 
 if __name__ == "__main__":
