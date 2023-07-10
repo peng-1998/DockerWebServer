@@ -6,7 +6,7 @@ from readerwriterlock import rwlock
 class TinyDB_(BaseDB):
 
     def __init__(self, db_path: str):
-        super().__init__(db_path)
+        super().__init__()
         self.db = TinyDB(db_path, sort_keys=True, indent=4)
         self.user_table = self.db.table('User')
         self.image_table = self.db.table('Image')

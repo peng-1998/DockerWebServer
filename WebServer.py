@@ -37,47 +37,49 @@ cors(app)
 async def init():
     with open('WebServerConfig.yaml') as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
-    g.configs = configs
+    app.config['configs'] = configs
     if configs['Components']['Logger']['enable']:
         from database import Logger
-        g.logger = Logger(**configs['Components']['Logger']['args'])
+        app.config['info_logger'] = Logger(**configs['Components']['Logger']['args'])
     else:
-        g.logger = print
+        app.config['info_logger'] = print
     if configs['Components']['ErrorLogger']['enable']:
         from database import Logger
-        g.error_logger = Logger(**configs['Components']['ErrorLogger']['args'])
+        app.config['error_logger'] = Logger(**configs['Components']['ErrorLogger']['args'])
     else:
-        g.error_logger = print
+        app.config['error_logger'] = print
 
-    g.repository = configs['Docker']['repository']
+    app.config['repository'] = configs['Docker']['repository']
     DB_Class = getattr(database, configs['Database']['Class'])
-    g.db: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
+    app.config['DB']: BaseDB = DB_Class(db_path=configs['Database']['db_path'])
     Scheduler_Class = getattr(SS, configs['Dispatch']['Class'])
-    g.wq = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler, finish_handler, g.logger)
-    g.wq.start()
-    g.max_task_id = 0
-    g.gpus_cache = AsyncDict()
-    g.docker = DockerController()
-    g.clients = AsyncDict()
-    g.servers = ServerManager(data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler)
+    app.config['wq'] = WaitQueue(Scheduler_Class(**configs['Dispatch']['args']), run_handler, finish_handler, app.config['info_logger'])
+    app.config['wq'].start()
+    app.config['max_task_id'] = 0
+    app.config['gpus_cache'] = AsyncDict()
+    app.config['docker'] = DockerController()
+    app.config['clients'] = AsyncDict()
+    app.config['servers'] = ServerManager(data_handler=data_handler, connect_handler=connect_handler, disconnect_handler=disconnect_handler)
     if configs['Components']['Mail']['enable']:
         import communication.MailBox as MB
         Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
-        g.mail = Mail_Class(**configs['Components']['Mail']['args'], logger=g.logger)
+        app.config['mail'] = Mail_Class(**configs['Components']['Mail']['args'], logger=app.config['info_logger'])
 
 
-@app.before_request
-async def is_jwt_valid():
-    """ 
-    check if the jwt is valid, if not, return 401
-    except the login and register request
-    """
-    if request.endpoint in ['login', 'register']:
-        return
-    try:
-        verify_jwt_in_request()
-    except NoAuthorizationError:
-        return jsonify({'message': 'Invalid token'}, 401)
+# @app.before_request
+# async def is_jwt_valid():
+#     """
+#     check if the jwt is valid, if not, return 401
+#     except the login and register request
+#     """
+#     if request.endpoint in ['login', 'register']:
+#         return
+#     if request.endpoint in ['ws/client', 'ws/server']:
+#         return
+#     try:
+#         verify_jwt_in_request()
+#     except NoAuthorizationError:
+#         return jsonify({'message': 'Invalid token'}, 401)
 
 
 @app.websocket('/ws/client')
@@ -89,19 +91,20 @@ async def ws_client():
     #     return 'Invalid password', 403  # or abort(403)
     # 生成一个随机的uuid作为key
     key = str(uuid.uuid4())
-    g.clients[key] = websocket
+    app.config['clients'][key] = websocket
     try:
         while True:
             data = await websocket.receive_json()
             await ws_clinet_data_handlers[data['type']](data['data'], key)
     finally:
-        del g.clients[uuid]
+        del app.config['clients'][uuid]
 
 
 @app.websocket('/ws/server')
 async def ws_server():
     machine_id = websocket.headers.get('machine_id', '')
-    g.servers[machine_id] = websocket
+    await app.config['servers'].__setitem__(machine_id, websocket)
+    websocket.close()
 
 
 if __name__ == "__main__":

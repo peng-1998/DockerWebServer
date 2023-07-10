@@ -1,6 +1,6 @@
 Database:
-  Class: SQLiteDB
-  db_path: ./data/database.db
+  Class: TinyDB_
+  db_path: ./data/database.json
 
 Docker:
   repository: '127.0.0.1:5000/'

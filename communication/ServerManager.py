@@ -16,12 +16,16 @@ class ServerManager(BaseServer, AsyncDict):
         async with self._lock:
             loop = asyncio.get_running_loop()
             last_heartbeat_time = loop.time()
-            self._data[key] = {'ws': value, 'last_heartbeat_time': last_heartbeat_time}
-            asyncio.create_task(self.__receiver(key, value))
+            task = asyncio.create_task(self.__receiver(key, value))
+            async with self._lock:
+                self._data[key] = {'task': task, 'ws': value, 'last_heartbeat_time': last_heartbeat_time}
+            await task
 
     async def __receiver(self, machine_id: int | str, websocket: Websocket):
         loop = asyncio.get_running_loop()
         try:
+            first_data = await websocket.receive_json()
+            await self.connect_handler(first_data['data'])
             while True:
                 data = await websocket.receive_json()
                 if data['type'] == 'heartbeat':
@@ -30,10 +34,10 @@ class ServerManager(BaseServer, AsyncDict):
                 else:
                     await self.data_handler(data, machine_id)
         except asyncio.CancelledError:
+            print('CancelledError')
             self.disconnect_handler(machine_id)
             async with self._lock:
                 del self._data[machine_id]
-
 
     async def send(self, data: dict, machine_id: int | str) -> None:
         await self._data[machine_id]['ws'].send_json(data)
@@ -45,8 +49,9 @@ class ServerManager(BaseServer, AsyncDict):
     async def __check_heartbeat(self):
         loop = asyncio.get_running_loop()
         while True:
-            for key, value in list(self.clients.items()):
-                if loop.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
-                    self.disconnect_handler(key)
-                    value['ws'].close()
+            async with self._lock:
+                for key, value in list(self._data.items()):
+                    if loop.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
+                        self.disconnect_handler(key)
+                        await value['task'].cancel()
             await asyncio.sleep(1)

@@ -36,8 +36,10 @@ class WaitQueue(threading.Thread):
         self.user_indices = {}
         self.queue_rw_lock = rwlock.RWLockWrite()
         self.indices_rw_lock = rwlock.RWLockWrite()
+        self.daemon = True
 
     def new_machine(self, machine_id: int | str, source: dict) -> None:
+        print(f'create wait queue for machine {machine_id} with source {source}')
         with self.queue_rw_lock.gen_wlock():
             self.queues[machine_id] = {'wait_queue': OrderedDict(), 'running_set': {}, 'on_line': True, 'source': source}
         self.logger(f'create wait queue for machine {machine_id}')
@@ -144,7 +146,7 @@ class WaitQueue(threading.Thread):
     def run(self) -> None:
         while True:
             self.queue_rw_lock.gen_rlock()
-            for machine_id, machine in self.queues:
+            for machine_id, machine in self.queues.items():
                 if machine['on_line']:
                     for task_id, task in machine['running_set']:
                         if task['start_time'] + timedelta(hours=task['duration']) < datetime.now():

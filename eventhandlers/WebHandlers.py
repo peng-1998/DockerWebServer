@@ -1,7 +1,7 @@
 import json
 import random
 import string
-from quart import g
+from quart import current_app
 from communication.BaseMessenger import BaseServer
 from database import BaseDB
 
@@ -15,15 +15,15 @@ async def data_handler_gpus(info: dict, machine_id: int | str):
         info (dict): the gpu info sent by the machine. e.g. {'0': {'type': 'Nvidia RTX 3060Ti', 'memory_total': 10240, 'memory_used': 2048, 'utilization': 0.96 }, ...}
         machine_id (int | str): the id of the machine
     """
-    await g.gpus_cache.__setitem__(machine_id, info)
+    await current_app.config['gpus_cache'].__setitem__(machine_id, info)
 
 
 async def data_handler_image(data: dict, machine_id: int | str):
     if data['status'] == 'failed':
-        g.error_logger(f'{machine_id} {data["opt"]} image:{data["image"]} failed, error info: {data["error"]}')
-        g.logger(f'{machine_id} {data["opt"]} image:{data["image"]} failed')
+        current_app.config['error_logger'](f'{machine_id} {data["opt"]} image:{data["image"]} failed, error info: {data["error"]}')
+        current_app.config['info_logger'](f'{machine_id} {data["opt"]} image:{data["image"]} failed')
         return
-    g.logger(f'{machine_id} {data["opt"]} image:{data["image"]} success')
+    current_app.config['info_logger'](f'{machine_id} {data["opt"]} image:{data["image"]} success')
     if data['opt'] == 'pull':
 
         ...
@@ -34,15 +34,15 @@ async def data_handler_image(data: dict, machine_id: int | str):
 
 async def data_handler_container(data: dict, machine_id: int | str):
     user_id = data['user_id']
-    await g.clients[data['uuid']].send_json({'type': 'container', 'opt': data['opt'], "status": data["status"]})
-    db: BaseDB = g.db
+    await current_app.config['clients'][data['uuid']].send_json({'type': 'container', 'opt': data['opt'], "status": data["status"]})
+    db: BaseDB = current_app.config['DB']
 
     if data['opt'] == 'create':
         if data['status'] == 'failed':
-            g.error_logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed, error info: {data["error"]} create args: {json.dumps(data["original_data"])}')
-            g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed')
+            current_app.config['error_logger'](f'{machine_id} {data["opt"]} container:{data["container"]} failed, error info: {data["error"]} create args: {json.dumps(data["original_data"])}')
+            current_app.config['info_logger'](f'{machine_id} {data["opt"]} container:{data["container"]} failed')
             return
-        g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} success')
+        current_app.config['info_logger'](f'{machine_id} {data["opt"]} container:{data["container"]} success')
         original_data = data['original_data']
         showname = original_data["name"].split('_')[-1][1:]
         portlist = [[int(k.split('/')[0]), v] for k, v in original_data["ports"].items()]
@@ -50,8 +50,8 @@ async def data_handler_container(data: dict, machine_id: int | str):
         db.insert_container({"showname": showname, "containername": data["name"], "userid": user_id, "machineid": machine_id, "portlist": portlist, "image": image_id, "runing": False})
         return
     if data['status'] == 'failed':
-        g.error_logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed, error info: {data["error"]}')
-        g.logger(f'{machine_id} {data["opt"]} container:{data["container"]} failed')
+        current_app.config['error_logger'](f'{machine_id} {data["opt"]} container:{data["container"]} failed, error info: {data["error"]}')
+        current_app.config['info_logger'](f'{machine_id} {data["opt"]} container:{data["container"]} failed')
         return
     if data['opt'] == 'remove':
         db.delete_container(search_key={"containername": data["container"], "machineid": machine_id})
@@ -61,9 +61,9 @@ async def data_handler_container(data: dict, machine_id: int | str):
 
 async def data_handler_task(data: dict, machine_id: int | str):
     if data['status'] == 'failed' and data['opt'] == 'run':
-        g.error_logger(f'{machine_id} {data["opt"]} task failed, error info: {data["error"]}')
-        g.logger(f'{machine_id} {data["opt"]} task failed')
-        g.wq.finish_task(machine_id, data['task_id'])
+        current_app.config['error_logger'](f'{machine_id} {data["opt"]} task failed, error info: {data["error"]}')
+        current_app.config['info_logger'](f'{machine_id} {data["opt"]} task failed')
+        current_app.config['wq'].finish_task(machine_id, data['task_id'])
         return
 
 
@@ -72,7 +72,7 @@ data_handler_funcs = {'gpus': data_handler_gpus, 'image': data_handler_image, 'c
 
 
 # data: {'type': str, 'data': dict}
-async def connect_handler(info: dict, ip: str) -> dict:
+async def connect_handler(info: dict) -> dict:
     """ deal with the first data sent by the machine
 
     Args:
@@ -88,7 +88,11 @@ async def connect_handler(info: dict, ip: str) -> dict:
     Returns:
         dict: the info return to Messenger
     """
-    db: BaseDB = g.db
+    print(info)
+    ip = 1
+    print(f'connect from {ip} by machine_id: {info["machine_id"]}')
+    current_app.config['info_logger'](f'connect from {ip} by machine_id: {info["machine_id"]}')
+    db: BaseDB = current_app.config['DB']
     machine_id = info['machine_id']
     del info['machine_id']
     gpus = info['gpus']
@@ -97,7 +101,7 @@ async def connect_handler(info: dict, ip: str) -> dict:
         db.insert_machine(machine={'id': machine_id, 'ip': ip, 'machine_info': info})
     else:
         db.update_machine(search_key={'id': machine_id}, update_key={'machine_info': info, 'ip': ip})
-    g.wq.new_machine(machine_id, {i: True for i in range(len(gpus))})
+    current_app.config['wq'].new_machine(machine_id, {i: True for i in range(len(gpus))})
     containers = info['containers']
     for container in containers:
         db.update_container(search_key={'containername': container['name'], 'machineid': machine_id}, update_key={'running': container['running']})
@@ -105,7 +109,7 @@ async def connect_handler(info: dict, ip: str) -> dict:
 
 
 async def disconnect_handler(machine_id: int | str):
-    g.wq.remove_machine(machine_id)
+    current_app.config['wq'].remove_machine(machine_id)
 
 
 async def data_handler(data: dict, machine_id: int | str):
@@ -123,29 +127,29 @@ def run_finish_mail(task: dict):
 
 
 def run_handler(machine_id: int | str, task: dict) -> None:
-    messenger: BaseServer = g.messenger
+    messenger: BaseServer = current_app.config['messenger']
     task['opt'] = 'run'
     messenger.send({'type': 'task', 'data': task}, machine_id)
-    if hasattr(g, 'mail'):
+    if hasattr(current_app.config, 'mail'):
         user_id = task['user_id']
-        user = g.db.get_user(search_key={'id': user_id}, return_key=[''])[0]
+        user = current_app.config['db'].get_user(search_key={'id': user_id}, return_key=[''])[0]
         if user['email'] != '':
-            g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
+            current_app.config['mail'].append(user['email'], user['nickname'], *run_finish_mail(task))
 
 
 def finish_handler(machine_id: int | str, task: dict) -> None:
-    messenger: BaseServer = g.messenger
+    messenger: BaseServer = current_app.config['messenger']
     task['opt'] = 'finish'
     messenger.send({'type': 'task', 'data': task}, machine_id)
-    if hasattr(g, 'mail'):
+    if hasattr(current_app.config, 'mail'):
         user_id = task['user_id']
-        user = g.db.get_user(search_key={'id': user_id}, return_key=[''])[0]
+        user = current_app.config['db'].get_user(search_key={'id': user_id}, return_key=[''])[0]
         if user['email'] != '':
-            g.mail.append(user['email'], user['nickname'], *run_finish_mail(task))
+            current_app.config['mail'].append(user['email'], user['nickname'], *run_finish_mail(task))
 
 
 async def ws_handler_container(data: dict, uuid: str):
-    db: BaseDB = g.db
+    db: BaseDB = current_app.config['DB']
     if data['opt'] == 'create':
         user_id = data['user_id']
         account = data['account']
@@ -170,7 +174,7 @@ async def ws_handler_container(data: dict, uuid: str):
                 }
             },
         }
-        g.messenger.send(msg, machine_id)
+        current_app.config['messenger'].send(msg, machine_id)
     elif data['opt'] in ['start', 'stop', 'restart', 'remove']:
         msg = {
             'type': 'container',
@@ -181,7 +185,7 @@ async def ws_handler_container(data: dict, uuid: str):
                 'user_id': user_id,
             }
         }
-        g.messenger.send(msg, machine_id)
+        current_app.config['messenger'].send(msg, machine_id)
 
 
 ws_clinet_data_handlers = {
