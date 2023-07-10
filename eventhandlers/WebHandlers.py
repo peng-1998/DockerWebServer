@@ -1,7 +1,9 @@
+import asyncio
 import json
 import random
 import string
 from quart import current_app
+from communication import DockerController
 from communication.BaseMessenger import BaseServer
 from database import BaseDB
 
@@ -192,11 +194,35 @@ async def ws_handler_container(data: dict, uuid: str):
 
 
 async def ws_handler_image(data: dict, uuid: str):
+    loop = asyncio.get_running_loop()
     db: BaseDB = current_app.config['DB']
+    docker: DockerController = current_app.config['docker']
     machine_id = data['machine_id']
+    # if data['opt'] == 'pull':
+    #     current_app.config['messenger'].send({'type': 'image', 'data': {'opt': 'pull', 'uuid': uuid, 'image': data['image']}}, machine_id)
 
-    if data['opt'] == 'pull':
-        current_app.config['messenger'].send({'type': 'image', 'data': {'opt': 'pull', 'uuid': uuid, 'image': data['image']}}, machine_id)
+    if data['opt'] == 'build':
+        # build image
+        image = current_app.config['repository'] + '/public/' + data['image']
+        docker: DockerController = current_app.config['docker']
+        await loop.run_in_executor(None, docker.create_image, data['dockerfile'], image)
+        current_app.config['clients'].send_json({'type': 'image', 'data': {'opt': 'build', 'uuid': uuid, 'image': data['image']}, 'status': 'built'})
+        # push image
+        await loop.run_in_executor(None, docker.push_image, image)
+        current_app.config['clients'].send_json({'type': 'image', 'data': {'opt': 'build', 'uuid': uuid, 'image': data['image']}, 'status': 'pushed'})
+        # remove image [optional]
+        ...
+        # update database
+        ...
+
+    if data['opt'] == 'remove':
+        current_app.config['messenger'].send_all({'type': 'image', 'data': {'opt': 'remove', 'uuid': uuid, 'image': data['image']}})
+        # 从镜像仓库当中删除
+        ## 获取镜像的digest
+        ## curl -X DELETE http://127.0.0.1:5000/v2/[user]/[image]/sha256:[digest]
+        ## docker exec registry bin/registry garbage-collect /etc/docker/registry/config.yml
+
+        # 从数据库当中删除
 
 
 ws_clinet_data_handlers = {

@@ -57,15 +57,14 @@ class DockerController:
         except docker.errors.APIError as e:
             return e
 
-    def create_image(self, dockerfile_path: str, context_path: str, image: str) -> str | None:
+    def create_image(self, dockerfile: str, image: str) -> str | None:
         '''
         dockerfile_path: str = 'path/to/dockerfile',
         context_path: str = 'path/to/context',
         image: str = 'image_name:tag',
         '''
-        dockerfile = open(dockerfile_path, 'rb').read()
         try:
-            self.client.images.build(fileobj=BytesIO(dockerfile), dockerfile=context_path, tag=image)
+            self.client.images.build(fileobj=BytesIO(dockerfile), tag=image)
         except Exception as e:
             return str(e)
 

@@ -1,6 +1,6 @@
 ./data/user
 ./__pycache__
-tst.ipynb
+test.ipynb
 test/
 __pycache__/
 *.pyc
