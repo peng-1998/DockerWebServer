@@ -2,7 +2,7 @@ import random
 import string
 from queue import Queue
 
-from flask import Blueprint, g, jsonify, make_response, request
+from flask import Blueprint, g, jsonify, make_response, request, current_app
 
 from database import BaseDB
 
@@ -15,14 +15,14 @@ containers = Blueprint('containers', __name__)
 
 @containers.route('/mycontainer/<user_id>', methods=['GET'])
 def mycontainer(user_id):
-    db: BaseDB = g.db
+    db: BaseDB = current_app.config['db']
     containers = db.get_container({'userid': user_id}, return_key=['showname', 'portlist', 'containername', 'running'])
     return make_response(jsonify(containers), 200)
 
 
 @containers.route('/create', methods=['POST'])
 def create_container():
-    db: BaseDB = g.db
+    db: BaseDB = current_app.config['db']
     attrs = request.json
     user_id = attrs['user_id']
     account = attrs['account']
@@ -49,9 +49,9 @@ def create_container():
             }
         },
     }
-    g.messenger.send(msg, machine_id)
-    g.messenger.send(msg, machine_id)
-    msg_queue: Queue = g.massage_cache.get(user_id)
+    current_app.config['messenger'].send(msg, machine_id)
+    current_app.config['messenger'].send(msg, machine_id)
+    msg_queue: Queue = current_app.config['massage_cache'].get(user_id)
     while True:
         msg = msg_queue.get()
         if msg['type'] == 'container' and msg['opt'] == 'create':
@@ -79,8 +79,8 @@ def container_operate():
             'user_id': user_id,
         }
     }
-    g.messenger.send(msg, machine_id)
-    msg_queue: Queue = g.massage_cache.get(user_id)
+    current_app.config['messenger'].send(msg, machine_id)
+    msg_queue: Queue = current_app.config['massage_cache'].get(user_id)
     while True:
         msg = msg_queue.get()
         if msg['type'] == 'container' and msg['opt'] == opt:
@@ -110,8 +110,8 @@ def commit_image():
             'father_image_id': father_image_id,
         }
     }
-    g.messenger.send(msg, machine_id)
-    msg_queue: Queue = g.massage_cache.get(account) 
+    current_app.config['messenger'].send(msg, machine_id)
+    msg_queue: Queue = current_app.config['massage_cache'].get(account) 
     while True:
         msg = msg_queue.get() # 这里会阻塞，直到收到消息
         if msg['type'] == 'container' and msg['opt'] == 'commit':

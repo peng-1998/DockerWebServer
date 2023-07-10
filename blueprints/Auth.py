@@ -1,5 +1,5 @@
 import bcrypt
-from flask import Blueprint, g, jsonify, make_response, request
+from flask import Blueprint, g, jsonify, make_response, request, current_app
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token
 
@@ -8,9 +8,10 @@ from database import BaseDB
 auth = Blueprint('auth', __name__)
 CORS(auth)
 
+
 @auth.route('/login', methods=(['POST']))
 def login():
-    database: BaseDB = g.db
+    database: BaseDB = current_app.config['db']
     data = request.get_json()
     username = data.get('username')
     user_info_list = database.get_user(search_key={'username': username}, return_key=['password', 'salt'])
@@ -28,7 +29,7 @@ def login():
 
 @auth.route('/register', methods=['POST'])
 def register():
-    database: BaseDB = g.db
+    database: BaseDB = current_app.config['db']
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')

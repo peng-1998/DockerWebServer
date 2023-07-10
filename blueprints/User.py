@@ -1,4 +1,4 @@
-from flask import Blueprint, request, g
+from flask import Blueprint, request, current_app
 from database import BaseDB
 
 user = Blueprint('user', __name__)
@@ -17,7 +17,7 @@ def info(): # 写ui的时候再定义
 @user.route('/set_profile', methods=['POST'])
 def set_profile():
     attrs = request.json
-    db: BaseDB = g.db
+    db: BaseDB = current_app.config['db']
     db.update_user({'id': attrs['user_id']}, {attrs['field']: attrs['value']})
     return {'status': 'success'}
 
@@ -27,6 +27,6 @@ def set_photo():
     photo = request.files['photo']
     user_id = request.json['user_id']
     photo.save('./static/photo/' + str(user_id) + '.' + photo.filename.split('0')[-1])
-    db: BaseDB = g.db
+    db: BaseDB = current_app.config['db']
     db.update_user({'id': user_id}, {'photo': str(user_id) + '.' + photo.filename.split('0')[-1]})
     return {'status': 'success'}
