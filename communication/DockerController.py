@@ -121,3 +121,25 @@ class DockerController:
         container_names: list[str] = ['container_name1', 'container_name2'],
         '''
         return [self.remove_container(container_name) for container_name in container_names]
+    
+    def start_container(self, container_name: str) -> bool | docker.errors.APIError:
+        '''
+        container_name: str = 'container_name',
+        '''
+        try:
+            container = self.get_container(container_name)
+            container.start()
+            return True
+        except docker.errors.APIError as e:
+            return e
+    
+    def restart_container(self, container_name: str) -> bool | docker.errors.APIError:
+        '''
+        container_name: str = 'container_name',
+        '''
+        try:
+            container = self.get_container(container_name)
+            container.restart()
+            return True
+        except docker.errors.APIError as e:
+            return e
