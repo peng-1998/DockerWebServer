@@ -20,14 +20,11 @@ class GPUMessengerWS(BaseClient):
         self.path = path
         self._lock = asyncio.Lock()
         
-    def start(self) -> None:
-        asyncio.run(self.__main())
-
-    async def __main(self) -> None:
+    async def start(self) -> None:
         reconnect_interval = self.init_reconnect_interval
         loop = asyncio.get_running_loop()
         self.last_heartbeat_time = loop.time()
-        asyncio.create_task(self.__send_hreatbeat())
+        loop.create_task(self.__send_hreatbeat())
         while True:
             try:
                 self.websocket = websocket.WebSocket()
@@ -38,7 +35,7 @@ class GPUMessengerWS(BaseClient):
                 while True:
                     data = await loop.run_in_executor(None, self.__load_data)
                     await self.data_handler(data)
-            except Exception as e:
+            except:
                 self.connected = False
                 reconnect_interval = min(self.max_reconnect_interval, reconnect_interval := 2 * reconnect_interval)
                 await asyncio.sleep(reconnect_interval)
@@ -55,9 +52,12 @@ class GPUMessengerWS(BaseClient):
 
     async def send(self, data: dict) -> None:
         data = json.dumps(data)
-        self.websocket.send(data)
-        async with self._lock:
-            self.last_heartbeat_time = asyncio.get_running_loop().time()
+        try:
+            self.websocket.send(data)
+            async with self._lock:
+                self.last_heartbeat_time = asyncio.get_running_loop().time()
+        except:
+            pass
 
     async def __send_hreatbeat(self):
         loop = asyncio.get_running_loop()
@@ -65,5 +65,5 @@ class GPUMessengerWS(BaseClient):
             if self.connected:
                 async with self._lock:
                     if loop.time() - self.last_heartbeat_time > self.max_hreatbeat_timeout:
-                        await self.send({"type": "heartbeat", "data": {}})
+                        self.websocket.send(json.dumps({'type': 'heartbeat', 'data': {}}))
             await asyncio.sleep(1)

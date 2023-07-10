@@ -25,10 +25,10 @@ async def data_handler_image(data: dict, machine_id: int | str):
         return
     current_app.config['info_logger'](f'{machine_id} {data["opt"]} image:{data["image"]} success')
     if data['opt'] == 'pull':
-
-        ...
+        if 'uuid' in data:
+            await current_app.config['clients'][data['uuid']].send_json({'type': 'image', 'opt': data['opt'], 'status': data['status']})
     elif data['opt'] == 'remove':
-
+        db: BaseDB = current_app.config['DB']
         ...
 
 
@@ -88,19 +88,21 @@ async def connect_handler(info: dict) -> dict:
     Returns:
         dict: the info return to Messenger
     """
-    print(info)
-    ip = 1
-    print(f'connect from {ip} by machine_id: {info["machine_id"]}')
-    current_app.config['info_logger'](f'connect from {ip} by machine_id: {info["machine_id"]}')
+    url = info['url']
+    current_app.config['info_logger'](f'connect from {url} by machine_id: {info["machine_id"]}')
     db: BaseDB = current_app.config['DB']
     machine_id = info['machine_id']
     del info['machine_id']
     gpus = info['gpus']
     machines_list = db.get_machine(search_key={'id': machine_id})
+    cpu = info['cpu']
+    memory = info['memory']
+    disk = info['disk']
+
     if len(machines_list) == 0:
-        db.insert_machine(machine={'id': machine_id, 'ip': ip, 'machine_info': info})
+        db.insert_machine(machine={'id': machine_id, 'ip': url, 'gpu': gpus, 'cpu': cpu, 'memory': memory, 'disk': disk, 'online': True})
     else:
-        db.update_machine(search_key={'id': machine_id}, update_key={'machine_info': info, 'ip': ip})
+        db.update_machine(search_key={'id': machine_id}, update_key={'ip': url, 'gpu': gpus, 'cpu': cpu, 'memory': memory, 'disk': disk, 'online': True})
     current_app.config['wq'].new_machine(machine_id, {i: True for i in range(len(gpus))})
     containers = info['containers']
     for container in containers:
@@ -109,7 +111,8 @@ async def connect_handler(info: dict) -> dict:
 
 
 async def disconnect_handler(machine_id: int | str):
-    current_app.config['wq'].remove_machine(machine_id)
+    current_app.config['wq'].set_machine_offline(machine_id, False)
+    current_app.config['info_logger'](f'machine_id: {machine_id} disconnect')
 
 
 async def data_handler(data: dict, machine_id: int | str):
@@ -188,6 +191,15 @@ async def ws_handler_container(data: dict, uuid: str):
         current_app.config['messenger'].send(msg, machine_id)
 
 
+async def ws_handler_image(data: dict, uuid: str):
+    db: BaseDB = current_app.config['DB']
+    machine_id = data['machine_id']
+
+    if data['opt'] == 'pull':
+        current_app.config['messenger'].send({'type': 'image', 'data': {'opt': 'pull', 'uuid': uuid, 'image': data['image']}}, machine_id)
+
+
 ws_clinet_data_handlers = {
     'container': ws_handler_container,
+    'image': ws_handler_image,
 }

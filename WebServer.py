@@ -104,7 +104,7 @@ async def ws_client():
 async def ws_server():
     machine_id = websocket.headers.get('machine_id', '')
     await app.config['servers'].__setitem__(machine_id, websocket)
-    websocket.close()
+    await websocket.close(0)
 
 
 if __name__ == "__main__":

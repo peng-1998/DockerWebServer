@@ -39,7 +39,7 @@ class WaitQueue(threading.Thread):
         self.daemon = True
 
     def new_machine(self, machine_id: int | str, source: dict) -> None:
-        print(f'create wait queue for machine {machine_id} with source {source}')
+        self.logger(f'create wait queue for machine {machine_id}')
         with self.queue_rw_lock.gen_wlock():
             self.queues[machine_id] = {'wait_queue': OrderedDict(), 'running_set': {}, 'on_line': True, 'source': source}
         self.logger(f'create wait queue for machine {machine_id}')

@@ -7,19 +7,18 @@ from .BaseMessenger import BaseServer
 
 class ServerManager(BaseServer, AsyncDict):
 
-    def __init__(self, data_handler: Callable[..., Any], connect_handler: Callable[..., Any], disconnect_handler: Callable[..., Any], max_hreatbeat_timeout: float = 10.0) -> None:
+    def __init__(self, data_handler: Callable[..., Any], connect_handler: Callable[..., Any], disconnect_handler: Callable[..., Any], max_hreatbeat_timeout: float = 3.) -> None:
         super().__init__(data_handler, connect_handler, disconnect_handler)
-        asyncio.create_task(self.__check_heartbeat())
+        asyncio.get_event_loop().create_task(self.__check_heartbeat())
         self.max_hreatbeat_timeout = max_hreatbeat_timeout
 
     async def __setitem__(self, key, value):
+        loop = asyncio.get_event_loop()
+        last_heartbeat_time = loop.time()
+        task = loop.create_task(self.__receiver(key, value))
         async with self._lock:
-            loop = asyncio.get_running_loop()
-            last_heartbeat_time = loop.time()
-            task = asyncio.create_task(self.__receiver(key, value))
-            async with self._lock:
-                self._data[key] = {'task': task, 'ws': value, 'last_heartbeat_time': last_heartbeat_time}
-            await task
+            self._data[key] = {'task': task, 'ws': value, 'last_heartbeat_time': last_heartbeat_time}
+        await task
 
     async def __receiver(self, machine_id: int | str, websocket: Websocket):
         loop = asyncio.get_running_loop()
@@ -34,10 +33,9 @@ class ServerManager(BaseServer, AsyncDict):
                 else:
                     await self.data_handler(data, machine_id)
         except asyncio.CancelledError:
-            print('CancelledError')
-            self.disconnect_handler(machine_id)
+            await self.disconnect_handler(machine_id)
             async with self._lock:
-                del self._data[machine_id]
+                self._data.__delitem__(machine_id)
 
     async def send(self, data: dict, machine_id: int | str) -> None:
         await self._data[machine_id]['ws'].send_json(data)
@@ -52,6 +50,6 @@ class ServerManager(BaseServer, AsyncDict):
             async with self._lock:
                 for key, value in list(self._data.items()):
                     if loop.time() - value['last_heartbeat_time'] > self.max_hreatbeat_timeout:
-                        self.disconnect_handler(key)
-                        await value['task'].cancel()
+                        await self.disconnect_handler(key)
+                        value['task'].cancel()
             await asyncio.sleep(1)
