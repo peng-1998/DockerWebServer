@@ -1,8 +1,8 @@
 #include "globalinit.h"
 
-GlobalInit GlobalInit::_instance;
+QSharedPointer<GlobalInit> GlobalInit::_instance = QSharedPointer<GlobalInit>::create();
 
-GlobalInit & GlobalInit::instance()
+QSharedPointer<GlobalInit> GlobalInit::instance()
 {
     return _instance;
 }

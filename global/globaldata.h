@@ -2,12 +2,12 @@
 
 #include <QObject>
 #include <QHash>
-
+#include <QSharedPointer>
 class GlobalData : QHash<QString,QVariant>
 {
     Q_OBJECT
 public:
-    static GlobalData * instance();
+    static QSharedPointer<GlobalData> instance();
     ~GlobalData();
 
 private:
@@ -15,7 +15,7 @@ private:
     GlobalData(const GlobalData&) = delete;
     GlobalData& operator=(const GlobalData&) = delete;
     GlobalData(GlobalData&&) = delete;
-    static GlobalData * _instance;
+    static QSharedPointer<GlobalData> _instance;
 
 
 };

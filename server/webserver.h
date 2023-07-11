@@ -1,27 +1,25 @@
 #pragma once
 
-#include <QObject>
 #include "../global/globalconfig.h"
 #include "../global/globaldata.h"
 #include "globalcommon.h"
 #include "globalevent.h"
 #include <QHttpServer>
-class WebServer : public QObject
+#include <QObject>
+#include <QWebSocketServer>
+#include <QSharedPointer>
+class WebServer final : public QObject
 {
     Q_OBJECT
 public:
     explicit WebServer(QObject *parent = nullptr);
-
-signals:
-
-public slots:
+    ~WebServer();
 
 private:
-    GlobalConfig * _config;
-    GlobalData * _data;
-    GlobalCommon * _common;
-    GlobalEvent * _event;
-    QHttpServer * _server;
+    QSharedPointer<GlobalConfig> _config;
+    QSharedPointer<GlobalData> _data;
+    QSharedPointer<GlobalCommon> _common;
+    QSharedPointer<GlobalEvent> _event;
+    QSharedPointer<QHttpServer> _httpServer;
 
 };
-

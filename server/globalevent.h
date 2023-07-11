@@ -2,14 +2,23 @@
 
 #include <QObject>
 #include <QHttpServerResponse>
+#include <QHttpServerRequest>
+#include "globalcommon.h"
+#include "../global/globalconfig.h"
+#include <QSharedPointer>
+
 class GlobalEvent : public QObject
 {
     Q_OBJECT
 public:
-    static GlobalEvent * instance();
+    static QSharedPointer<GlobalEvent> instance();
 
 public slots:
-    QHttpServerResponse && onHttpIndex(const QHttpServerRequest &request,QHttpServerResponse && response);
+    QHttpServerResponse && onHttpIndex(const QHttpServerRequest &request);
+    QHttpServerResponse && onHttpWSServer(const QHttpServerRequest &request);
+    QHttpServerResponse && onHttpWSClient(const QHttpServerRequest &request);
+    QHttpServerResponse && onApiAuthLogin(const QHttpServerRequest &request);
+    QHttpServerResponse && onApiAuthRegister(const QHttpServerRequest &request);
 signals:
 
 private:
@@ -17,5 +26,5 @@ private:
     GlobalEvent(const GlobalEvent&) = delete;
     GlobalEvent& operator=(const GlobalEvent&) = delete;
     GlobalEvent(GlobalEvent&&) = delete;
-    static GlobalEvent * _instance;
+    static QSharedPointer<GlobalEvent> _instance;
 };

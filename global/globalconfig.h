@@ -2,12 +2,12 @@
 
 #include <QObject>
 #include <QSettings>
-
+#include <QSharedPointer>
 class GlobalConfig :  public QSettings
 {
     Q_OBJECT
 public:
-    static GlobalConfig * instance();
+    static QSharedPointer<GlobalConfig> instance();
     ~GlobalConfig();
     static void init(const QString &fileName, Format format = Format::IniFormat);
 
@@ -19,7 +19,7 @@ private:
     GlobalConfig(const GlobalConfig&) = delete;
     GlobalConfig& operator=(const GlobalConfig&) = delete;
     GlobalConfig(GlobalConfig&&) = delete;
-    static GlobalConfig * _instance;
+    static QSharedPointer<GlobalConfig> _instance;
     static bool _isInit;
 
 };

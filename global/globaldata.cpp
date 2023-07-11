@@ -1,8 +1,9 @@
 #include "globaldata.h"
 
-GlobalData* GlobalData::_instance = new GlobalData;
+QSharedPointer<GlobalData> GlobalData::_instance = QSharedPointer<GlobalData>::create();
 
-GlobalData * GlobalData::instance()
+
+QSharedPointer<GlobalData> GlobalData::instance()
 {
     return _instance;
 }

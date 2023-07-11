@@ -18,10 +18,10 @@ void GlobalConfig::init(const QString &fileName, Format format)
     if(_isInit)
         return;
     _isInit = true;
-    _instance = new GlobalConfig(fileName, format);
+    _instance = QSharedPointer<GlobalConfig>::create(fileName,format);
 }
 
-GlobalConfig *GlobalConfig::instance()
+QSharedPointer<GlobalConfig> GlobalConfig::instance()
 {
     return _instance;
 }

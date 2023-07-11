@@ -1,12 +1,12 @@
 #pragma once
 
 #include <QObject>
-
+#include <QSharedPointer>
 class GlobalInit : public QObject
 {
     Q_OBJECT
 public:
-    static GlobalInit & instance();
+    static QSharedPointer<GlobalInit> instance();
 
 signals:
 
@@ -15,7 +15,7 @@ private:
     GlobalInit(const GlobalInit&) = delete;
     GlobalInit& operator=(const GlobalInit&) = delete;
     GlobalInit(GlobalInit&&) = delete;
-    static GlobalInit _instance;
+    static QSharedPointer<GlobalInit> _instance;
 
 };
 
