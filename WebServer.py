@@ -199,17 +199,20 @@ with app.app_context():
 
 
 @app.before_request
-def is_jwt_valid():
-    """ 
+async def is_jwt_valid():
+    """
+    enpoint_name should be like this: [BlueprintName].[function_name]
     check if the jwt is valid, if not, return 401
     except the login and register request
     """
-    if request.endpoint in ['login', 'register']:
+    if request.endpoint in ['auth.login', 'auth.register']:
+        return 
+    if request.endpoint in ['ws_client', 'ws_server']:
         return
     try:
-        verify_jwt_in_request()
+        await verify_jwt_in_request()
     except NoAuthorizationError:
-        return jsonify({'message': 'Invalid token'}, 401)
+        return await make_response(jsonify({'message': 'Invalid token'}), 401)
 
 
 @app.route("/api/massage/<user_id>", methods=['GET'])
