@@ -14,7 +14,7 @@ async def login():
     database: BaseDB = current_app.config['DB']
     data = await request.get_json()
     username = data.get('username')
-    user_info_list = database.get_user(search_key={'username': username}, return_key=['password', 'salt'])
+    user_info_list = database.get_user(search_key={'account': username}, return_key=['password', 'salt'])
     if user_info_list:
         saved_password, salt = user_info_list[0]
         password = bcrypt.hashpw(data.get('password').encode(), salt.encode())
@@ -33,11 +33,11 @@ async def register():
     data = await request.get_json()
     username = data.get('username')
     password = data.get('password')
-    is_user_name_exists = database.get_user(search_key={'username': username})
-    if is_user_name_exists:
-        return  await  make_response(jsonify(success=False, message="User Alreay Exists"), 409)
+    is_user_name_exists = database.get_user(search_key={'account': username})
+    if len(is_user_name_exists) != 0:
+        return  await  make_response(jsonify(message="User Alreay Exists"), 409)
     else:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode(), salt)
-        database.insert_user(user={'username': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
-        return  await  make_response(jsonify(success=True, message="Register Succeed"), 200)
+        database.insert_user(user={'account': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
+        return await  make_response(jsonify(), 200)

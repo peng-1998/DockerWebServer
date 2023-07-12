@@ -3,7 +3,7 @@ import os
 import uuid
 
 import yaml
-from quart import Quart, Websocket, g, jsonify, request, websocket
+from quart import Quart, Websocket, g, jsonify, make_response, request, websocket
 from quart_cors import cors
 from quart_jwt_extended import JWTManager, verify_jwt_in_request
 from quart_jwt_extended.exceptions import NoAuthorizationError
@@ -66,20 +66,20 @@ async def init():
         app.config['mail'] = Mail_Class(**configs['Components']['Mail']['args'], logger=app.config['info_logger'])
 
 
-@app.before_request
-async def is_jwt_valid():
-    """
-    check if the jwt is valid, if not, return 401
-    except the login and register request
-    """
-    if request.endpoint in ['login', 'register']:
-        return
-    if request.endpoint in ['ws/client', 'ws/server']:
-        return
-    try:
-        verify_jwt_in_request()
-    except NoAuthorizationError:
-        return jsonify({'message': 'Invalid token'}, 401)
+# @app.before_request
+# async def is_jwt_valid():
+#     """
+#     check if the jwt is valid, if not, return 401
+#     except the login and register request
+#     """
+#     if request.endpoint in ['login', 'register']:
+#         return 
+#     if request.endpoint in ['ws/client', 'ws/server']:
+#         return
+#     try:
+#         await verify_jwt_in_request()
+#     except NoAuthorizationError:
+#         return await make_response(jsonify({'message': 'Invalid token'}), 401)
 
 
 @app.websocket('/ws/client')
