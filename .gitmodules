@@ -1,0 +1,4 @@
+[submodule "server/bcrypt"]
+	path = server/bcrypt
+	url = https://github.com/andreybutov/qt-bcrypt
+
