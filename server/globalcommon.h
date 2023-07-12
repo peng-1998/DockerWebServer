@@ -11,7 +11,8 @@ class GlobalCommon : public QObject
 public:
     static QSharedPointer<GlobalCommon> instance();
     static QMap<QString, QString> parseHeaders(const QList<QPair<QByteArray, QByteArray>> &headers);
-
+    static QString hashPassword(const QString &password, const QString &salt);
+    static std::tuple<QString, QString> generateSaltAndHash(const QString &password);
 private:
     explicit GlobalCommon(QObject *parent = nullptr);
     GlobalCommon(const GlobalCommon&) = delete;

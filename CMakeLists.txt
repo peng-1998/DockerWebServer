@@ -26,7 +26,7 @@ add_executable(DWS
   server/globalcommon.h server/globalcommon.cpp
   server/webserver.h server/webserver.cpp
   server/database.h server/database.cpp
-
+  server/qjsonwebtoken.h server/qjsonwebtoken.cpp
 )
 target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent)
 

@@ -4,7 +4,7 @@
 #include <QtConcurrent>
 
 QSharedPointer<DataBase> DataBase::_instance{nullptr};
-QStringList DataBase::_user_column{"id", "account", "nickname", "password", "email", "phone", "photo"};
+QStringList DataBase::_user_column{"id", "account", "nickname", "password", "salt", "email", "phone", "photo"};
 QStringList DataBase::_image_column{"id", "showname", "imagename", "init_args", "description"};
 QStringList DataBase::_container_column{"id", "imageid", "userid", "showname", "containername", "portlist", "running"};
 QStringList DataBase::_machine_column{"id", "ip", "gpu", "cpu", "memory", "online"};
@@ -16,12 +16,13 @@ QSharedPointer<DataBase> DataBase::instance()
     return _instance;
 }
 
-void DataBase::insertUser(const QString &account, const QString &password, QString nickname, QString email, QString phone, QString photo)
+void DataBase::insertUser(const QString &account, const QString &password, const QString &salt, const QString nickname, const QString email, const QString phone, const QString photo)
 {
-    _query.prepare("INSERT INTO user (account, password, nickname, email, phone, photo) "
-                   "VALUES (:account, :password, :nickname, :email, :phone, :photo)");
+    _query.prepare("INSERT INTO user (account, password, salt, nickname, email, phone, photo) "
+                   "VALUES (:account, :password, :salt, :nickname, :email, :phone, :photo)");
     _query.bindValue(":account", account);
     _query.bindValue(":password", password);
+    _query.bindValue(":salt", salt);
     _query.bindValue(":nickname", nickname);
     _query.bindValue(":email", email);
     _query.bindValue(":phone", phone);
@@ -583,6 +584,7 @@ void DataBase::creatTable()
                 "account TEXT NOT NULL UNIQUE,"
                 "nickname TEXT,"
                 "password TEXT NOT NULL,"
+                "salt TEXT NOT NULL,"
                 "email TEXT,"
                 "phone TEXT,"
                 "photo TEXT,"

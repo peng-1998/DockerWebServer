@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QObject>
 #include <QHash>
+#include <QObject>
 #include <QSharedPointer>
-class GlobalData : QHash<QString,QVariant>
+class GlobalData : public QHash<QString, QVariant>
 {
     Q_OBJECT
 public:
@@ -12,11 +12,8 @@ public:
 
 private:
     GlobalData();
-    GlobalData(const GlobalData&) = delete;
-    GlobalData& operator=(const GlobalData&) = delete;
-    GlobalData(GlobalData&&) = delete;
+    GlobalData(const GlobalData &) = delete;
+    GlobalData &operator=(const GlobalData &) = delete;
+    GlobalData(GlobalData &&) = delete;
     static QSharedPointer<GlobalData> _instance;
-
-
 };
-

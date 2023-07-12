@@ -74,6 +74,9 @@
         "variant": "cpp",
         "qhttpserverrequest": "cpp",
         "qhttpserverresponse": "cpp",
-        "source_location": "cpp"
+        "source_location": "cpp",
+        "qsharedpointer": "cpp",
+        "qweakpointer": "cpp",
+        "qcryptographichash": "cpp"
     }
 }

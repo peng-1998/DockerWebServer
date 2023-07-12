@@ -1,25 +1,25 @@
 #pragma once
 
+#include <QHash>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QList>
+#include <QMap>
 #include <QObject>
+#include <QPair>
+#include <QSharedPointer>
 #include <QSqlDatabase>
 #include <QSqlQuery>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QSharedPointer>
-#include <QPair>
-#include <QVariant>
 #include <QStringList>
-#include <QMap>
-#include <QList>
-#include <QHash>
+#include <QVariant>
 class DataBase : public QObject
 {
     Q_OBJECT
 public:
     static QSharedPointer<DataBase> instance();
 
-    void insertUser(const QString &account, const QString &password , QString nickname = "", QString email = "", QString phone = "", QString photo = "");
+    void insertUser(const QString &account, const QString &password, const QString &salt, QString nickname = "", QString email = "", QString phone = "", QString photo = "");
     std::optional<QHash<QString, QVariant>> getUser(const int id, const std::optional<QStringList> &select = std::nullopt);
     std::optional<QHash<QString, QVariant>> getUser(const QString &account, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getUser(QList<QPair<QString, QVariant>> &where, const std::optional<QStringList> &select = std::nullopt);
@@ -30,7 +30,7 @@ public:
     void deleteUser(const QString &account);
     bool containsUser(const QString &account);
 
-    void insertImage(const QString &imagename, const QString &showname,const  QJsonObject &init_args, const QString &description);
+    void insertImage(const QString &imagename, const QString &showname, const QJsonObject &init_args, const QString &description);
     std::optional<QHash<QString, QVariant>> getImage(const int id, const std::optional<QStringList> &select = std::nullopt);
     std::optional<QHash<QString, QVariant>> getImage(const QString &imagename, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getImageAll(const std::optional<QStringList> &select = std::nullopt);
@@ -45,9 +45,9 @@ public:
     std::optional<QHash<QString, QVariant>> getContainer(const int id, const std::optional<QStringList> &select = std::nullopt);
     std::optional<QHash<QString, QVariant>> getContainer(const QString &containername, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getContainerAll(const std::optional<QStringList> &select = std::nullopt);
-    QList<QHash<QString, QVariant>> getContainerUser(const QString& account, const std::optional<QStringList> &select = std::nullopt);
+    QList<QHash<QString, QVariant>> getContainerUser(const QString &account, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getContainerUser(const int id, const std::optional<QStringList> &select = std::nullopt);
-    QList<QHash<QString, QVariant>> getContainerImage(const QString& image, const std::optional<QStringList> &select = std::nullopt);
+    QList<QHash<QString, QVariant>> getContainerImage(const QString &image, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getContainerImage(const int id, const std::optional<QStringList> &select = std::nullopt);
     void updateContainer(const int id, const QList<QPair<QString, QVariant>> &set);
     void updateContainer(const QString &containername, const QList<QPair<QString, QVariant>> &set);
@@ -77,4 +77,3 @@ private:
     static QStringList _container_column;
     static QStringList _machine_column;
 };
-

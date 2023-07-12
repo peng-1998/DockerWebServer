@@ -1,5 +1,6 @@
 #include "globalinit.h"
-
+#include <QWeakPointer>
+#include "webserver.h"
 QSharedPointer<GlobalInit> GlobalInit::_instance = QSharedPointer<GlobalInit>::create();
 
 QSharedPointer<GlobalInit> GlobalInit::instance()
@@ -10,5 +11,7 @@ QSharedPointer<GlobalInit> GlobalInit::instance()
 GlobalInit::GlobalInit(QObject *parent)
     : QObject{parent}
 {
+    qRegisterMetaType<QWeakPointer<WebServer>>("QWeakPointer<WebServer>");
+    qRegisterMetaType<QSharedPointer<WebServer>>("QSharedPointer<WebServer>");
 
 }
