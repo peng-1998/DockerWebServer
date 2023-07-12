@@ -1,4 +1,3 @@
-[submodule "server/bcrypt"]
-	path = server/bcrypt
-	url = https://github.com/andreybutov/qt-bcrypt
-
+[submodule "server/jsonwebtoken"]
+	path = server/jsonwebtoken
+	url = https://github.com/juangburgos/QJsonWebToken
