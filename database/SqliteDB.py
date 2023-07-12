@@ -1,12 +1,17 @@
 import sqlite3
 from .BaseDB import BaseDB
+from warnings import warn
 from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFO
 
 
 class SQLiteDB(BaseDB):
+    "Mapping class to table"
 
     def __init__(self, db_path: str) -> None:
         super().__init__()
+        warn(
+            "This class wil be deprecated in the future. Please use Flask-SQLAlchemy instead."
+        )
         self.db = sqlite3.connect(db_path)
         # 数据库初始化建表，如果不存在则创建
         self.cursor = self.db.cursor()
@@ -17,7 +22,6 @@ class SQLiteDB(BaseDB):
     # 线程安全的数据库操作，在API操作完成之后，关闭连接。
     @staticmethod
     def runthenclose(func):
-
         def wrapper(self, *args, **kwargs):
             func(self, *args, **kwargs)
             self.cursor.close()
@@ -27,7 +31,9 @@ class SQLiteDB(BaseDB):
 
     def _create_table(self, table_name: str):
         assert table_name in TABEL_INFO.keys()
-        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}")
+        self.cursor.execute(
+            f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}"
+        )
 
     @runthenclose
     def _insert(self, table_name: str, data_dict: dict):
@@ -81,16 +87,24 @@ class SQLiteDB(BaseDB):
         )
         self.db.commit()
 
-    def get_user(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_user(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         return self._get("user", search_key, return_key, limit)
 
-    def get_image(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_image(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         return self._get("image", search_key, return_key, limit)
 
-    def get_container(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_container(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         return self._get("container", search_key, return_key, limit)
 
-    def get_machine(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_machine(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         return self._get("machine", search_key, return_key, limit)
 
     def insert_user(self, user: dict) -> bool:
@@ -128,3 +142,23 @@ class SQLiteDB(BaseDB):
 
     def update_machine(self, search_key: dict, update_key: dict) -> bool:
         return self._update("machine", search_key, update_key)
+
+    @runthenclose
+    def all_user(self) -> list:
+        self.cursor.execute("SELECT * FROM user")
+        return self.cursor.fetchall()
+
+    @runthenclose
+    def all_image(self) -> list:
+        self.cursor.execute("SELECT * FROM image")
+        return self.cursor.fetchall()
+
+    @runthenclose
+    def all_container(self) -> list:
+        self.cursor.execute("SELECT * FROM container")
+        return self.cursor.fetchall()
+
+    @runthenclose
+    def all_machine(self) -> list:
+        self.cursor.execute("SELECT * FROM machine")
+        return self.cursor.fetchall()
