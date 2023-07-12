@@ -15,14 +15,15 @@ public:
     static QSharedPointer<GlobalEvent> instance();
 
 public:
-    QHttpServerResponse onHttpIndex(const QHttpServerRequest &request);
-    QHttpServerResponse onHttpWSServer(const QHttpServerRequest &request);
-    QHttpServerResponse onHttpWSClient(const QHttpServerRequest &request);
-    QHttpServerResponse onApiAuthLogin(const QHttpServerRequest &request);
-    QHttpServerResponse onApiAuthRegister(const QHttpServerRequest &request);
-    QHttpServerResponse onApiUserSetProfile(const QHttpServerRequest &request);
-    QHttpServerResponse onApiUserSetPhoto(const QHttpServerRequest &request);
-    QHttpServerResponse onApiUserGetUser(const QString &account, const QHttpServerRequest &request);
+    static QHttpServerResponse onHttpIndex(const QHttpServerRequest &request);
+    static QHttpServerResponse onHttpWSServer(const QHttpServerRequest &request);
+    static QHttpServerResponse onHttpWSClient(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAuthLogin(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAuthRegister(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiUserSetProfile(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiUserSetPhoto(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiUserGetUser(const QString &account, const QHttpServerRequest &request);
+    static QHttpServerResponse onApiMachinesInfo(const QHttpServerRequest &request);
 signals:
 
 private:

@@ -17,18 +17,17 @@ WebServer::WebServer(QObject *parent)
     _jwt->setSecret(_config->value("JWT/secret").toString());
     _jwt->setAlgorithmStr(_config->value("JWT/algorithm").toString());
     _jwt->appendClaim("iss", _config->value("JWT/iss").toString());
-    auto bind = [this](auto func)
-    { return std::bind(func, this->_event, std::placeholders::_1); };
     _httpServer = QSharedPointer<QHttpServer>::create();
     _httpServer->listen(QHostAddress::Any, _config->value("Http/port").toInt());
-    _httpServer->route("/", Method::Get, bind(&GlobalEvent::onHttpIndex));
-    _httpServer->route("/ws/server", Method::Get, jwtDecorator(GlobalEvent::onHttpWSServer));
-    _httpServer->route("/ws/client", Method::Get, jwtDecorator(GlobalEvent::onHttpWSClient));
-    _httpServer->route("/api/auth/login", Method::Post, bind(&GlobalEvent::onApiAuthLogin));
-    _httpServer->route("/api/auth/register", Method::Post, bind(&GlobalEvent::onApiAuthRegister));
-    _httpServer->route("/api/user/set_profile", Method::Post, jwtDecorator(GlobalEvent::onApiUserSetProfile));
-    _httpServer->route("/api/user/set_photo", Method::Get, jwtDecorator(GlobalEvent::onApiUserSetPhoto));
-    _httpServer->route("/api/user/get_user/<arg>", Method::Get, jwtDecorator(GlobalEvent::onApiUserGetUser));
+    _httpServer->route("/", Method::Get, &GlobalEvent::onHttpIndex);
+    _httpServer->route("/ws/server", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSServer));
+    _httpServer->route("/ws/client", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSClient));
+    _httpServer->route("/api/auth/login", Method::Post, &GlobalEvent::onApiAuthLogin);
+    _httpServer->route("/api/auth/register", Method::Post, &GlobalEvent::onApiAuthRegister);
+    _httpServer->route("/api/user/set_profile", Method::Post, jwtDecorator(&GlobalEvent::onApiUserSetProfile));
+    _httpServer->route("/api/user/set_photo", Method::Get, jwtDecorator(&GlobalEvent::onApiUserSetPhoto));
+    _httpServer->route("/api/user/get_user/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiUserGetUser));
+    _httpServer->route("/api/machines/info", Method::Get, jwtDecorator(&GlobalEvent::onApiMachinesInfo));
 }
 
 WebServer::~WebServer()
@@ -43,43 +42,55 @@ QString WebServer::getJwtToken(const QString &identity) const
     return _jwt->getToken();
 }
 template <typename T>
-std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDecoratorArg(T t)
+std::function<QHttpServerResponse (const QString &,const QHttpServerRequest &)> WebServer::jwtDecoratorArg(T t)
 {
-    return [this](const QString &account, const QHttpServerRequest &request) -> QHttpServerResponse
+    return [this,&t](const QString &arg, const QHttpServerRequest &request)
     {
         auto header = request.headers();
-        for (auto item : header)
+        for (auto &item : header)
         {
             if (item.first == "Authorization")
             {
-                auto token = item.second;
-                auto jwt = QJsonWebToken::fromTokenAndSecret(token, this->_secret);
-                if (jwt->isValid())
-                    return t(account, request);
+                auto jwt = QJsonWebToken::fromTokenAndSecret(item.second, this->_secret);
+                if (jwt.isValid())
+                    return std::invoke(t,arg,request);
                 else
-                    return QHttpServerResponse({"message", "Invalid token"}, QHttpServerResponder::StatusCode::Unauthorized);
+                {
+                    QJsonObject res;
+                    res["message"]="Invalid token";
+                    return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+                }
             }
         }
+        QJsonObject res;
+        res["message"]="Token Not Found";
+        return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
     };
 }
 
 template <typename T>
-inline std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDecorator(T t)
+std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDecorator(T t)
 {
-    return [this](const QHttpServerRequest &request) -> QHttpServerResponse
+    return [this,&t](const QHttpServerRequest &request)
     {
         auto header = request.headers();
-        for (auto item : header)
+        for (auto &item : header)
         {
             if (item.first == "Authorization")
             {
-                auto token = item.second;
-                auto jwt = QJsonWebToken::fromTokenAndSecret(token, this->_secret);
-                if (jwt->isValid())
-                    return t(request);
+                auto jwt = QJsonWebToken::fromTokenAndSecret(item.second, this->_secret);
+                if (jwt.isValid())
+                    return std::invoke(t,request);
                 else
-                    return QHttpServerResponse({"message", "Invalid token"}, QHttpServerResponder::StatusCode::Unauthorized);
+                {
+                    QJsonObject res;
+                    res["message"]="Invalid token";
+                    return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+                }
             }
         }
+        QJsonObject res;
+        res["message"]="Token Not Found";
+        return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
     };
 }

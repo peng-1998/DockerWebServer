@@ -212,6 +212,7 @@ std::optional<QHash<QString, QVariant>> DataBase::getImage(const QString &imagen
         }
         return result;
     }
+    return std::nullopt;
 }
 
 QList<QHash<QString, QVariant>> DataBase::getImageAll(const std::optional<QStringList> &select)
@@ -538,6 +539,7 @@ QList<QHash<QString, QVariant>> DataBase::getMachineAll(const std::optional<QStr
         }
         result.append(tmp);
     }
+    return result;
 }
 
 void DataBase::updateMachine(const QString &id, const QList<QPair<QString, QVariant>> &set)

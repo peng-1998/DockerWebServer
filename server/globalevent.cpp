@@ -36,8 +36,8 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
         return QHttpServerResponse({"message", "User Not Found"}, StatusCode::NotFound);
     }
     auto user = db->getUser(username, QStringList() << "password"
-                                                    << "salt")
-                    .value();
+                            << "salt")
+            .value();
     if (user["password"].toString() != GlobalCommon::hashPassword(body["password"].toString(), user["salt"].toString()))
     {
         return QHttpServerResponse({"message", "Wrong Password"}, StatusCode::Unauthorized);
@@ -94,12 +94,21 @@ QHttpServerResponse GlobalEvent::onApiUserSetPhoto(const QHttpServerRequest &req
 
 QHttpServerResponse GlobalEvent::onApiUserGetUser(const QString &account, const QHttpServerRequest &request)
 {
-    auto db = DataBase::instance();
-    auto user = db->getUser(account);
-    QJsonObject result;
-    for(auto &key : user->keys())
+    auto result = DataBase::instance()->getUser(account);
+    if(result.has_value())
     {
-        result.insert(key, user->value(key).toString());
+        return QHttpServerResponse(StatusCode::NotFound);
+    }
+    return QHttpServerResponse(GlobalCommon::hashToJsonObject(result.value()), StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiMachinesInfo(const QHttpServerRequest &request)
+{
+    auto machines = DataBase::instance()->getMachineAll();
+    QJsonArray result;
+    for (auto &machine : machines)
+    {
+        result.append(GlobalCommon::hashToJsonObject(machine));
     }
     return QHttpServerResponse(result, StatusCode::Ok);
 }

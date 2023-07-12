@@ -1,5 +1,7 @@
 #include "globalcommon.h"
 #include "bcrypt/qtbcrypt.h"
+#include <QMetaType>
+
 QSharedPointer<GlobalCommon> GlobalCommon::_instance = QSharedPointer<GlobalCommon>::create();
 
 QSharedPointer<GlobalCommon> GlobalCommon::instance()
@@ -25,6 +27,32 @@ std::tuple<QString, QString> GlobalCommon::generateSaltAndHash(const QString &pa
 {
     auto salt = QtBCrypt::generateSalt();
     return std::make_tuple(salt, QtBCrypt::hashPassword(password, salt));
+}
+
+QJsonObject GlobalCommon::hashToJsonObject(const QHash<QString, QVariant> &hash)
+{
+    QJsonObject result;
+    for (auto &key : hash.keys())
+    {
+        auto value = hash.value(key);
+        if(value.typeId() == QMetaType::QString)
+        {
+            result.insert(key, hash.value(key).toString());
+        }
+        else if(value.typeId() == QMetaType::Int)
+        {
+            result.insert(key, hash.value(key).toInt());
+        }
+        else if(value.typeId() == QMetaType::Bool)
+        {
+            result.insert(key, hash.value(key).toBool());
+        }
+        else
+        {
+            result.insert(key, hash.value(key).toJsonObject());
+        }
+    }
+    return result;
 }
 
 GlobalCommon::GlobalCommon(QObject *parent)

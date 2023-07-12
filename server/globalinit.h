@@ -7,6 +7,7 @@ class GlobalInit : public QObject
     Q_OBJECT
 public:
     static QSharedPointer<GlobalInit> instance();
+    static void initConfig();
 
 signals:
 
