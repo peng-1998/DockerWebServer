@@ -2,7 +2,7 @@ import json
 import os
 
 import yaml
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, g
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request
 from flask_jwt_extended.exceptions import NoAuthorizationError
@@ -10,7 +10,8 @@ from flask_jwt_extended.exceptions import NoAuthorizationError
 import communication
 import database.SqliteDB
 import dispatch.SchedulingStrategy as SS
-from blueprints import admin, auth, containers, machines, user
+from blueprints import admin, auth, containers, machines, user, feature
+
 from communication import BaseServer, DockerController
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
@@ -24,6 +25,7 @@ app.register_blueprint(admin, url_prefix="/api/admin")
 app.register_blueprint(containers, url_prefix="/api/containers")
 app.register_blueprint(machines, url_prefix="/api/machines")
 app.register_blueprint(user, url_prefix="/api/user")
+app.register_blueprint(feature, url_prefix="api/feature")
 
 app.config['JWT_SECRECT_KEY'] = 'mycreditentials'
 jwt = JWTManager(app)

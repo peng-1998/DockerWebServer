@@ -5,8 +5,9 @@ USER = "(id INTEGER PRIMARY KEY AUTOINCREMENT, username VARCHAR (30) NOT NULL,re
 IMAGE = "(id INTEGER PRIMARY KEY, showname TEXT NOT NULL, imagename TEXT NOT NULL,tag TEXT NOT NULL,init_args BLOB,description TEXT)"
 CONTAINER = "(id INTEGER PRIMARY KEY, showname TEXT NOT NULL, containername TEXT NOT NULL, machineid INTEGER NOT NULL, portlist BLOB, image INTERGER)"
 MACHINE = "(id INTEGER PRIMARY KEY, ip TEXT, machine_info TEXT)"
+FEATURE = "(id INTEGER PRIMARY KEY, name TEXT, enabled BOOL)"
 
-TABEL_INFO = {"user": USER, "image": IMAGE, "container": CONTAINER, "machine": MACHINE}
+TABEL_INFO = {"user": USER, "image": IMAGE, "container": CONTAINER, "machine": MACHINE, "feature": FEATURE}
 
 
 def serialize_data(data):

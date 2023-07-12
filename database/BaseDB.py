@@ -72,6 +72,11 @@ class BaseDB(ABC):
         "memory": dict, # {"total":1024,"free":512}
         "online": bool, 
     }
+    features_key = {
+        "id": int,
+        "name": str,
+        "enabled": bool,
+    }
 
     @abstractmethod
     def insert_user(self, user: dict) -> bool:
