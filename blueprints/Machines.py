@@ -33,7 +33,7 @@ async def request_GPU():
     task = {'task_id': current_app.config['max_task_id'], **attrs}
     wq.new_task(task)
     current_app.config['max_task_id'] += 1
-    return make_response(jsonify(), 200)
+    return await make_response(jsonify(), 200)
 
 
 @machines.route('/cancel', methods=['POST'])
@@ -45,4 +45,4 @@ async def cancel_GPU():
         wq.finish_task(**attrs)
     else:
         wq.cancel_task(**attrs)
-    return make_response(jsonify(), 200)
+    return await make_response(jsonify(), 200)

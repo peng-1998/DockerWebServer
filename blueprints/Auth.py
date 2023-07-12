@@ -12,7 +12,7 @@ cors(auth)
 @auth.route('/login', methods=(['POST']))
 async def login():
     database: BaseDB = current_app.config['DB']
-    data = request.get_json()
+    data = await request.get_json()
     username = data.get('username')
     user_info_list = database.get_user(search_key={'username': username}, return_key=['password', 'salt'])
     if user_info_list:
@@ -20,24 +20,24 @@ async def login():
         password = bcrypt.hashpw(data.get('password').encode(), salt.encode())
         if saved_password == password.decode():
             access_token = create_access_token(identity=username)
-            return make_response(jsonify(success=True, message="Login Succeed", access_token=access_token), 200)
+            return  await  make_response(jsonify(success=True, message="Login Succeed", access_token=access_token), 200)
         else:
-            return make_response(jsonify(success=False, message="Wrong Password"), 401)
+            return  await  make_response(jsonify(success=False, message="Wrong Password"), 401)
     else:
-        return make_response(jsonify(success=False, message="User Not Found"), 404)
+        return  await  make_response(jsonify(success=False, message="User Not Found"), 404)
 
 
 @auth.route('/register', methods=['POST'])
 async def register():
     database: BaseDB = current_app.config['DB']
-    data = request.get_json()
+    data = await request.get_json()
     username = data.get('username')
     password = data.get('password')
     is_user_name_exists = database.get_user(search_key={'username': username})
     if is_user_name_exists:
-        return make_response(jsonify(success=False, message="User Alreay Exists"), 409)
+        return  await  make_response(jsonify(success=False, message="User Alreay Exists"), 409)
     else:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode(), salt)
         database.insert_user(user={'username': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
-        return make_response(jsonify(success=True, message="Register Succeed"), 200)
+        return  await  make_response(jsonify(success=True, message="Register Succeed"), 200)

@@ -66,20 +66,20 @@ async def init():
         app.config['mail'] = Mail_Class(**configs['Components']['Mail']['args'], logger=app.config['info_logger'])
 
 
-# @app.before_request
-# async def is_jwt_valid():
-#     """
-#     check if the jwt is valid, if not, return 401
-#     except the login and register request
-#     """
-#     if request.endpoint in ['login', 'register']:
-#         return
-#     if request.endpoint in ['ws/client', 'ws/server']:
-#         return
-#     try:
-#         verify_jwt_in_request()
-#     except NoAuthorizationError:
-#         return jsonify({'message': 'Invalid token'}, 401)
+@app.before_request
+async def is_jwt_valid():
+    """
+    check if the jwt is valid, if not, return 401
+    except the login and register request
+    """
+    if request.endpoint in ['login', 'register']:
+        return
+    if request.endpoint in ['ws/client', 'ws/server']:
+        return
+    try:
+        verify_jwt_in_request()
+    except NoAuthorizationError:
+        return jsonify({'message': 'Invalid token'}, 401)
 
 
 @app.websocket('/ws/client')

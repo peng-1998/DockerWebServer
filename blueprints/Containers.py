@@ -14,10 +14,10 @@ containers = Blueprint('containers', __name__)
 
 
 @containers.route('/mycontainer/<user_id>', methods=['GET'])
-def mycontainer(user_id):
+async def mycontainer(user_id):
     db: BaseDB = current_app.config['DB']
     containers = db.get_container({'userid': user_id}, return_key=['showname', 'portlist', 'containername', 'running'])
-    return make_response(jsonify(containers), 200)
+    return await make_response(jsonify(containers), 200)
 
 
 # # 转移到ws

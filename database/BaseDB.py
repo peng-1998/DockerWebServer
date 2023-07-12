@@ -41,8 +41,9 @@ class BaseDB(ABC):
         "account": str,
         "nickname": str,
         "password": str,
+        "salt":str,
         "email": str,
-        "phone": int,
+        "phone": str,
         # "containers": list, # 废弃
         "photo": str,
     }

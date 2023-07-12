@@ -211,9 +211,10 @@ async def ws_handler_image(data: dict, uuid: str):
         await loop.run_in_executor(None, docker.push_image, image)
         current_app.config['clients'].send_json({'type': 'image', 'data': {'opt': 'build', 'uuid': uuid, 'image': data['image']}, 'status': 'pushed'})
         # remove image [optional]
-        ...
+        if current_app.config['configs']['Docker']['rmimageafterbuild']:
+            await loop.run_in_executor(None, docker.remove_image, image)
         # update database
-        ...
+        db.insert_image({'description': data['description'], 'imagename': image, 'showname': data['showname'], 'init_args': data['init_args']})
 
     if data['opt'] == 'remove':
         current_app.config['messenger'].send_all({'type': 'image', 'data': {'opt': 'remove', 'uuid': uuid, 'image': data['image']}})

@@ -19,7 +19,7 @@ class TinyDB_(BaseDB):
         item = self.__setdefault(item, keys)
         item_id = self.db.table(table).insert(item)
         with self.rw_lock.gen_wlock():
-            self.db.table(table).update({'id': item_id}, doc_ids=item_id)
+            self.db.table(table).update({'id': item_id}, doc_ids=[item_id])
         return bool(item_id)
 
     def __get_item(self, table: str, search_key: dict, return_key: list = None, limit: int = None) -> list:
