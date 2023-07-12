@@ -66,20 +66,21 @@ async def init():
         app.config['mail'] = Mail_Class(**configs['Components']['Mail']['args'], logger=app.config['info_logger'])
 
 
-# @app.before_request
-# async def is_jwt_valid():
-#     """
-#     check if the jwt is valid, if not, return 401
-#     except the login and register request
-#     """
-#     if request.endpoint in ['login', 'register']:
-#         return 
-#     if request.endpoint in ['ws/client', 'ws/server']:
-#         return
-#     try:
-#         await verify_jwt_in_request()
-#     except NoAuthorizationError:
-#         return await make_response(jsonify({'message': 'Invalid token'}), 401)
+@app.before_request
+async def is_jwt_valid():
+    """
+    enpoint_name should be like this: [BlueprintName].[function_name]
+    check if the jwt is valid, if not, return 401
+    except the login and register request
+    """
+    if request.endpoint in ['auth.login', 'auth.register']:
+        return 
+    if request.endpoint in ['ws_client', 'ws_server']:
+        return
+    try:
+        await verify_jwt_in_request()
+    except NoAuthorizationError:
+        return await make_response(jsonify({'message': 'Invalid token'}), 401)
 
 
 @app.websocket('/ws/client')
