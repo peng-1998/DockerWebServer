@@ -1,6 +1,7 @@
 #include "globalevent.h"
 #include "database.h"
 #include "webserver.h"
+#include <QFile>
 #include <QJsonObject>
 #include <QWebSocket>
 #include <QWebSocketServer>
@@ -26,47 +27,81 @@ QHttpServerResponse GlobalEvent::onHttpWSClient(const QHttpServerRequest &reques
 
 QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &request)
 {
-    auto headers = GlobalCommon::parseHeaders(request.headers());
+    auto body = QJsonDocument::fromJson(request.body()).object();
     auto webserver = GlobalData::instance()->value("webserver").value<QSharedPointer<WebServer>>();
-    auto username = headers["username"];
+    auto username = body["username"].toString();
     auto db = DataBase::instance();
-    auto res = QJsonObject();
     if (!db->containsUser(username))
     {
-        res["success"] = false;
-        res["message"] = "User Not Found";
-        return QHttpServerResponse(res, StatusCode::NotFound);
+        return QHttpServerResponse({"message", "User Not Found"}, StatusCode::NotFound);
     }
     auto user = db->getUser(username, QStringList() << "password"
                                                     << "salt")
                     .value();
-    if (user["password"].toString() != GlobalCommon::hashPassword(headers["password"], user["salt"].toString()))
+    if (user["password"].toString() != GlobalCommon::hashPassword(body["password"].toString(), user["salt"].toString()))
     {
-        res["success"] = false;
-        res["message"] = "Wrong Password";
-        return QHttpServerResponse(res, StatusCode::Unauthorized);
+        return QHttpServerResponse({"message", "Wrong Password"}, StatusCode::Unauthorized);
     }
-    res["success"] = true;
-    res["message"] = "Login Succeed";
-    res["access_token"] = webserver->getJwtToken(username);
-    return QHttpServerResponse(res, StatusCode::Ok);
+    return QHttpServerResponse({"access_token", webserver->getJwtToken(username)}, StatusCode::Ok);
 }
 
 QHttpServerResponse GlobalEvent::onApiAuthRegister(const QHttpServerRequest &request)
 {
     auto db = DataBase::instance();
-    auto headers = GlobalCommon::parseHeaders(request.headers());
-    auto username = headers["username"];
-    auto password = headers["password"];
+    auto body = QJsonDocument::fromJson(request.body()).object();
+    auto username = body["username"].toString();
+    auto password = body["password"].toString();
     if (db->containsUser(username))
     {
-        QJsonObject res;
-        res["success"] = false;
-        res["message"] = "User Already Exists";
-        return QHttpServerResponse(res, StatusCode::Conflict);
+        return QHttpServerResponse({"message", "User Already Exists"}, StatusCode::Conflict);
     }
     auto [salt, hash] = GlobalCommon::generateSaltAndHash(password);
-    db->insertUser(username, hash, salt);
+    db->insertUser(username, hash, salt, username, "", "", GlobalConfig::instance()->value("defaultPhoto").toString());
+    return QHttpServerResponse(StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiUserSetProfile(const QHttpServerRequest &request)
+{
+    auto body = QJsonDocument::fromJson(request.body()).object();
+    auto id = body["user_id"].toInt();
+    auto db = DataBase::instance();
+    db->updateUser(id, QList<QPair<QString, QVariant>>() << QPair<QString, QVariant>(body["field"].toString(), body["value"].toVariant()));
+    return QHttpServerResponse(StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiUserSetPhoto(const QHttpServerRequest &request)
+{
+    auto headers = GlobalCommon::parseHeaders(request.headers());
+    auto fileName = headers["filename"];
+    auto account = headers["account"];
+    auto id = headers["user_id"].toInt();
+    auto withFile = headers["with_file"] == "true";
+    auto db = DataBase::instance();
+
+    if (!withFile)
+    {
+        db->updateUser(id, QList<QPair<QString, QVariant>>() << QPair<QString, QVariant>("photo", GlobalConfig::instance()->value("defultPhotoPath").toString() + "/" + fileName));
+        return QHttpServerResponse(StatusCode::Ok);
+    }
+    auto savePath = GlobalConfig::instance()->value("customPhotoPath").toString() + "/" + account + ".png";
+    db->updateUser(id, QList<QPair<QString, QVariant>>() << QPair<QString, QVariant>("photo", savePath));
+    QFile file(savePath);
+    file.open(QIODevice::WriteOnly);
+    file.write(request.body());
+    file.close();
+    return QHttpServerResponse(StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiUserGetUser(const QString &account, const QHttpServerRequest &request)
+{
+    auto db = DataBase::instance();
+    auto user = db->getUser(account);
+    QJsonObject result;
+    for(auto &key : user->keys())
+    {
+        result.insert(key, user->value(key).toString());
+    }
+    return QHttpServerResponse(result, StatusCode::Ok);
 }
 
 GlobalEvent::GlobalEvent(QObject *parent)

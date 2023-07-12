@@ -24,8 +24,7 @@ QString GlobalCommon::hashPassword(const QString &password, const QString &salt)
 std::tuple<QString, QString> GlobalCommon::generateSaltAndHash(const QString &password)
 {
     auto salt = QtBCrypt::generateSalt();
-    auto hash = QtBCrypt::hashPassword(password, salt);
-    return std::make_tuple(salt, hash);
+    return std::make_tuple(salt, QtBCrypt::hashPassword(password, salt));
 }
 
 GlobalCommon::GlobalCommon(QObject *parent)

@@ -31,6 +31,8 @@ private:
 
     template <typename T>
     std::function<QHttpServerResponse(const QHttpServerRequest &)> jwtDecorator(T t);
+    template <typename T>
+    std::function<QHttpServerResponse(const QHttpServerRequest &)> jwtDecoratorArg(T t);
 };
 
 Q_DECLARE_METATYPE(QSharedPointer<WebServer>);
