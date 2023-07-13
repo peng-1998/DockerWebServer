@@ -20,11 +20,11 @@ async def login():
         password = bcrypt.hashpw(data.get('password').encode(), salt.encode())
         if saved_password == password.decode():
             access_token = create_access_token(identity=username)
-            return  await  make_response(jsonify(success=True, message="Login Succeed", access_token=access_token), 200)
+            return await make_response(jsonify(success=True, message="Login Succeed", access_token=access_token), 200)
         else:
-            return  await  make_response(jsonify(success=False, message="Wrong Password"), 401)
+            return await make_response(jsonify(success=False, message="Wrong Password"), 401)
     else:
-        return  await  make_response(jsonify(success=False, message="User Not Found"), 404)
+        return await make_response(jsonify(success=False, message="User Not Found"), 404)
 
 
 @auth.route('/register', methods=['POST'])
@@ -35,9 +35,9 @@ async def register():
     password = data.get('password')
     is_user_name_exists = database.get_user(search_key={'account': username})
     if len(is_user_name_exists) != 0:
-        return  await  make_response(jsonify(message="User Alreay Exists"), 409)
+        return await make_response(jsonify(message="User Alreay Exists"), 409)
     else:
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode(), salt)
         database.insert_user(user={'account': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
-        return await  make_response(jsonify(), 200)
+        return await make_response(jsonify(), 200)
