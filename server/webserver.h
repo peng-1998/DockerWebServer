@@ -22,7 +22,6 @@ public:
 private:
     QSharedPointer<GlobalConfig> _config;
     QSharedPointer<GlobalData> _data;
-    QSharedPointer<GlobalCommon> _common;
     QSharedPointer<GlobalEvent> _event;
     QSharedPointer<QHttpServer> _httpServer;
     QSharedPointer<QWebSocketServer> _wsServer;

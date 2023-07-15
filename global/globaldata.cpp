@@ -1,15 +1,21 @@
 #include "globaldata.h"
+#include <QString>
+#include <QVariant>
 
-QSharedPointer<GlobalData> GlobalData::_instance = QSharedPointer<GlobalData>::create();
-
+QSharedPointer<GlobalData> GlobalData::_instance = QSharedPointer<GlobalData>(new GlobalData());
 
 QSharedPointer<GlobalData> GlobalData::instance()
 {
     return _instance;
 }
 
+GlobalData::~GlobalData()
+{
+
+}
+
 GlobalData::GlobalData()
-    : QHash<QString, QVariant>()
+    : QObject(), QHash<QString, QVariant>()
 {
 
 }

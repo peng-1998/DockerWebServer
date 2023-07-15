@@ -2,23 +2,26 @@
 #include <QMetaType>
 #include <QSettings>
 #include <QWeakPointer>
-//
+#include <QDebug>
 using Method = QHttpServerRequest::Method;
 WebServer::WebServer(QObject *parent)
     : QObject{parent}
 {
-    GlobalConfig::init("config.ini", QSettings::IniFormat);
     GlobalData::instance()->emplace("webserver", QVariant::fromValue(QSharedPointer<WebServer>(this)));
     _config = GlobalConfig::instance();
-    _common = GlobalCommon::instance();
     _data = GlobalData::instance();
     _event = GlobalEvent::instance();
     _jwt = QSharedPointer<QJsonWebToken>::create();
-    _jwt->setSecret(_config->value("JWT/secret").toString());
-    _jwt->setAlgorithmStr(_config->value("JWT/algorithm").toString());
-    _jwt->appendClaim("iss", _config->value("JWT/iss").toString());
+    
+    _jwt->setSecret(QString::fromStdString((*_config)["JWT"]["secret"].as<std::string>()));
+    _jwt->setAlgorithmStr(QString::fromStdString((*_config)["JWT"]["algorithm"].as<std::string>()));
+    _jwt->appendClaim("iss", QString::fromStdString((*_config)["JWT"]["iss"].as<std::string>()));
     _httpServer = QSharedPointer<QHttpServer>::create();
-    _httpServer->listen(QHostAddress::Any, _config->value("Http/port").toInt());
+    _httpServer->listen(QHostAddress::Any,(*_config)["Http"]["port"].as<int>());
+    _httpServer->afterRequest([] (QHttpServerResponse &&resp) { 
+        resp.addHeader("Access-Control-Allow-Origin", "*");
+        return std::move(resp); 
+    });
     _httpServer->route("/", Method::Get, &GlobalEvent::onHttpIndex);
     _httpServer->route("/ws/server", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSServer));
     _httpServer->route("/ws/client", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSClient));

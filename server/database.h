@@ -18,7 +18,7 @@ class DataBase : public QObject
     Q_OBJECT
 public:
     static QSharedPointer<DataBase> instance();
-
+    ~DataBase() = default;
     void insertUser(const QString &account, const QString &password, const QString &salt, QString nickname = "", QString email = "", QString phone = "", QString photo = "");
     std::optional<QHash<QString, QVariant>> getUser(const int id, const std::optional<QStringList> &select = std::nullopt);
     std::optional<QHash<QString, QVariant>> getUser(const QString &account, const std::optional<QStringList> &select = std::nullopt);
@@ -64,7 +64,7 @@ signals:
 
 private:
     explicit DataBase(QObject *parent = nullptr);
-    ~DataBase() = default;
+
     DataBase(const DataBase &) = delete;
     DataBase &operator=(const DataBase &) = delete;
     DataBase(DataBase &&) = delete;
@@ -76,4 +76,8 @@ private:
     static QStringList _image_column;
     static QStringList _container_column;
     static QStringList _machine_column;
+    static QString formatWhere(const QList<QPair<QString, QVariant>> &where);
+    static QString formatSet(const QList<QPair<QString, QVariant>> &set);
+    static QHash<QString, QVariant> formatResult(const QSqlQuery &query, const QStringList &select);
+    static QList<QPair<QString, QVariant>> formatInput(const QList<QPair<QString, QVariant>> &input);
 };

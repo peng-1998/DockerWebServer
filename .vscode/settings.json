@@ -78,6 +78,9 @@
         "qsharedpointer": "cpp",
         "qweakpointer": "cpp",
         "qcryptographichash": "cpp",
-        "qhash": "cpp"
+        "qhash": "cpp",
+        "qhttpserver": "cpp",
+        "qobject": "cpp",
+        "qanystringview": "cpp"
     }
 }

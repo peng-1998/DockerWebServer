@@ -1,9 +1,9 @@
 #include "globalconfig.h"
-
+using Type = YAML::NodeType;
 bool GlobalConfig::_isInit = false;
-
-GlobalConfig::GlobalConfig(const QString &fileName, Format format = Format::IniFormat)
-    : QSettings(fileName, format)
+QSharedPointer<GlobalConfig> GlobalConfig::_instance = nullptr;
+GlobalConfig::GlobalConfig(const QString &fileName)
+    : QObject{nullptr}, Node{YAML::LoadFile(fileName.toStdString())}
 {
 
 }
@@ -13,15 +13,16 @@ GlobalConfig::~GlobalConfig()
 
 }
 
-void GlobalConfig::init(const QString &fileName, Format format)
+void GlobalConfig::init(const QString &fileName)
 {
     if(_isInit)
         return;
     _isInit = true;
-    _instance = QSharedPointer<GlobalConfig>::create(fileName,format);
+    _instance = QSharedPointer<GlobalConfig>(new GlobalConfig(fileName));
 }
+
 
 QSharedPointer<GlobalConfig> GlobalConfig::instance()
 {
-    return _instance;
+    return GlobalConfig::_instance;
 }

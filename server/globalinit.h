@@ -6,9 +6,7 @@ class GlobalInit : public QObject
 {
     Q_OBJECT
 public:
-    static QSharedPointer<GlobalInit> instance();
-    static void initConfig();
-
+    static void init();
 signals:
 
 private:
@@ -17,6 +15,5 @@ private:
     GlobalInit& operator=(const GlobalInit&) = delete;
     GlobalInit(GlobalInit&&) = delete;
     static QSharedPointer<GlobalInit> _instance;
-
+    static void registerType();
 };
-

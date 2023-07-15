@@ -5,23 +5,31 @@
 #include <QJsonObject>
 #include <QWebSocket>
 #include <QWebSocketServer>
+#include <QDebug>
 using StatusCode = QHttpServerResponder::StatusCode;
-QSharedPointer<GlobalEvent> GlobalEvent::_instance = QSharedPointer<GlobalEvent>::create();
+
+
+QSharedPointer<GlobalEvent> GlobalEvent::_instance = QSharedPointer<GlobalEvent>(new GlobalEvent());
 
 QSharedPointer<GlobalEvent> GlobalEvent::instance()
 {
     return _instance;
 }
 
+QHttpServerResponse GlobalEvent::onHttpIndex(const QHttpServerRequest &request)
+{
+    return QHttpServerResponse("Hello World!", StatusCode::Ok);
+}
+
 QHttpServerResponse GlobalEvent::onHttpWSServer(const QHttpServerRequest &request)
 {
-    int wsport = GlobalConfig::instance()->value("WebSocket/port").toInt();
+    int wsport = (*GlobalConfig::instance())["WebSocket"]["port"].as<int>();
     return QHttpServerResponse("{\"port\":" + QByteArray::number(wsport) + "}", StatusCode::Ok);
 }
 
 QHttpServerResponse GlobalEvent::onHttpWSClient(const QHttpServerRequest &request)
 {
-    int wsport = GlobalConfig::instance()->value("WebSocket/port").toInt();
+    int wsport = (*GlobalConfig::instance())["WebSocket"]["port"].as<int>();
     return QHttpServerResponse("{\"port\":" + QByteArray::number(wsport) + "}", StatusCode::Ok);
 }
 
@@ -32,16 +40,10 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
     auto username = body["username"].toString();
     auto db = DataBase::instance();
     if (!db->containsUser(username))
-    {
         return QHttpServerResponse({"message", "User Not Found"}, StatusCode::NotFound);
-    }
-    auto user = db->getUser(username, QStringList() << "password"
-                            << "salt")
-            .value();
+    auto user = db->getUser(username, QStringList() << "password"<< "salt").value();
     if (user["password"].toString() != GlobalCommon::hashPassword(body["password"].toString(), user["salt"].toString()))
-    {
         return QHttpServerResponse({"message", "Wrong Password"}, StatusCode::Unauthorized);
-    }
     return QHttpServerResponse({"access_token", webserver->getJwtToken(username)}, StatusCode::Ok);
 }
 
@@ -52,11 +54,9 @@ QHttpServerResponse GlobalEvent::onApiAuthRegister(const QHttpServerRequest &req
     auto username = body["username"].toString();
     auto password = body["password"].toString();
     if (db->containsUser(username))
-    {
         return QHttpServerResponse({"message", "User Already Exists"}, StatusCode::Conflict);
-    }
     auto [salt, hash] = GlobalCommon::generateSaltAndHash(password);
-    db->insertUser(username, hash, salt, username, "", "", GlobalConfig::instance()->value("defaultPhoto").toString());
+    db->insertUser(username, hash, salt, username, "", "", QString::fromStdString((*GlobalConfig::instance())["defaultPhoto"].as<std::string>()));
     return QHttpServerResponse(StatusCode::Ok);
 }
 
@@ -79,11 +79,9 @@ QHttpServerResponse GlobalEvent::onApiUserSetPhoto(const QHttpServerRequest &req
     auto db = DataBase::instance();
 
     if (!withFile)
-    {
-        db->updateUser(id, QList<QPair<QString, QVariant>>() << QPair<QString, QVariant>("photo", GlobalConfig::instance()->value("defultPhotoPath").toString() + "/" + fileName));
+        db->updateUser(id, QList<QPair<QString, QVariant>>() << QPair<QString, QVariant>("photo", QString::fromStdString((*GlobalConfig::instance())["defaultPhotoPath"].as<std::string>()) + "/" + fileName));
         return QHttpServerResponse(StatusCode::Ok);
-    }
-    auto savePath = GlobalConfig::instance()->value("customPhotoPath").toString() + "/" + account + ".png";
+    auto savePath = QString::fromStdString((*GlobalConfig::instance())["customPhotoPath"].as<std::string>()) + "/" + account + ".png";
     db->updateUser(id, QList<QPair<QString, QVariant>>() << QPair<QString, QVariant>("photo", savePath));
     QFile file(savePath);
     file.open(QIODevice::WriteOnly);
@@ -96,9 +94,7 @@ QHttpServerResponse GlobalEvent::onApiUserGetUser(const QString &account, const 
 {
     auto result = DataBase::instance()->getUser(account);
     if(result.has_value())
-    {
         return QHttpServerResponse(StatusCode::NotFound);
-    }
     return QHttpServerResponse(GlobalCommon::hashToJsonObject(result.value()), StatusCode::Ok);
 }
 
@@ -107,9 +103,7 @@ QHttpServerResponse GlobalEvent::onApiMachinesInfo(const QHttpServerRequest &req
     auto machines = DataBase::instance()->getMachineAll();
     QJsonArray result;
     for (auto &machine : machines)
-    {
         result.append(GlobalCommon::hashToJsonObject(machine));
-    }
     return QHttpServerResponse(result, StatusCode::Ok);
 }
 

@@ -3,7 +3,7 @@
 #include <QHash>
 #include <QObject>
 #include <QSharedPointer>
-class GlobalData : public QHash<QString, QVariant>
+class GlobalData :public QObject, public QHash<QString, QVariant>
 {
     Q_OBJECT
 public:

@@ -2,13 +2,6 @@
 #include "bcrypt/qtbcrypt.h"
 #include <QMetaType>
 
-QSharedPointer<GlobalCommon> GlobalCommon::_instance = QSharedPointer<GlobalCommon>::create();
-
-QSharedPointer<GlobalCommon> GlobalCommon::instance()
-{
-    return _instance;
-}
-
 QMap<QString, QString> GlobalCommon::parseHeaders(const QList<QPair<QByteArray, QByteArray>> &headers)
 {
     QMap<QString, QString> result;
