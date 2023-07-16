@@ -7,16 +7,16 @@ class TinyDB_(BaseDB):
 
     def __init__(self, db_path: str):
         super().__init__()
-        self.db = TinyDB(db_path, sort_keys=True, indent=4)
-        self.user_table = self.db.table('User')
-        self.image_table = self.db.table('Image')
+        self.db              = TinyDB(db_path, sort_keys=True, indent=4)
+        self.user_table      = self.db.table('User')
+        self.image_table     = self.db.table('Image')
         self.container_table = self.db.table('Container')
-        self.machine_table = self.db.table('Machine')
-        self.query = Query()
-        self.rw_lock = rwlock.RWLockWrite()
+        self.machine_table   = self.db.table('Machine')
+        self.query           = Query()
+        self.rw_lock         = rwlock.RWLockWrite()
 
     def __insert_item(self, table: str, item: dict, keys: dict) -> bool:
-        item = self.__setdefault(item, keys)
+        item    = self.__setdefault(item, keys)
         item_id = self.db.table(table).insert(item)
         with self.rw_lock.gen_wlock():
             self.db.table(table).update({'id': item_id}, doc_ids=[item_id])
