@@ -10,9 +10,9 @@ class BaseMail(ABC):
     def __init__(self, sender_mail: str, sender_name: str, password: str, resend_time: int = 5, logger: Callable = print) -> None:
         self.sender_mail = sender_mail
         self.sender_name = sender_name
-        self.password = password
+        self.password    = password
         self.resend_time = resend_time
-        self.logger = logger
+        self.logger      = logger
         self.send_queue: List[Tuple[str, str, str, str]] = []
 
     def append(self, receiver_mail: str, receiver_name: str, subject: str, content: str) -> None:

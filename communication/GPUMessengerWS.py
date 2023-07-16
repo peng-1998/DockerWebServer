@@ -9,16 +9,16 @@ class GPUMessengerWS(BaseClient):
 
     def __init__(self, host: str, port: int, path: str, machine_id: int | str, data_handler: Callable, connect_handler: Callable = None, init_reconnect_interval: int = 1, max_reconnect_interval: int = 30, max_hreatbeat_timeout: float = 1.0) -> None:
         BaseClient.__init__(self, data_handler, connect_handler)
-        self.port = port
-        self.host = host
-        self.machine_id = machine_id
-        self.daemon = True
-        self.connected = False
+        self.port                    = port
+        self.host                    = host
+        self.machine_id              = machine_id
+        self.daemon                  = True
+        self.connected               = False
         self.init_reconnect_interval = init_reconnect_interval
-        self.max_reconnect_interval = max_reconnect_interval
-        self.max_hreatbeat_timeout = max_hreatbeat_timeout
-        self.path = path
-        self._lock = asyncio.Lock()
+        self.max_reconnect_interval  = max_reconnect_interval
+        self.max_hreatbeat_timeout   = max_hreatbeat_timeout
+        self.path                    = path
+        self._lock                   = asyncio.Lock()
         
     async def start(self) -> None:
         reconnect_interval = self.init_reconnect_interval

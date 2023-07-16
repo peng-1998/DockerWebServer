@@ -28,15 +28,15 @@ class WaitQueue(threading.Thread):
 
     def __init__(self, scheduling_strategy: Callable, run_handler: Callable, finish_handler: Callable, logger: Callable = print):
         super().__init__()
-        self.queues = {}
+        self.queues              = {}
         self.scheduling_strategy = scheduling_strategy
-        self.logger = logger
-        self.run_handler = run_handler
-        self.finish_handler = finish_handler
-        self.user_indices = {}
-        self.queue_rw_lock = rwlock.RWLockWrite()
-        self.indices_rw_lock = rwlock.RWLockWrite()
-        self.daemon = True
+        self.logger              = logger
+        self.run_handler         = run_handler
+        self.finish_handler      = finish_handler
+        self.user_indices        = {}
+        self.queue_rw_lock       = rwlock.RWLockWrite()
+        self.indices_rw_lock     = rwlock.RWLockWrite()
+        self.daemon              = True
 
     def new_machine(self, machine_id: int | str, source: dict) -> None:
         self.logger(f'create wait queue for machine {machine_id}')

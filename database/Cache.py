@@ -5,7 +5,7 @@ class InfoCache:
 
     def __init__(self):
         self.cache = {}
-        self.lock = rwlock.RWLockFair()
+        self.lock  = rwlock.RWLockFair()
 
     def update(self, key: int | str, info: dict):
         with self.lock.gen_wlock():

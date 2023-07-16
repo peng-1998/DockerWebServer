@@ -40,9 +40,9 @@ async def delete_image():
 @admin.route('/delete_webserver_container', methods=['POST'])
 async def delete_webserver_container():
     docker: DockerController = current_app.config['docker']
-    attrs = request.json
+    attrs           = request.json
     container_names = attrs['container_names']
-    res = docker.remove_container(container_names)
+    res             = docker.remove_container(container_names)
     response = {}
     for r, c in zip(res, container_names):
         if isinstance(r, bool):

@@ -12,8 +12,8 @@ cors(auth)
 @auth.route('/login', methods=(['POST']))
 async def login():
     database: BaseDB = current_app.config['DB']
-    data = await request.get_json()
-    username = data.get('username')
+    data           = await request.get_json()
+    username       = data.get('username')
     user_info_list = database.get_user(search_key={'account': username}, return_key=['password', 'salt'])
     if user_info_list:
         saved_password, salt = user_info_list[0]
@@ -30,14 +30,14 @@ async def login():
 @auth.route('/register', methods=['POST'])
 async def register():
     database: BaseDB = current_app.config['DB']
-    data = await request.get_json()
+    data     = await request.get_json()
     username = data.get('username')
     password = data.get('password')
     is_user_name_exists = database.get_user(search_key={'account': username})
     if len(is_user_name_exists) != 0:
         return await make_response(jsonify(message="User Alreay Exists"), 409)
     else:
-        salt = bcrypt.gensalt()
+        salt            = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode(), salt)
         database.insert_user(user={'account': username, 'password': hashed_password.decode(), 'salt': salt.decode()})
         return await make_response(jsonify(), 200)

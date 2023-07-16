@@ -36,7 +36,7 @@ class NVIDIAGPU:
             Tuple[float, float]: the total memory and used memory
         """
         total_memory = self.gpuinstance.DeviceQuery('memory.total')['gpu'][gpuid]['fb_memory_usage']['total']
-        used_memory = self.gpuinstance.DeviceQuery('memory.used')['gpu'][gpuid]['fb_memory_usage']['used']
+        used_memory  = self.gpuinstance.DeviceQuery('memory.used')['gpu'][gpuid]['fb_memory_usage']['used']
         return {'memory_total': total_memory, 'memory_used': used_memory}
 
     @check_gpuid

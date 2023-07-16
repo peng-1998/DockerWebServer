@@ -95,10 +95,10 @@ async def connect_handler(info: dict) -> dict:
     db: BaseDB = current_app.config['DB']
     machine_id = info['machine_id']
     del info['machine_id']
-    gpus = info['gpus']
+    gpus          = info['gpus']
     machines_list = db.get_machine(search_key={'id': machine_id})
-    cpu = info['cpu']
-    memory = info['memory']
+    cpu           = info['cpu']
+    memory        = info['memory']
     disk = info['disk']
 
     if len(machines_list) == 0:
@@ -156,24 +156,24 @@ def finish_handler(machine_id: int | str, task: dict) -> None:
 async def ws_handler_container(data: dict, uuid: str):
     db: BaseDB = current_app.config['DB']
     if data['opt'] == 'create':
-        user_id = data['user_id']
-        account = data['account']
-        image_id = data['image_id']
-        image = db.get_image({'id': image_id})
-        machine_id = data['machine_id']
-        ports = data['ports']
-        chars = string.ascii_letters + string.digits
+        user_id       = data['user_id']
+        account       = data['account']
+        image_id      = data['image_id']
+        image         = db.get_image({'id': image_id})
+        machine_id    = data['machine_id']
+        ports         = data['ports']
+        chars         = string.ascii_letters + string.digits
         random_string = ''.join(random.choice(chars) for i in range(10))
         msg = {
             'type': 'container',
             'data': {
-                'opt': 'create',
+                'opt'    : 'create',
                 'user_id': user_id,
-                'uuid': uuid,
+                'uuid'   : uuid,
                 'create_args': {
-                    'name': f'u{account}_c{random_string}',
-                    'image': image['imagename'],
-                    'ports': ports,
+                    'name'    : f'u{account}_c{random_string}',
+                    'image'   : image['imagename'],
+                    'ports'   : ports,
                     'hostname': account,
                     **image['init_args'],
                 }
@@ -184,10 +184,10 @@ async def ws_handler_container(data: dict, uuid: str):
         msg = {
             'type': 'container',
             'data': {
-                'opt': data['opt'],
-                'uuid': uuid,
+                'opt'           : data['opt'],
+                'uuid'          : uuid,
                 'container_name': data['container_name'],
-                'user_id': user_id,
+                'user_id'       : user_id,
             }
         }
         current_app.config['messenger'].send(msg, machine_id)
@@ -228,5 +228,5 @@ async def ws_handler_image(data: dict, uuid: str):
 
 ws_clinet_data_handlers = {
     'container': ws_handler_container,
-    'image': ws_handler_image,
+    'image'    : ws_handler_image,
 }

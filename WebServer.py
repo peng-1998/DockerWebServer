@@ -3,7 +3,8 @@ import os
 import uuid
 
 import yaml
-from quart import Quart, Websocket, g, jsonify, make_response, request, websocket
+from quart import (Quart, Websocket, g, jsonify, make_response, request,
+                   websocket)
 from quart_cors import cors
 from quart_jwt_extended import JWTManager, verify_jwt_in_request
 from quart_jwt_extended.exceptions import NoAuthorizationError
@@ -13,11 +14,13 @@ import database.SqliteDB
 import dispatch.SchedulingStrategy as SS
 from blueprints import admin, auth, containers, machines, user
 from communication import BaseServer, DockerController
+from communication.ServerManager import ServerManager
 from database import BaseDB, InfoCache
 from dispatch import WaitQueue
+from eventhandlers.WebHandlers import (connect_handler, data_handler,
+                                       disconnect_handler, finish_handler,
+                                       run_handler, ws_clinet_data_handlers)
 from utils.AsyncStructure import AsyncDict
-from communication.ServerManager import ServerManager
-from eventhandlers.WebHandlers import run_handler, data_handler, connect_handler, disconnect_handler, finish_handler, ws_clinet_data_handlers
 
 os.chdir(os.path.dirname(__file__))
 
@@ -73,9 +76,7 @@ async def is_jwt_valid():
     check if the jwt is valid, if not, return 401
     except the login and register request
     """
-    if request.endpoint in ['auth.login', 'auth.register']:
-        return 
-    if request.endpoint in ['ws_client', 'ws_server']:
+    if request.endpoint in ['auth.login', 'auth.register', 'ws_client', 'ws_server']:
         return
     try:
         await verify_jwt_in_request()

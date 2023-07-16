@@ -60,7 +60,7 @@ class SQLiteDB(BaseDB):
         table_name: str,
         search_key: dict,
         return_key: list = None,
-        limit: int = None,
+        limit     : int = None,
     ):
         if return_key is None:
             return_key = ["*"]

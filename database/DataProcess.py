@@ -1,10 +1,10 @@
 import pickle
 
 
-USER = "(id INTEGER PRIMARY KEY AUTOINCREMENT, username VARCHAR (30) NOT NULL,realname TEXT,password TEXT,email VARCHAR (30), phone INTEGER, containers BLOB, photo TEXT)"
-IMAGE = "(id INTEGER PRIMARY KEY, showname TEXT NOT NULL, imagename TEXT NOT NULL,tag TEXT NOT NULL,init_args BLOB,description TEXT)"
+USER      = "(id INTEGER PRIMARY KEY AUTOINCREMENT, username VARCHAR (30) NOT NULL,realname TEXT,password TEXT,email VARCHAR (30), phone INTEGER, containers BLOB, photo TEXT)"
+IMAGE     = "(id INTEGER PRIMARY KEY, showname TEXT NOT NULL, imagename TEXT NOT NULL,tag TEXT NOT NULL,init_args BLOB,description TEXT)"
 CONTAINER = "(id INTEGER PRIMARY KEY, showname TEXT NOT NULL, containername TEXT NOT NULL, machineid INTEGER NOT NULL, portlist BLOB, image INTERGER)"
-MACHINE = "(id INTEGER PRIMARY KEY, ip TEXT, machine_info TEXT)"
+MACHINE   = "(id INTEGER PRIMARY KEY, ip TEXT, machine_info TEXT)"
 
 TABEL_INFO = {"user": USER, "image": IMAGE, "container": CONTAINER, "machine": MACHINE}
 

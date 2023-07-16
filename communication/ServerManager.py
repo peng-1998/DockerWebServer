@@ -12,10 +12,10 @@ class ServerManager(BaseServer, AsyncDict):
         asyncio.get_event_loop().create_task(self.__check_heartbeat())
         self.max_hreatbeat_timeout = max_hreatbeat_timeout
 
-    async def __setitem__(self, key, value):
-        loop = asyncio.get_event_loop()
+    async def __setitem__(self, key, value): 
+        loop                = asyncio.get_event_loop()
         last_heartbeat_time = loop.time()
-        task = loop.create_task(self.__receiver(key, value))
+        task                = loop.create_task(self.__receiver(key, value))
         async with self._lock:
             self._data[key] = {'task': task, 'ws': value, 'last_heartbeat_time': last_heartbeat_time}
         await task

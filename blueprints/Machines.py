@@ -38,9 +38,9 @@ async def request_GPU():
 
 @machines.route('/cancel', methods=['POST'])
 async def cancel_GPU():
-    attrs = request.json
-    wq: WaitQueue = current_app.config['wq']
-    task = wq.find_task(**attrs)
+    wq   : WaitQueue = current_app.config['wq']
+    task : dict      = wq.find_task(**attrs)
+    attrs: dict      = request.json
     if task['status'] == 'running':
         wq.finish_task(**attrs)
     else:

@@ -22,7 +22,7 @@ async def set_profile():
 
 @user.route('/set_photo', methods=['POST'])
 async def set_photo():
-    photo = request.files['photo']
+    photo   = request.files['photo']
     user_id = request.json['user_id']
     photo.save('./static/photo/' + str(user_id) + '.' + photo.filename.split('0')[-1])
     db: BaseDB = current_app.config['DB']
