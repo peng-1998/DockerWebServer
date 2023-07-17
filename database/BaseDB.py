@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 """
 Table User {
     id int [pk, increment]
@@ -50,8 +51,8 @@ class BaseDB(ABC):
         "id": int,
         "showname": str,
         "imagename": str,
-        "init_args": dict, # {参数: 默认值（可能为字典或数组）}
-        "description": dict, # 可以考虑 字符串 或 字典
+        "init_args": dict,  # {参数: 默认值（可能为字典或数组）}
+        "description": dict,  # 可以考虑 字符串 或 字典
     }
     container_key = {
         "id": int,
@@ -66,11 +67,17 @@ class BaseDB(ABC):
     machine_key = {
         "id": int,
         "ip": str,
-        "gpu": dict, # {0：{"tpye":"3060","memory":10240}}
-        "cpu": dict, # {"type":"i7-10700","core":8}
-        "disk": dict, # {"total":1024,"free":512}
-        "memory": dict, # {"total":1024,"free":512}
-        "online": bool, 
+        "machine_info": dict,  # {"gpu": dict, "cpu": dict, "disk": dict, "memory": dict}
+        # {0：{"tpye":"3060","memory":10240}}
+        # {"type":"i7-10700","core":8}
+        # {"total":1024,"free":512}
+        # {"total":1024,"free":512}
+        "online": bool,
+    }
+    features_key = {
+        "id": int,
+        "name": str,
+        "enabled": bool,
     }
 
     @abstractmethod
@@ -78,7 +85,9 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_user(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_user(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         pass
 
     @abstractmethod
@@ -94,7 +103,9 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_image(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_image(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         pass
 
     @abstractmethod
@@ -110,7 +121,9 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_container(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_container(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         pass
 
     @abstractmethod
@@ -126,7 +139,9 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_machine(self, search_key: dict, return_key: list = None, limit: int = None) -> list:
+    def get_machine(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
         pass
 
     @abstractmethod

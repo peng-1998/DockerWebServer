@@ -1,4 +1,0 @@
-MachineID: 1
-# 应保证每台部署的机器都重新生成应该uuid, 如shell 命令 uuidgen
-URL: 'www.sdasds.com'
-# 用于访问机器的url,可以是网址或ip

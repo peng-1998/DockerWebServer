@@ -107,6 +107,11 @@ class SQLiteDB(BaseDB):
     ) -> list:
         return self._get("machine", search_key, return_key, limit)
 
+    def get_feature(
+        self, search_key: dict, return_key: list = None, limit: int = None
+    ) -> list:
+        return self._get("feature", search_key, return_key, limit)
+
     def insert_user(self, user: dict) -> bool:
         return self._insert("user", user)
 
@@ -119,6 +124,9 @@ class SQLiteDB(BaseDB):
     def insert_machine(self, machine: dict) -> bool:
         return self._insert("machine", machine)
 
+    def insert_feature(self, feature: dict) -> bool:
+        return self._insert("feature", feature)
+
     def delete_user(self, search_key: dict) -> bool:
         return self._delete("user", search_key)
 
@@ -130,6 +138,9 @@ class SQLiteDB(BaseDB):
 
     def delete_machine(self, search_key: dict) -> bool:
         return self._delete("machine", search_key)
+
+    def delete_feature(self, search_key: dict) -> bool:
+        return self._delete("feature", search_key)
 
     def update_user(self, search_key: dict, update_key: dict) -> bool:
         return self._update("user", search_key, update_key)

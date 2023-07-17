@@ -5,7 +5,6 @@ from io import BytesIO
 
 
 class DockerController:
-
     def __init__(self):
         self.client: DockerClient = docker.from_env()
 
@@ -33,8 +32,10 @@ class DockerController:
         except docker.errors.ImageNotFound:
             return None
 
-    def create_container(self, **kargs) -> Container | docker.errors.ImageNotFound | docker.errors.APIError:
-        '''
+    def create_container(
+        self, **kargs
+    ) -> Container | docker.errors.ImageNotFound | docker.errors.APIError:
+        """
         kwargs:
             image: str = 'ubuntu:latest',
             name: str = 'container_name',
@@ -49,7 +50,7 @@ class DockerController:
             user: str|int = 'root'|1000 (recommanded),
             volumes: dict = {'/host/path': {'bind': '/container/path', 'mode': 'rw'|'ro'}}|{'/host/path':/container/path},
             working_dir: str = '/path/to/workdir',
-        '''
+        """
         try:
             return self.client.containers.create(**kargs)
         except docker.errors.ImageNotFound as e:
@@ -57,42 +58,46 @@ class DockerController:
         except docker.errors.APIError as e:
             return e
 
-    def create_image(self, dockerfile_path: str, context_path: str, image: str) -> str | None:
-        '''
+    def create_image(
+        self, dockerfile_path: str, context_path: str, image: str
+    ) -> str | None:
+        """
         dockerfile_path: str = 'path/to/dockerfile',
         context_path: str = 'path/to/context',
         image: str = 'image_name:tag',
-        '''
-        dockerfile = open(dockerfile_path, 'rb').read()
+        """
+        dockerfile = open(dockerfile_path, "rb").read()
         try:
-            self.client.images.build(fileobj=BytesIO(dockerfile), dockerfile=context_path, tag=image)
+            self.client.images.build(
+                fileobj=BytesIO(dockerfile), dockerfile=context_path, tag=image
+            )
         except Exception as e:
             return str(e)
 
     def push_image(self, image_name: str) -> docker.errors.APIError | None:
-        '''
+        """
         image_name: str = 'image_name'
-        '''
-        image_name, tag = image_name.split(':')
+        """
+        image_name, tag = image_name.split(":")
         try:
             self.client.images.push(image_name, tag=tag)
         except docker.errors.APIError as e:
             return e
 
     def pull_image(self, image_name: str) -> Image | docker.errors.APIError:
-        '''
+        """
         image_name: str = 'image_name',
-        '''
-        image_name, tag = image_name.split(':')
+        """
+        image_name, tag = image_name.split(":")
         try:
             return self.client.images.pull(image_name, tag=tag)
         except docker.errors.APIError as e:
             return e
 
     def remove_image(self, image_name: str) -> bool | docker.errors.APIError:
-        '''
+        """
         image_name: str = 'image_name',
-        '''
+        """
         try:
             self.client.images.remove(image_name)
             return True
@@ -100,15 +105,15 @@ class DockerController:
             return e
 
     def remove_images(self, image_names: list[str]) -> bool | docker.errors.APIError:
-        '''
+        """
         image_names: list[str] = ['image_name1', 'image_name2'],
-        '''
+        """
         return [self.remove_image(image_name) for image_name in image_names]
 
     def remove_container(self, container_name: str) -> bool | docker.errors.APIError:
-        '''
+        """
         container_name: str = 'container_name',
-        '''
+        """
         try:
             container = self.get_container(container_name)
             container.remove()
@@ -116,8 +121,34 @@ class DockerController:
         except docker.errors.APIError as e:
             return e
 
-    def remove_containers(self, container_names: list[str]) -> bool | docker.errors.APIError:
-        '''
+    def remove_containers(
+        self, container_names: list[str]
+    ) -> bool | docker.errors.APIError:
+        """
         container_names: list[str] = ['container_name1', 'container_name2'],
-        '''
-        return [self.remove_container(container_name) for container_name in container_names]
+        """
+        return [
+            self.remove_container(container_name) for container_name in container_names
+        ]
+
+    def start_container(self, container_name: str) -> bool | docker.errors.APIError:
+        """
+        container_name: str = 'container_name',
+        """
+        try:
+            container = self.get_container(container_name)
+            container.start()
+            return True
+        except docker.errors.APIError as e:
+            return e
+
+    def restart_container(self, container_name: str) -> bool | docker.errors.APIError:
+        """
+        container_name: str = 'container_name',
+        """
+        try:
+            container = self.get_container(container_name)
+            container.restart()
+            return True
+        except docker.errors.APIError as e:
+            return e

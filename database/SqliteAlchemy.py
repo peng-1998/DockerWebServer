@@ -1,8 +1,9 @@
 # This is the more standardised database module, which is based on Flask-SQLAlchemy.
-# db_path: sqlite:///mydatabase.db 
+# db_path: sqlite:///mydatabase.db
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
 
 # 表对象：用户、镜像、容器、设备
 class User(db.Model):
@@ -21,7 +22,8 @@ class User(db.Model):
         self.email = email
         self.phone = phone
         self.photo = photo
-    
+
+
 class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     showname = db.Column(db.String(20), nullable=False)
@@ -35,6 +37,7 @@ class Image(db.Model):
         self.init_args = init_args
         self.description = description
 
+
 class Container(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     showname = db.Column(db.String(20), nullable=False)
@@ -42,11 +45,13 @@ class Container(db.Model):
     machineid = db.Column(db.Integer, nullable=False)
     portlist = db.Column(db.PickleType)
     running = db.Column(db.Boolean)
-    imageid = db.Column(db.Integer, db.ForeignKey('image.id'))
-    machineid = db.Column(db.Integer, db.ForeignKey('machine.id'))
-    userid = db.Column(db.Integer, db.ForeignKey('user.id'))
+    imageid = db.Column(db.Integer, db.ForeignKey("image.id"))
+    machineid = db.Column(db.Integer, db.ForeignKey("machine.id"))
+    userid = db.Column(db.Integer, db.ForeignKey("user.id"))
 
-    def __init__(self, showname, containername, machineid, portlist, running, imageid, userid):
+    def __init__(
+        self, showname, containername, machineid, portlist, running, imageid, userid
+    ):
         self.showname = showname
         self.containername = containername
         self.machineid = machineid
@@ -55,6 +60,7 @@ class Container(db.Model):
         self.imageid = imageid
         self.machineid = machineid
         self.userid = userid
+
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
