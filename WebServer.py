@@ -139,7 +139,6 @@ with app.app_context():
         )
 
 
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=False, threaded=True)
     # 目前有个bug,如果以debug模式运行,会导致套接字被定义两次,导致第二次无法绑定端口

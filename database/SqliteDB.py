@@ -60,22 +60,45 @@ class SQLiteDB(BaseDB):
         except:
             return False
 
+    # @runthenclose
+    # def _get(
+    #     self,
+    #     table_name: str,
+    #     search_key: dict,
+    #     return_key: list = None,
+    #     limit: int = None,
+    # ):
+    #     if return_key is None:
+    #         return_key = ["*"]
+    #     if limit is None:
+    #         limit = 100
+    #     self.cursor.execute(
+    #         f"SELECT {', '.join(return_key)} FROM {table_name.lower()} WHERE {f' AND '.join([f'{k} = ?' for k in search_key.keys()])} LIMIT ?",
+    #         tuple([v for v in search_key.values()] + [limit]),
+    #     )
+    #     info = self.cursor.fetchall()
+    #     return info
+    
     @runthenclose
     def _get(
-        self,
-        table_name: str,
-        search_key: dict,
-        return_key: list = None,
-        limit: int = None,
-    ):
+    self,
+    table_name: str,
+    search_key: dict,
+    return_key: list = None,
+    limit: int = None,
+):
         if return_key is None:
             return_key = ["*"]
         if limit is None:
             limit = 100
-        self.cursor.execute(
-            f"SELECT {', '.join(return_key)} FROM {table_name.lower()} WHERE {f' AND '.join([f'{k} = ?' for k in search_key.keys()])} LIMIT ?",
-            tuple([v for v in search_key.values()] + [limit]),
-        )
+        query = f"SELECT {', '.join(return_key)} FROM {table_name.lower()}"
+        parameters = []
+        if search_key:
+            query += f" WHERE {f' AND '.join([f'{k} = ?' for k in search_key.keys()])}"
+            parameters = [v for v in search_key.values()]
+        query += " LIMIT ?"
+        parameters.append(limit)
+        self.cursor.execute(query, parameters)
         info = self.cursor.fetchall()
         return info
 
