@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../global/globalconfig.h"
+#include "globalconfig.h"
 #include "globalcommon.h"
 #include "jsonwebtoken/src/qjsonwebtoken.h"
 #include <QHttpServerRequest>
@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QSharedPointer>
 #include <QWeakPointer>
+#include <QJsonObject>
 class GlobalEvent : public QObject
 {
     Q_OBJECT
@@ -24,6 +25,16 @@ public:
     static QHttpServerResponse onApiUserSetPhoto(const QHttpServerRequest &request);
     static QHttpServerResponse onApiUserGetUser(const QString &account, const QHttpServerRequest &request);
     static QHttpServerResponse onApiMachinesInfo(const QHttpServerRequest &request);
+    void onWSNewConnection();
+    void onWSDisconnection(const QString &uuid);
+    void onWSMessageReceived(const QString &message, const QString &uuid);
+    void onWSHandleContainer(QJsonObject &data, const QString &uuid);
+    void onNewTcpConnection();
+    void onTcpMessageReceived();
+    void onTcpDisconnection(const QString &machineId);
+    void onTcpHandleInit(QJsonObject &data, QTcpSocket *sder);
+    void onTcpHandleContainer(QJsonObject &data, const QString &machineId);
+    void onTcpHandleGpus(QJsonObject &data, const QString &machineId);
 signals:
 
 private:
@@ -32,4 +43,6 @@ private:
     GlobalEvent &operator=(const GlobalEvent &) = delete;
     GlobalEvent(GlobalEvent &&) = delete;
     static QSharedPointer<GlobalEvent> _instance;
+    QHash<QString,std::function<void (QJsonObject &data, const QString &uuid)>> _wsHandlers;
+    QHash<QString,std::function<void (QJsonObject &data, const QString &machineId)>> _tcpHandlers;
 };

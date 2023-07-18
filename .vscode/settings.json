@@ -81,6 +81,11 @@
         "qhash": "cpp",
         "qhttpserver": "cpp",
         "qobject": "cpp",
-        "qanystringview": "cpp"
-    }
+        "qanystringview": "cpp",
+        "qwebsocket": "cpp",
+        "qjsonobject": "cpp",
+        "qrandomgenerator": "cpp",
+        "qtcpserver": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

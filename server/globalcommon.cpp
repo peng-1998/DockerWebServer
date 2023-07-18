@@ -1,7 +1,7 @@
 #include "globalcommon.h"
 #include "bcrypt/qtbcrypt.h"
 #include <QMetaType>
-
+#include <QRandomGenerator>
 QMap<QString, QString> GlobalCommon::parseHeaders(const QList<QPair<QByteArray, QByteArray>> &headers)
 {
     QMap<QString, QString> result;
@@ -29,23 +29,42 @@ QJsonObject GlobalCommon::hashToJsonObject(const QHash<QString, QVariant> &hash)
     {
         auto value = hash.value(key);
         if(value.typeId() == QMetaType::QString)
-        {
             result.insert(key, hash.value(key).toString());
-        }
         else if(value.typeId() == QMetaType::Int)
-        {
             result.insert(key, hash.value(key).toInt());
-        }
         else if(value.typeId() == QMetaType::Bool)
-        {
             result.insert(key, hash.value(key).toBool());
-        }
         else
-        {
             result.insert(key, hash.value(key).toJsonObject());
-        }
     }
     return result;
+}
+
+QString GlobalCommon::generateRandomString(int length)
+{
+    QString result;
+    const QString characters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+
+    // 使用 QRandomGenerator 生成随机数
+    QRandomGenerator generator = QRandomGenerator::securelySeeded();
+
+    // 生成指定长度的随机字符串
+    for (int i = 0; i < length; ++i) {
+        int index = generator.bounded(characters.length());
+        result.append(characters.at(index));
+    }
+
+    return result;
+}
+
+QString GlobalCommon::objectToString(const QJsonObject &object)
+{
+    return QString(QJsonDocument(object).toJson(QJsonDocument::Compact));
+}
+
+QJsonObject GlobalCommon::stringToObject(const QbyteArray &string)
+{
+    return QJsonDocument::fromJson(string).object();
 }
 
 GlobalCommon::GlobalCommon(QObject *parent)

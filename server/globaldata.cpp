@@ -15,7 +15,7 @@ GlobalData::~GlobalData()
 }
 
 GlobalData::GlobalData()
-    : QObject(), QHash<QString, QVariant>()
+    : QObject()
 {
 
 }

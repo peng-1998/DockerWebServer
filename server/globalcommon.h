@@ -15,6 +15,9 @@ public:
     static QString hashPassword(const QString &password, const QString &salt);
     static std::tuple<QString, QString> generateSaltAndHash(const QString &password);
     static QJsonObject hashToJsonObject(const QHash<QString, QVariant> &hash);
+    static QString generateRandomString(int length = 32);
+    static QString objectToString(const QJsonObject &object);
+    static QJsonObject stringToObject(const QbyteArray &string);
 
 private:
     explicit GlobalCommon(QObject *parent = nullptr);

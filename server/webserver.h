@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../global/globalconfig.h"
-#include "../global/globaldata.h"
+#include "globalconfig.h"
+#include "globaldata.h"
 #include "globalcommon.h"
 #include "globalevent.h"
 #include "jsonwebtoken/src/qjsonwebtoken.h"
@@ -10,6 +10,7 @@
 #include <QSharedPointer>
 #include <QWeakPointer>
 #include <QWebSocketServer>
+#include <QWebSocket>
 class WebServer final : public QObject
 {
     Q_OBJECT
@@ -31,10 +32,10 @@ private:
     template <typename T>
     std::function<QHttpServerResponse(const QHttpServerRequest &)> jwtDecorator(T t);
     template <typename T>
-    std::function<QHttpServerResponse (const QString &,const QHttpServerRequest &)> jwtDecoratorArg(T t);
+    std::function<QHttpServerResponse(const QString &, const QHttpServerRequest &)> jwtDecoratorArg(T t);
 };
 
 Q_DECLARE_METATYPE(QSharedPointer<WebServer>);
 Q_DECLARE_METATYPE(QWeakPointer<WebServer>);
-
-
+Q_DECLARE_METATYPE(QSharedPointer<QWebSocketServer>);
+Q_DECLARE_METATYPE(QWeakPointer<QWebSocketServer>);

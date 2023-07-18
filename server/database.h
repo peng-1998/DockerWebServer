@@ -51,6 +51,7 @@ public:
     QList<QHash<QString, QVariant>> getContainerImage(const int id, const std::optional<QStringList> &select = std::nullopt);
     void updateContainer(const int id, const QList<QPair<QString, QVariant>> &set);
     void updateContainer(const QString &containername, const QList<QPair<QString, QVariant>> &set);
+    void updateContainerRunning(const QString &containername, const bool running = false);
     void deleteContainer(const int id);
     void deleteContainer(const QString &containername);
 
@@ -59,6 +60,7 @@ public:
     QList<QHash<QString, QVariant>> getMachineAll(const std::optional<QStringList> &select = std::nullopt);
     void updateMachine(const QString &id, const QList<QPair<QString, QVariant>> &set);
     void deleteMachine(const QString &id);
+    bool containsMachine(const QString &id);
 
 signals:
 

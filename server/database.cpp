@@ -1,5 +1,5 @@
 #include "database.h"
-#include "../global/globalconfig.h"
+#include "globalconfig.h"
 #include <QDebug>
 #include <QFile>
 #include <QSqlError>
@@ -268,6 +268,11 @@ void DataBase::updateContainer(const QString &containername, const QList<QPair<Q
     _query.exec(QString("UPDATE container SET %1 WHERE containername = '%2'").arg(formatSet(set), containername));
 }
 
+void DataBase::updateContainerRunning(const QString &containername, const bool running)
+{
+    _query.exec(QString("UPDATE container SET running = %1 WHERE containername = '%2'").arg(running, containername));
+}
+
 void DataBase::deleteContainer(const int id)
 {
     _query.exec(QString("DELETE FROM container WHERE id = %1").arg(id));
@@ -316,6 +321,12 @@ void DataBase::updateMachine(const QString &id, const QList<QPair<QString, QVari
 void DataBase::deleteMachine(const QString &id)
 {
     _query.exec(QString("DELETE FROM machine WHERE id = '%1'").arg(id));
+}
+
+bool DataBase::containsMachine(const QString &id)
+{
+    _query.exec(QString("SELECT id FROM machine WHERE id = '%1'").arg(id));
+    return _query.next();
 }
 
 DataBase::DataBase(QObject *parent)

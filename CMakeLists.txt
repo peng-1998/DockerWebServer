@@ -6,7 +6,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
@@ -19,9 +19,8 @@ find_package(yaml-cpp CONFIG REQUIRED)
 
 add_executable(DWS
   webserver.cpp
-  global/globalconfig.h global/globalconfig.cpp
-  global/globaldata.h global/globaldata.cpp
-
+  server/globalconfig.h server/globalconfig.cpp
+  server/globaldata.h server/globaldata.cpp
   server/globalevent.h server/globalevent.cpp
   server/globalinit.h server/globalinit.cpp
   server/globalcommon.h server/globalcommon.cpp
@@ -32,7 +31,8 @@ add_executable(DWS
   server/bcrypt/openwall_crypt/crypt_blowfish.h server/bcrypt/openwall_crypt/crypt_blowfish.c 
   server/bcrypt/openwall_crypt/crypt_gensalt.h server/bcrypt/openwall_crypt/crypt_gensalt.c
   server/bcrypt/openwall_crypt/crypt.h server/bcrypt/openwall_crypt/ow-crypt.h server/bcrypt/openwall_crypt/wrapper.c server/bcrypt/openwall_crypt/x86.S
-)
+  server/tcpserver.h server/tcpserver.cpp
+  )
 target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp)
 
 install(TARGETS DWS
