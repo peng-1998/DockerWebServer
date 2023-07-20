@@ -4,6 +4,7 @@ from warnings import warn
 from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFO
 
 
+
 class SQLiteDB(BaseDB):
     "Mapping class to table"
 
@@ -28,6 +29,7 @@ class SQLiteDB(BaseDB):
             self.db.close()
 
         return wrapper
+    
 
     def _create_table(self, table_name: str):
         assert table_name in TABEL_INFO.keys()
@@ -196,3 +198,5 @@ class SQLiteDB(BaseDB):
     def all_machine(self) -> list:
         self.cursor.execute("SELECT * FROM machine")
         return self.cursor.fetchall()
+
+
