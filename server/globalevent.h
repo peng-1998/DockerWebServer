@@ -35,6 +35,7 @@ public:
     void onTcpHandleInit(QJsonObject &data, QTcpSocket *sder);
     void onTcpHandleContainer(QJsonObject &data, const QString &machineId);
     void onTcpHandleGpus(QJsonObject &data, const QString &machineId);
+    void onTcpHandleImage(QJsonObject &data, const QString &machineId);
 signals:
 
 private:

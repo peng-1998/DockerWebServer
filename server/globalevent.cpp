@@ -42,9 +42,7 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
     auto db        = DataBase::instance();
     if (!db->containsUser(username))
         return QHttpServerResponse({"message", "User Not Found"}, StatusCode::NotFound);
-    auto user = db->getUser(username, QStringList() << "password"
-                                                    << "salt")
-                    .value();
+    auto user = db->getUser(username, QStringList() << "password" << "salt").value();
     if (user["password"].toString() != GlobalCommon::hashPassword(body["password"].toString(), user["salt"].toString()))
         return QHttpServerResponse({"message", "Wrong Password"}, StatusCode::Unauthorized);
     return QHttpServerResponse({"access_token", webserver->getJwtToken(username)}, StatusCode::Ok);
@@ -151,7 +149,6 @@ void GlobalEvent::onWSHandleContainer(QJsonObject &data, const QString &uuid)
                     {"image", image["imagename"].toString()},
                     {"port", data["port"]},
                     {"hostname",data["account"].toString()},
-
                 }}
             }}
         };
@@ -230,19 +227,42 @@ void GlobalEvent::onTcpHandleInit(QJsonObject &data, QTcpSocket *sder)
 
 void GlobalEvent::onTcpHandleContainer(QJsonObject &data, const QString &machineId)
 {
-    auto uuid = data["uuid"].toString();
-    auto gd  = GlobalData::instance();
+    auto uuid          = data["uuid"].toString();
+    auto gd            = GlobalData::instance();
+    auto opt           = data["opt"].toString();
+    auto db            = DataBase::instance();
+    auto containername = data["containername"].toString();
     if(gd->wsClients.contains(uuid))
     {
         QJsonObject wsMsg {
             {"type", "container"},
-            {"opt",data["opt"]},
+            {"opt", data["opt"]},
+            {"containername", data["containername"]},
             {"status", data["status"]}
         };
         gd->wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(data));
     }
-        
-    
+    if (opt == "create")
+        if (auto original_data = data["original_data"].toObject(); data["status"] == "success")
+        {
+            auto c_sp = containername.split("_");
+            db->insertContainer(
+                original_data["containername"].toString(),
+                c_sp[1].right(c_sp[1].length() - 1),
+                original_data["imagename"].toString(),
+                c_sp[0].right(c_sp[0].length() - 1),
+                original_data["portlist"].toArray(),
+                false);
+        }
+        else{
+            // TODO: 向日志中写入错误信息
+        }
+    else if (opt == "start" || opt == "restart")
+        db->updateContainerRunning(containername, true);
+    else if (opt == "stop")
+        db->updateContainerRunning(containername, false);
+    else if (opt == "delete")
+        db->deleteContainer(containername);
 }
 
 void GlobalEvent::onTcpHandleGpus(QJsonObject &data, const QString &machineId)
@@ -250,10 +270,29 @@ void GlobalEvent::onTcpHandleGpus(QJsonObject &data, const QString &machineId)
     GlobalData::instance()->gpus_cache[machineId] = data;
 }
 
+void GlobalEvent::onTcpHandleImage(QJsonObject &data, const QString &machineId)
+{
+    if(data.contains("uuid")){
+        auto uuid = data["uuid"].toString();
+        auto wsClients = GlobalData::instance()->wsClients;
+        if(wsClients.contains(uuid))
+        {
+            QJsonObject wsMsg {
+                {"type", "image"},
+                {"opt", data["opt"]},
+                {"status", data["status"]}
+            };
+            wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(wsMsg));
+        }
+    }
+    // TODO: 不知道这里要做什么
+    
+}
+
 GlobalEvent::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
-    _wsHandlers["container"] = &GlobalEvent::onWSHandleContainer;
+    _wsHandlers["container"]  = &GlobalEvent::onWSHandleContainer;
     _tcpHandlers["container"] = &GlobalEvent::onTcpHandleContainer;
-    _tcpHandlers["gpus"] = &GlobalEvent::onTcpHandleGpus;
+    _tcpHandlers["gpus"]      = &GlobalEvent::onTcpHandleGpus;
 }
