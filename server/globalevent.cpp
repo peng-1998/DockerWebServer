@@ -289,10 +289,33 @@ void GlobalEvent::onTcpHandleImage(QJsonObject &data, const QString &machineId)
     
 }
 
+void GlobalEvent::onTcpHandleHeartbeat(QJsonObject &data, const QString &machineId)
+{
+    GlobalData::instance()->tcpClients[machineId]->setProperty("lastHeartbeat", QDateTime::currentDateTime());
+}
+
+void GlobalEvent::onCheckHeartbeat()
+{
+    auto &clients = GlobalData::instance()->tcpClients;
+    if (clients.isEmpty())
+        return;
+    auto now = QDateTime::currentDateTime();
+    std::for_each(
+        clients.begin(), 
+        clients.end(), 
+        [&now, &_heartbeatTimeout](auto &client)
+        {if (client->property("lastHeartbeat").toDateTime().secsTo(now) > _heartbeatTimeout)
+            client->disconnectFromHost(); });
+}
+
 GlobalEvent::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
     _wsHandlers["container"]  = &GlobalEvent::onWSHandleContainer;
     _tcpHandlers["container"] = &GlobalEvent::onTcpHandleContainer;
     _tcpHandlers["gpus"]      = &GlobalEvent::onTcpHandleGpus;
+    _tcpHandlers["image"]     = &GlobalEvent::onTcpHandleImage;
+    _tcpHandlers["heartbeat"] = &GlobalEvent::onTcpHandleHeartbeat;
+    connect(&_heartbeatTimer, &QTimer::timeout, this, &GlobalEvent::onCheckHeartbeat);
+    _heartbeatTimer.start(_checkHeartbeatInterval);
 }

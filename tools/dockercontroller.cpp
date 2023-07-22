@@ -8,7 +8,7 @@ DockerController::DockerController(QObject *parent)
 
 Containers DockerController::containers()
 {
-    auto data = get("/containers/json");
+    auto [statusCode, headers, data] = get("/containers/json");
     Containers containers;
     for (auto container_data : data.toArray())
         containers << Container{container_data.toObject()};
@@ -17,7 +17,7 @@ Containers DockerController::containers()
 
 Images DockerController::images()
 {
-    auto data = get("/images/json");
+    auto [statusCode, headers, data] = get("/containers/json");
     Images images;
     for (auto image_data : data.toArray())
         images << Image{image_data.toObject()};
@@ -26,12 +26,14 @@ Images DockerController::images()
 
 Container DockerController::container(const QString &name)
 {
-    return Container{get(QString("/containers/%1/json").arg(name)).toObject()};
+    auto [statusCode, headers, data] = get(QString("/containers/%1/json").arg(name));
+    return Container{data.toObject()};
 }
 
 Image DockerController::image(const QString &name)
 {
-    return Image{get(QString("/images/%1/json").arg(name)).toObject()};
+    auto [statusCode, headers, data] = get(QString("/images/%1/json").arg(name));
+    return Image{data.toObject()};
 }
 
 QString DockerController::createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports)
@@ -46,7 +48,7 @@ QString DockerController::createContainer(const QString &image, const QString &n
     if (!ports.isEmpty())
         for (auto port : ports)
             data["HostConfig"]["PortBindings"][QString("%1/tcp").arg(port.first)] = QJsonArray{QJsonObject{{"HostPort", port.second}}};
-    auto response = post(url, headers, data);
+    auto [statusCode, headers, response] = post(url, headers, data);
     return response.toObject()["Id"].toString();
 }
 
@@ -69,11 +71,11 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
     QString url = QString("/build?t=%1").arg(name);
     Headers headers;
     headers << QPair<QByteArray, QByteArray>("Content-Type", "application/tar");
-    auto response = post(url, headers, tarData).toArray();
-    auto lastResponse = response.last().toObject();
+    auto [statusCode, headers, response] = post(url, headers, tarData);
+    auto lastResponse = response.toArray().last().toObject();
     if (lastResponse.contains("errorDetail"))
         return std::nullopt;
-    for (auto &line : response)
+    for (auto &line : response.toArray())
         if (line.toObject().contains("aux"))
             return line.toObject()["aux"]["ID"].toString();
 }
@@ -81,14 +83,42 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
 std::optional<QString> DockerController::pushImage(const QString &name)
 {
     auto splitStr = name.split(":");
-    auto url = QString("/images/%1/push?tag=%2").arg(splitStr[0], splitStr[1]);
+    auto url      = QString("/images/%1/push?tag=%2").arg(splitStr[0], splitStr[1]);
     Headers headers;
     headers << QPair<QByteArray, QByteArray>("X-Registry-Auth", "{}");
-    auto response = post(url, headers, QByteArray{});
+    auto [statusCode, headers, response] = post(url, headers, QByteArray{});
     if (response.isObject())
         return std::nullopt;
     else
         for (auto &line : response.toArray())
             if (line.toObject().contains("aux"))
                 return line.toObject()["aux"]["Digest"].toString();
+}
+
+std::optional<QString> DockerController::pullImage(const QString &name)
+{
+    auto splitStr                        = name.split(":");
+    auto url                             = QString("/images/create?fromImage=%1&tag=%2").arg(splitStr[0], splitStr[1]);
+    auto [statusCode, headers, response] = post(url, Headers{}, QByteArray{});
+    if (response.isObject())
+        return std::nullopt;
+    else
+        for (auto &line : response.toArray())
+            if (line.toObject()["status"].toString().contains("Digest:"))
+                return line.toObject()["status"].toString().split("Digest:")[1].trimmed();
+}
+
+void DockerController::removeContainer(const QString &name)
+{
+    delete_(QString("/containers/%1?force=true").arg(name));
+}
+
+void DockerController::removeImage(const QString &name)
+{
+    delete_(QString("/images/%1?force=true").arg(name));
+}
+
+void DockerController::containerOpt(const QString &name, const ContainerOpt opt)
+{
+    post(QString("/containers/%1/%2").arg(name, opt), Headers{}, QByteArray{});
 }

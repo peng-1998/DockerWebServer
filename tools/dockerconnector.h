@@ -23,9 +23,10 @@ class DockerConnector : public QObject
     Q_OBJECT
 public:
     explicit DockerConnector(QObject *parent = nullptr);
-    QJsonObject get(const QString &path);
-    QJsonValue post(const QString &path, Headers &headers, const QJsonObject &data);
-    QJsonValue post(const QString &path, Headers &headers, const QByteArray &data)
+    Response get(const QString &path);
+    Response post(const QString &path, Headers &headers, const QJsonObject &data);
+    Response post(const QString &path, Headers &headers, const QByteArray &data)
+    Response delete_(const QString &path);
 signals:
 
 private:

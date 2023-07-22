@@ -9,6 +9,8 @@
 #include <QSharedPointer>
 #include <QWeakPointer>
 #include <QJsonObject>
+#include <QJsonArray>
+#include <QTimer>
 class GlobalEvent : public QObject
 {
     Q_OBJECT
@@ -36,6 +38,8 @@ public:
     void onTcpHandleContainer(QJsonObject &data, const QString &machineId);
     void onTcpHandleGpus(QJsonObject &data, const QString &machineId);
     void onTcpHandleImage(QJsonObject &data, const QString &machineId);
+    void onTcpHandleHeartbeat(QJsonObject &data, const QString &machineId);
+    void onCheckHeartbeat();
 signals:
 
 private:
@@ -46,4 +50,7 @@ private:
     static QSharedPointer<GlobalEvent> _instance;
     QHash<QString,std::function<void (QJsonObject &data, const QString &uuid)>> _wsHandlers;
     QHash<QString,std::function<void (QJsonObject &data, const QString &machineId)>> _tcpHandlers;
+    QTimer _heartbeatTimer;
+    int _heartbeatTimeout;
+    int _checkHeartbeatInterval;
 };
