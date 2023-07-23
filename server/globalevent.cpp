@@ -108,6 +108,33 @@ QHttpServerResponse GlobalEvent::onApiMachinesInfo(const QHttpServerRequest &req
     return QHttpServerResponse(result, StatusCode::Ok);
 }
 
+QHttpServerResponse GlobalEvent::onApiAdminAllUsers(const QHttpServerRequest &request)
+{
+    auto users = DataBase::instance()->getUserAll();
+    QJsonArray result;
+    for (auto &user : users)
+        result.append(GlobalCommon::hashToJsonObject(user));
+    return QHttpServerResponse(result, StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiAdminAllImages(const QHttpServerRequest &request)
+{
+    auto images = DataBase::instance()->getImageAll();
+    QJsonArray result;
+    for (auto &image : images)
+        result.append(GlobalCommon::hashToJsonObject(image));
+    return QHttpServerResponse(result, StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiAdminAllContainers(const QString &machineId, const QHttpServerRequest &request)
+{
+    auto containers = DataBase::instance()->getContainerMachine(machineId);
+    QJsonArray result;
+    for (auto &container : containers)
+        result.append(GlobalCommon::hashToJsonObject(container));
+    return QHttpServerResponse(result, StatusCode::Ok);
+}
+
 void GlobalEvent::onWSNewConnection()
 {
     auto ws   = GlobalData::instance()->wsServer->nextPendingConnection();

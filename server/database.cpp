@@ -163,27 +163,29 @@ bool DataBase::containsImage(const QString &imagename)
     return _query.next();
 }
 
-void DataBase::insertContainer(const QString &containername, const QString &showname, const int imageid, const int userid, const QJsonArray portlist, const bool running)
+void DataBase::insertContainer(const QString &containername, const QString &showname, const int imageid, const int userid, const QString &machineId, const QJsonArray portlist, const bool running)
 {
-    _query.prepare("INSERT INTO container (containername, showname, imageid, userid, portlist, running) "
-                   "VALUES (:containername, :showname, :imageid, :userid, :portlist, :running)");
+    _query.prepare("INSERT INTO container (containername, showname, imageid, userid, machineid, portlist, running) "
+                   "VALUES (:containername, :showname, :imageid, :userid, :machineid, :portlist, :running)");
     _query.bindValue(":containername", containername);
     _query.bindValue(":showname", showname);
     _query.bindValue(":imageid", imageid);
     _query.bindValue(":userid", userid);
+    _query.bindValue(":machineid", machineId);
     _query.bindValue(":portlist", QJsonDocument(portlist).toJson());
     _query.bindValue(":running", running);
     _query.exec();
 }
 
-void DataBase::insertContainer(const QString &containername, const QString &showname, const QString &imagename, const QString &account, const QJsonArray portlist, const bool running)
+void DataBase::insertContainer(const QString &containername, const QString &showname, const QString &imagename, const QString &account, const QString &machineId, const QJsonArray portlist, const bool running)
 {
-    _query.prepare("INSERT INTO container (containername, showname, imageid, userid, portlist, running) "
-                   "VALUES (:containername, :showname, (SELECT id FROM image WHERE imagename = :imagename), (SELECT id FROM user WHERE account = :account), :portlist, :running)");
+    _query.prepare("INSERT INTO container (containername, showname, imageid, userid, machineid, portlist, running) "
+                   "VALUES (:containername, :showname, (SELECT id FROM image WHERE imagename = :imagename), (SELECT id FROM user WHERE account = :account), :machineid, :portlist, :running)");
     _query.bindValue(":containername", containername);
     _query.bindValue(":showname", showname);
     _query.bindValue(":imagename", imagename);
     _query.bindValue(":account", account);
+    _query.bindValue(":machineid", machineId);
     _query.bindValue(":portlist", QJsonDocument(portlist).toJson());
     _query.bindValue(":running", running);
     _query.exec();
@@ -252,6 +254,15 @@ QList<QHash<QString, QVariant>> DataBase::getContainerImage(const QString &image
 QList<QHash<QString, QVariant>> DataBase::getContainerImage(const int id, const std::optional<QStringList> &select)
 {
     _query.exec(QString("SELECT %1 FROM container WHERE imageid = %2").arg(select.value_or(_container_column).join(", "), QString::number(id)));
+    QList<QHash<QString, QVariant>> result;
+    while (_query.next())
+        result.append(formatResult(_query, select.value_or(_container_column)));
+    return result;
+}
+
+QList<QHash<QString, QVariant>> DataBase::getContainerMachine(const QString &machineId, const std::optional<QStringList> &select)
+{
+    _query.exec(QString("SELECT %1 FROM container WHERE machineid = '%2'").arg(select.value_or(_container_column).join(", "), machineId));
     QList<QHash<QString, QVariant>> result;
     while (_query.next())
         result.append(formatResult(_query, select.value_or(_container_column)));
@@ -368,6 +379,7 @@ void DataBase::creatTable()
                 "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 "imageid INTEGER NOT NULL,"
                 "userid INTEGER NOT NULL,"
+                "machineid TEXT NOT NULL,"
                 "showname TEXT NOT NULL,"
                 "containername TEXT NOT NULL,"
                 "portlist TEXT NOT NULL,"

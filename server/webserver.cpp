@@ -4,6 +4,7 @@
 #include <QWeakPointer>
 #include <QDebug>
 using Method = QHttpServerRequest::Method;
+using StatusCode = QHttpServerResponder::StatusCode;
 WebServer::WebServer(QObject *parent)
     : QObject{parent}
 {
@@ -32,6 +33,9 @@ WebServer::WebServer(QObject *parent)
     _httpServer->route("/api/user/set_photo", Method::Get, jwtDecorator(&GlobalEvent::onApiUserSetPhoto));
     _httpServer->route("/api/user/get_user/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiUserGetUser));
     _httpServer->route("/api/machines/info", Method::Get, jwtDecorator(&GlobalEvent::onApiMachinesInfo));
+    _httpServer->route("/api/admin/all_users", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllUsers));
+    _httpServer->route("/api/admin/all_images", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllImages));
+    _httpServer->route("/api/admin/all_containers/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiAdminAllContainers));
 
     _wsServer = QSharedPointer<QWebSocketServer>::create("WebSocketServer", QWebSocketServer::NonSecureMode);
     _wsServer->listen(QHostAddress::Any, (*_config)["WebSocket"]["port"].as<int>());
@@ -63,13 +67,11 @@ std::function<QHttpServerResponse (const QString &,const QHttpServerRequest &)> 
                     return std::invoke(t,arg,request);
                 else
                 {
-                    QJsonObject res;
-                    res["message"]="Invalid token";
-                    return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+                    QJsonObject res {{"message","Invalid token"}};
+                    return QHttpServerResponse(res, StatusCode::Unauthorized);
                 }
-        QJsonObject res;
-        res["message"]="Token Not Found";
-        return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+        QJsonObject res {{"message","Token Not Found"}};
+        return QHttpServerResponse(res, StatusCode::Unauthorized);
     };
 }
 
@@ -85,12 +87,10 @@ std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDec
                     return std::invoke(t,request);
                 else
                 {
-                    QJsonObject res;
-                    res["message"]="Invalid token";
-                    return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+                    QJsonObject res {{"message","Invalid token"}};
+                    return QHttpServerResponse(res, StatusCode::Unauthorized);
                 }
-        QJsonObject res;
-        res["message"]="Token Not Found";
-        return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+        QJsonObject res {{"message","Token Not Found"}};
+        return QHttpServerResponse(res, StatusCode::Unauthorized);
     };
 }

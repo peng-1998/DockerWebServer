@@ -27,6 +27,9 @@ public:
     static QHttpServerResponse onApiUserSetPhoto(const QHttpServerRequest &request);
     static QHttpServerResponse onApiUserGetUser(const QString &account, const QHttpServerRequest &request);
     static QHttpServerResponse onApiMachinesInfo(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllUsers(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllImages(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllContainers(const QString &machineId, const QHttpServerRequest &request);
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);
     void onWSMessageReceived(const QString &message, const QString &uuid);
