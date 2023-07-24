@@ -33,6 +33,7 @@ add_executable(DWS
   server/bcrypt/openwall_crypt/crypt.h server/bcrypt/openwall_crypt/ow-crypt.h server/bcrypt/openwall_crypt/wrapper.c server/bcrypt/openwall_crypt/x86.S
   tools/dockerconnector.h tools/dockerconnector.cpp
   tools/dockercontroller.h tools/dockercontroller.cpp
+  tools/gpuinfo.h tools/gpuinfo.cpp
   )
 target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp)
 
