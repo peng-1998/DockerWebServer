@@ -9,13 +9,8 @@ QSharedPointer<GlobalData> GlobalData::instance()
     return _instance;
 }
 
-GlobalData::~GlobalData()
-{
-
-}
-
-GlobalData::GlobalData()
-    : QObject()
+GlobalData::GlobalData(QObject *parent)
+    : QObject(nullptr)
 {
 
 }

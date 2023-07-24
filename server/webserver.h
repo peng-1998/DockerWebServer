@@ -18,8 +18,6 @@ public:
     explicit WebServer(QObject *parent = nullptr);
     ~WebServer();
 
-    QString getJwtToken(const QString &) const;
-
 private:
     QSharedPointer<GlobalConfig> _config;
     QSharedPointer<GlobalData> _data;

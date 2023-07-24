@@ -55,6 +55,7 @@ public:
     void updateContainerRunning(const QString &containername, const bool running = false);
     void deleteContainer(const int id);
     void deleteContainer(const QString &containername);
+    bool containsContainer(const QString &containername);
 
     void insertMachine(const QString &id, const QString &ip, const QJsonObject &gpu, const QJsonObject &cpu, const QJsonObject &memory, const QJsonObject &disk, const bool online = true);
     std::optional<QHash<QString, QVariant>> getMachine(const QString &id, const std::optional<QStringList> &select = std::nullopt);

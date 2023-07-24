@@ -281,7 +281,10 @@ void DataBase::updateContainer(const QString &containername, const QList<QPair<Q
 
 void DataBase::updateContainerRunning(const QString &containername, const bool running)
 {
-    _query.exec(QString("UPDATE container SET running = %1 WHERE containername = '%2'").arg(running, containername));
+    _query.prepare("UPDATE container SET running = :running WHERE containername = :containername");
+    _query.bindValue(":running", running);
+    _query.bindValue(":containername", containername);
+    _query.exec();
 }
 
 void DataBase::deleteContainer(const int id)
@@ -292,6 +295,12 @@ void DataBase::deleteContainer(const int id)
 void DataBase::deleteContainer(const QString &containername)
 {
     _query.exec(QString("DELETE FROM container WHERE containername = '%1'").arg(containername));
+}
+
+bool DataBase::containsContainer(const QString &containername)
+{
+    _query.exec(QString("SELECT id FROM container WHERE containername = '%1'").arg(containername));
+    return _query.next();
 }
 
 void DataBase::insertMachine(const QString &id, const QString &ip, const QJsonObject &gpu, const QJsonObject &cpu, const QJsonObject &memory, const QJsonObject &disk, const bool online)

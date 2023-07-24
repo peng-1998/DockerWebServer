@@ -8,12 +8,11 @@ using StatusCode = QHttpServerResponder::StatusCode;
 WebServer::WebServer(QObject *parent)
     : QObject{parent}
 {
-    GlobalData::instance()->webServer = QSharedPointer<WebServer>(this);
-    
     _config = GlobalConfig::instance();
     _data   = GlobalData::instance();
     _event  = GlobalEvent::instance();
     _jwt    = QSharedPointer<QJsonWebToken>::create();
+    _data->jwt = _jwt;
     
     _jwt->setSecret(QString::fromStdString((*_config)["JWT"]["secret"].as<std::string>()));
     _jwt->setAlgorithmStr(QString::fromStdString((*_config)["JWT"]["algorithm"].as<std::string>()));
@@ -45,14 +44,6 @@ WebServer::WebServer(QObject *parent)
 
 WebServer::~WebServer()
 {
-}
-
-QString WebServer::getJwtToken(const QString &identity) const
-{
-    _jwt->appendClaim("identity", identity);
-    // _jwt->appendClaim("iat", QDateTime::currentDateTime().toSecsSinceEpoch());
-    // _jwt->appendClaim("exp", QDateTime::currentDateTime().addDays(1).toSecsSinceEpoch());
-    return _jwt->getToken();
 }
 
 template <typename T>
