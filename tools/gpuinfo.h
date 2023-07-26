@@ -9,6 +9,13 @@
 #endif
 #define MAX_PROCESS_PER_GPU 32
 
+#include <QMap>
+#include <QString>
+#include <QList>
+#include <QHash>
+
+
+
 struct MemoryInfo
 {
     float total_memory;
@@ -17,28 +24,29 @@ struct MemoryInfo
 
 struct UtilizationInfo
 {
-    unsigned int gpu_utilization;
-    unsigned int memory_utilization;
+    uint gpu_utilization;
+    uint memory_utilization;
 };
 
 struct ProcessInfo
 {
     int gpu_id;
-    std::map<int, float> pid_memory;
+    QHash<int, float> pid_memory;
 };
 
 struct GPUInfo
 {
-    /* data */
-    std::string gpu_name;
+    QString gpu_name;
     MemoryInfo memory_info;
     UtilizationInfo utilization_info;
 };
 
+typedef QList<GPUInfo> GPUInfos;
+
 class NvidiaGPU
 {
 private:
-    unsigned int gpu_device_count;
+    uint gpu_device_count;
     nvmlReturn_t result;
     nvmlDevice_t device;
 
@@ -48,6 +56,6 @@ public:
     MemoryInfo getMemory(int gpuid);
     UtilizationInfo getUtilization(int gpuid);
     ProcessInfo getProcess(int gpuid);
-    std::map getAllGPUsInfo();
+    GPUInfos getAllGPUsInfo();
     jsonfy();
 }

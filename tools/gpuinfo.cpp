@@ -4,67 +4,55 @@ NvidiaGPU::NvidiaGPU()
 {
     result = nvmlInit();
     result = nvmlDeviceGetCount(&gpu_device_count);
-    if (NVML_SUCCESS != result0)
-    {
-        std::cout << "Failed to initialize NVML:" << nvmlErrorString(result0) << "\n"
-                  << endl;
-        exit(1);
-    }
+    if (result != NVML_SUCCESS)
+        throw "Failed to initialize NVML" + nvmlErrorString(result);
 }
+
 NvidiaGPU::~NvidiaGPU()
 {
     result = nvmlShutdown();
-    if (NVML_SUCCESS != result0)
-    {
-        std::cout << "Failed to shutdown NVML:" << nvmlErrorString(result0) << "\n"
-                  << endl;
-        exit(1);
-    }
+    if (result != NVML_SUCCESS)
+        throw "Failed to shutdown NVML." + nvmlErrorString(result);
 }
-NvidiaGPU::getMemory(int gpuid)
+
+MemoryInfo NvidiaGPU::getMemory(int gpuid)
 {
     nvmiMemory_t memory;
     result = nvmlDeviceGetHandleByIndex(gpuid, &device);
     result = nvmlDeviceGetMemoryInfo(device, &memory);
-    if (NVML_SUCCESS != result0)
-    {
-        std::cout << "Failed to get handle for device:" << nvmlErrorString(result0) << "\n"
-                  << endl;
-        exit(1);
-    }
+    if (result != NVML_SUCCESS)
+        throw "Failed to get handle for device." + nvmlErrorString(result);
     return { memory.total / 1024 / 1024, memory.used / 1024 / 1024 }
 }
-NvidiaGPU::getUtilization(int gpuid)
+
+UtilizationInfo NvidiaGPU::getUtilization(int gpuid)
 {
     nvmlUtilization_t utilization;
     result = nvmlDeviceGetHandleByIndex(gpuid, &device);
     result = nvmlDeviceGetUtilizationRates(device, &utilization);
-    if (NVML_SUCCESS != result0)
-    {
-        std::cout << "Failed to get handle for device:" << nvmlErrorString(result0) << "\n"
-                  << endl;
-        exit(1);
-    }
+    if (result != NVML_SUCCESS)
+        throw "Failed to get handle for device." + nvmlErrorString(result);
     return {utilization.gpu, utilization.memory};
 }
-NvidiaGPU::getProcess(int gpuid)
+
+ProcessInfo NvidiaGPU::getProcess(int gpuid)
 {
     nvmlProcessInfo_t process[MAX_PROCESS_PER_GPU];
     unsigned int infoCount = 0;
     result = nvmlDeviceGetHandleByIndex(gpuid, &device);
     result = nvmlDeviceGetComputeRunningProcesses_v3(device, &infoCount, &process);
-    if (NVML_SUCCESS != result0)
-    {
-        std::cout << "Failed to get handle for device:" << nvmlErrorString(result0) << "\n"
-                  << endl;
-        exit(1);
-    }
-    return {gpuid, map<int, float>(process, process + infoCount, [](nvmlProcessInfo_t p)
-                                   { return {p.pid, p.usedGpuMemory / 1024 / 1024}; })};
+    if (result != NVML_SUCCESS)
+        throw "Failed to get handle for device." + nvmlErrorString(result);
+    auto process_info = ProcessInfo();
+    process_info.gpu_id = gpuid;
+    for(int i = 0; i < infoCount; ++i)
+        process_info.pid_memory.insert(process[i].pid, process[i].usedGpuMemory / 1024 / 1024);
+    return process_info;
 }
-NvidiaGPU::getAllGPUsInfo()
+
+GPUInfos NvidiaGPU::getAllGPUsInfo()
 {
-    std::map<int, GPUInfo> all_gpus_info;
+    GPUInfos all_gpus_info;
     char name[NVML_DEVICE_NAME_BUFFER_SIZE];
     nvmlMemory_t memory;
     nvmlUtilization_t utilization;
@@ -74,10 +62,11 @@ NvidiaGPU::getAllGPUsInfo()
         result = nvmlDeviceGetName(device, &name, NVML_DEVICE_NAME_BUFFER_SIZE);
         result = nvmlDeviceGetMemoryInfo(device, &memory);
         result = nvmlDeviceGetUtilizationRates(device, &utilization);
-        all_gpus_info[i] = GPUInfo(name, {memory.total / 1024 / 1024, memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory});
+        all_gpus_info << GPUInfo(name, {memory.total / 1024 / 1024, memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory});
     }
     return all_gpus_info;
 }
+
 NvidiaGPU::jsonfy()
 {
 }

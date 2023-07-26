@@ -85,7 +85,9 @@
         "qwebsocket": "cpp",
         "qjsonobject": "cpp",
         "qrandomgenerator": "cpp",
-        "qtcpserver": "cpp"
+        "qtcpserver": "cpp",
+        "qstring": "cpp",
+        "qexception": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
