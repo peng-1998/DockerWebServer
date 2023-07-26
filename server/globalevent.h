@@ -1,16 +1,18 @@
 #pragma once
 
-#include "globalconfig.h"
 #include "globalcommon.h"
+#include "globalconfig.h"
 #include "jsonwebtoken/src/qjsonwebtoken.h"
 #include <QHttpServerRequest>
 #include <QHttpServerResponse>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QObject>
 #include <QSharedPointer>
-#include <QWeakPointer>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <QTcpSocket>
 #include <QTimer>
+#include <QWeakPointer>
+#include <QWebSocket>
 class GlobalEvent : public QObject
 {
     Q_OBJECT
@@ -27,6 +29,9 @@ public:
     static QHttpServerResponse onApiUserSetPhoto(const QHttpServerRequest &request);
     static QHttpServerResponse onApiUserGetUser(const QString &account, const QHttpServerRequest &request);
     static QHttpServerResponse onApiMachinesInfo(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllUsers(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllImages(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllContainers(const QString &machineId, const QHttpServerRequest &request);
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);
     void onWSMessageReceived(const QString &message, const QString &uuid);
@@ -48,9 +53,9 @@ private:
     GlobalEvent &operator=(const GlobalEvent &) = delete;
     GlobalEvent(GlobalEvent &&) = delete;
     static QSharedPointer<GlobalEvent> _instance;
-    QHash<QString,std::function<void (QJsonObject &data, const QString &uuid)>> _wsHandlers;
-    QHash<QString,std::function<void (QJsonObject &data, const QString &machineId)>> _tcpHandlers;
-    QTimer _heartbeatTimer;
-    int _heartbeatTimeout;
-    int _checkHeartbeatInterval;
+    QHash<QString, std::function<void(GlobalEvent *, QJsonObject &data, const QString &uuid)>> _wsHandlers;
+    QHash<QString, std::function<void(GlobalEvent *, QJsonObject &data, const QString &machineId)>> _tcpHandlers;
+    
+    // int _heartbeatTimeout;
+    // int _checkHeartbeatInterval;
 };

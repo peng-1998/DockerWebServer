@@ -4,15 +4,15 @@
 #include <QWeakPointer>
 #include <QDebug>
 using Method = QHttpServerRequest::Method;
+using StatusCode = QHttpServerResponder::StatusCode;
 WebServer::WebServer(QObject *parent)
     : QObject{parent}
 {
-    GlobalData::instance()->webServer = QSharedPointer<WebServer>(this);
-    
     _config = GlobalConfig::instance();
     _data   = GlobalData::instance();
     _event  = GlobalEvent::instance();
     _jwt    = QSharedPointer<QJsonWebToken>::create();
+    _data->jwt = _jwt;
     
     _jwt->setSecret(QString::fromStdString((*_config)["JWT"]["secret"].as<std::string>()));
     _jwt->setAlgorithmStr(QString::fromStdString((*_config)["JWT"]["algorithm"].as<std::string>()));
@@ -32,6 +32,9 @@ WebServer::WebServer(QObject *parent)
     _httpServer->route("/api/user/set_photo", Method::Get, jwtDecorator(&GlobalEvent::onApiUserSetPhoto));
     _httpServer->route("/api/user/get_user/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiUserGetUser));
     _httpServer->route("/api/machines/info", Method::Get, jwtDecorator(&GlobalEvent::onApiMachinesInfo));
+    _httpServer->route("/api/admin/all_users", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllUsers));
+    _httpServer->route("/api/admin/all_images", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllImages));
+    _httpServer->route("/api/admin/all_containers/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiAdminAllContainers));
 
     _wsServer = QSharedPointer<QWebSocketServer>::create("WebSocketServer", QWebSocketServer::NonSecureMode);
     _wsServer->listen(QHostAddress::Any, (*_config)["WebSocket"]["port"].as<int>());
@@ -41,14 +44,6 @@ WebServer::WebServer(QObject *parent)
 
 WebServer::~WebServer()
 {
-}
-
-QString WebServer::getJwtToken(const QString &identity) const
-{
-    _jwt->appendClaim("identity", identity);
-    // _jwt->appendClaim("iat", QDateTime::currentDateTime().toSecsSinceEpoch());
-    // _jwt->appendClaim("exp", QDateTime::currentDateTime().addDays(1).toSecsSinceEpoch());
-    return _jwt->getToken();
 }
 
 template <typename T>
@@ -63,13 +58,11 @@ std::function<QHttpServerResponse (const QString &,const QHttpServerRequest &)> 
                     return std::invoke(t,arg,request);
                 else
                 {
-                    QJsonObject res;
-                    res["message"]="Invalid token";
-                    return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+                    QJsonObject res {{"message","Invalid token"}};
+                    return QHttpServerResponse(res, StatusCode::Unauthorized);
                 }
-        QJsonObject res;
-        res["message"]="Token Not Found";
-        return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+        QJsonObject res {{"message","Token Not Found"}};
+        return QHttpServerResponse(res, StatusCode::Unauthorized);
     };
 }
 
@@ -85,12 +78,10 @@ std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDec
                     return std::invoke(t,request);
                 else
                 {
-                    QJsonObject res;
-                    res["message"]="Invalid token";
-                    return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+                    QJsonObject res {{"message","Invalid token"}};
+                    return QHttpServerResponse(res, StatusCode::Unauthorized);
                 }
-        QJsonObject res;
-        res["message"]="Token Not Found";
-        return QHttpServerResponse(res, QHttpServerResponder::StatusCode::Unauthorized);
+        QJsonObject res {{"message","Token Not Found"}};
+        return QHttpServerResponse(res, StatusCode::Unauthorized);
     };
 }

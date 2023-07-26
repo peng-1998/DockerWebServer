@@ -2,6 +2,7 @@
 #include "bcrypt/qtbcrypt.h"
 #include <QMetaType>
 #include <QRandomGenerator>
+#include <QJsonDocument>
 QMap<QString, QString> GlobalCommon::parseHeaders(const QList<QPair<QByteArray, QByteArray>> &headers)
 {
     QMap<QString, QString> result;
@@ -62,9 +63,17 @@ QString GlobalCommon::objectToString(const QJsonObject &object)
     return QString(QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
-QJsonObject GlobalCommon::stringToObject(const QbyteArray &string)
+QJsonObject GlobalCommon::stringToObject(const QByteArray &string)
 {
     return QJsonDocument::fromJson(string).object();
+}
+
+QString GlobalCommon::getJwtToken(QSharedPointer<QJsonWebToken> jwt, const QString & identity)
+{
+    jwt->appendClaim("identity", identity);
+    // _jwt->appendClaim("iat", QDateTime::currentDateTime().toSecsSinceEpoch());
+    // _jwt->appendClaim("exp", QDateTime::currentDateTime().addDays(1).toSecsSinceEpoch());
+    return jwt->getToken();
 }
 
 GlobalCommon::GlobalCommon(QObject *parent)

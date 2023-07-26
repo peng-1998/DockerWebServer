@@ -25,12 +25,17 @@ public:
     explicit DockerConnector(QObject *parent = nullptr);
     Response get(const QString &path);
     Response post(const QString &path, Headers &headers, const QJsonObject &data);
-    Response post(const QString &path, Headers &headers, const QByteArray &data)
+    Response post(const QString &path, Headers &headers, const QByteArray &data);
     Response delete_(const QString &path);
+
+    static Headers empty_headers;
+    static QByteArray empty_data;
+    static QJsonObject empty_object;
 signals:
 
 private:
+    QSharedPointer<QLocalSocket> connectDocker();
     Response parseResponse(const QString &data);
     QByteArray formatRequest(const QString &path, const Method method, Headers &headers, const QJsonObject &data);
-    QByteArray formatRequest(const QString &path, const Method method, Headers &headers, const QByteArray &data)
+    QByteArray formatRequest(const QString &path, const Method method, Headers &headers, const QByteArray &data);
 };

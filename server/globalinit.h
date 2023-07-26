@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QSharedPointer>
+#include "globaldata.h"
 class GlobalInit : public QObject
 {
     Q_OBJECT

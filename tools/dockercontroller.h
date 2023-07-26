@@ -17,7 +17,7 @@ public:
         QString name;
         QList<QPair<int, int>> ports;
         bool running;
-        Container(QJsonObject &data)
+        Container(QJsonObject data)
         {
             id      = data["Id"].toString();
             name    = data["Name"].toString().remove(0, 1);
@@ -30,7 +30,8 @@ public:
                 auto port = port_data.toObject();
                 ports_set << QPair<int, int>(port["PrivatePort"].toInt(), port["PublicPort"].toInt());
             }
-            ports = ports_set.toList();
+            for (auto port : ports_set)
+                ports << port;
         };
     };
 
@@ -38,18 +39,18 @@ public:
     {
         QString name;
         QString id;
-        Image(QJsonObject &data)
+        Image(QJsonObject data)
         {
             name = data["RepoTags"].toArray()[0].toString();
             id   = data["Id"].toString();
         };
     };
 
-    enum ContainerOpt : QString
+    enum ContainerOpt
     {
-        START   = "start",
-        STOP    = "stop",
-        RESTART = "restart"
+        START   = 0,
+        STOP    = 1,
+        RESTART = 2
     };
 
     typedef QList<Container> Containers;

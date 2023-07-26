@@ -40,8 +40,8 @@ public:
     void deleteImage(const QString &imagename);
     bool containsImage(const QString &imagename);
 
-    void insertContainer(const QString &containername, const QString &showname, const int imageid, const int userid, const QJsonArray portlist, const bool running = false);
-    void insertContainer(const QString &containername, const QString &showname, const QString &imagename, const QString &account, const QJsonArray portlist, const bool running = false);
+    void insertContainer(const QString &containername, const QString &showname, const int imageid, const int userid, const QString &machineId, const QJsonArray portlist, const bool running = false);
+    void insertContainer(const QString &containername, const QString &showname, const QString &imagename, const QString &account, const QString &machineId, const QJsonArray portlist, const bool running = false);
     std::optional<QHash<QString, QVariant>> getContainer(const int id, const std::optional<QStringList> &select = std::nullopt);
     std::optional<QHash<QString, QVariant>> getContainer(const QString &containername, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getContainerAll(const std::optional<QStringList> &select = std::nullopt);
@@ -49,11 +49,13 @@ public:
     QList<QHash<QString, QVariant>> getContainerUser(const int id, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getContainerImage(const QString &image, const std::optional<QStringList> &select = std::nullopt);
     QList<QHash<QString, QVariant>> getContainerImage(const int id, const std::optional<QStringList> &select = std::nullopt);
+    QList<QHash<QString, QVariant>> getContainerMachine(const QString &machineId, const std::optional<QStringList> &select = std::nullopt);
     void updateContainer(const int id, const QList<QPair<QString, QVariant>> &set);
     void updateContainer(const QString &containername, const QList<QPair<QString, QVariant>> &set);
     void updateContainerRunning(const QString &containername, const bool running = false);
     void deleteContainer(const int id);
     void deleteContainer(const QString &containername);
+    bool containsContainer(const QString &containername);
 
     void insertMachine(const QString &id, const QString &ip, const QJsonObject &gpu, const QJsonObject &cpu, const QJsonObject &memory, const QJsonObject &disk, const bool online = true);
     std::optional<QHash<QString, QVariant>> getMachine(const QString &id, const std::optional<QStringList> &select = std::nullopt);
