@@ -1,4 +1,4 @@
-#include <gpuinfo.h>
+#include "gpuinfo.h"
 
 NvidiaGPU::NvidiaGPU()
 {
@@ -45,7 +45,7 @@ ProcessInfo NvidiaGPU::getProcess(int gpuid)
         throw "Failed to get handle for device." + nvmlErrorString(result);
     auto process_info = ProcessInfo();
     process_info.gpu_id = gpuid;
-    for(int i = 0; i < infoCount; ++i)
+    for (int i = 0; i < infoCount; ++i)
         process_info.pid_memory.insert(process[i].pid, process[i].usedGpuMemory / 1024 / 1024);
     return process_info;
 }
@@ -65,8 +65,4 @@ GPUInfos NvidiaGPU::getAllGPUsInfo()
         all_gpus_info << GPUInfo(name, {memory.total / 1024 / 1024, memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory});
     }
     return all_gpus_info;
-}
-
-NvidiaGPU::jsonfy()
-{
 }

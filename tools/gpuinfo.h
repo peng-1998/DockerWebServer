@@ -1,5 +1,5 @@
 #ifndef NVML_INIT_FLAG_NO_GPUS
-#include <hwloc/nvml.h>
+#include "nvml.h"
 #endif
 #ifndef MAP_H
 #include <map>
@@ -13,8 +13,6 @@
 #include <QString>
 #include <QList>
 #include <QHash>
-
-
 
 struct MemoryInfo
 {
@@ -57,5 +55,4 @@ public:
     UtilizationInfo getUtilization(int gpuid);
     ProcessInfo getProcess(int gpuid);
     GPUInfos getAllGPUsInfo();
-    jsonfy();
 }
