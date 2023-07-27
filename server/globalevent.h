@@ -1,8 +1,8 @@
 #pragma once
 
 #include "globalcommon.h"
-#include "globalconfig.h"
-#include "jsonwebtoken/src/qjsonwebtoken.h"
+#include "../tools/globalconfig.h"
+#include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
 #include <QHttpServerRequest>
 #include <QHttpServerResponse>
 #include <QJsonArray>
@@ -18,8 +18,7 @@ class GlobalEvent : public QObject
     Q_OBJECT
 public:
     static QSharedPointer<GlobalEvent> instance();
-
-public:
+public slots:
     static QHttpServerResponse onHttpIndex(const QHttpServerRequest &request);
     static QHttpServerResponse onHttpWSServer(const QHttpServerRequest &request);
     static QHttpServerResponse onHttpWSClient(const QHttpServerRequest &request);
@@ -55,7 +54,4 @@ private:
     static QSharedPointer<GlobalEvent> _instance;
     QHash<QString, std::function<void(GlobalEvent *, QJsonObject &data, const QString &uuid)>> _wsHandlers;
     QHash<QString, std::function<void(GlobalEvent *, QJsonObject &data, const QString &machineId)>> _tcpHandlers;
-    
-    // int _heartbeatTimeout;
-    // int _checkHeartbeatInterval;
 };

@@ -3,15 +3,23 @@
 #include <QSettings>
 #include <QWeakPointer>
 #include <QDebug>
+
 using Method = QHttpServerRequest::Method;
 using StatusCode = QHttpServerResponder::StatusCode;
+
 WebServer::WebServer(QObject *parent)
     : QObject{parent}
 {
+    GlobalConfig::init("config.yaml");
     _config = GlobalConfig::instance();
     _data   = GlobalData::instance();
     _event  = GlobalEvent::instance();
     _jwt    = QSharedPointer<QJsonWebToken>::create();
+    GlobalData::instance()->tcpServer = QSharedPointer<QTcpServer>(new QTcpServer());
+    GlobalData::instance()->tcpServer->listen(QHostAddress::Any, (*GlobalConfig::instance())["TCP"]["port"].as<int>());
+    connect(GlobalData::instance()->tcpServer.get(), &QTcpServer::newConnection, GlobalEvent::instance().get(), &GlobalEvent::onNewTcpConnection);
+    connect(&GlobalData::instance()->heartbeatTimer, &QTimer::timeout, GlobalEvent::instance().get(), &GlobalEvent::onCheckHeartbeat);
+    GlobalData::instance()->heartbeatTimer.start(1000);
     _data->jwt = _jwt;
     
     _jwt->setSecret(QString::fromStdString((*_config)["JWT"]["secret"].as<std::string>()));
@@ -47,41 +55,33 @@ WebServer::~WebServer()
 }
 
 template <typename T>
-std::function<QHttpServerResponse (const QString &,const QHttpServerRequest &)> WebServer::jwtDecoratorArg(T t)
+std::function<QHttpServerResponse (QString ,const QHttpServerRequest &)> WebServer::jwtDecoratorArg(T && t)
 {
-    return [this,&t](const QString &arg, const QHttpServerRequest &request)
+    return [this, t = std::forward<T>(t)](QString arg, const QHttpServerRequest &request) -> QHttpServerResponse
     {
         auto header = request.headers();
         for (auto &item : header)
             if (item.first == "Authorization")
                 if (auto jwt = QJsonWebToken::fromTokenAndSecret(item.second, this->_secret); jwt.isValid())
-                    return std::invoke(t,arg,request);
+                    return std::invoke(t, arg, request);
                 else
-                {
-                    QJsonObject res {{"message","Invalid token"}};
-                    return QHttpServerResponse(res, StatusCode::Unauthorized);
-                }
-        QJsonObject res {{"message","Token Not Found"}};
-        return QHttpServerResponse(res, StatusCode::Unauthorized);
+                    return QHttpServerResponse(QJsonObject{{"message","Invalid token"}}, StatusCode::Unauthorized);
+        return QHttpServerResponse(QJsonObject{{"message","Token Not Found"}}, StatusCode::Unauthorized);
     };
 }
 
 template <typename T>
-std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDecorator(T t)
+std::function<QHttpServerResponse(const QHttpServerRequest &)> WebServer::jwtDecorator(T && t)
 {
-    return [this,&t](const QHttpServerRequest &request)
+    return [this, t = std::forward<T>(t)](const QHttpServerRequest &request) -> QHttpServerResponse
     {
         auto header = request.headers();
         for (auto &item : header)
             if (item.first == "Authorization")
                 if (auto jwt = QJsonWebToken::fromTokenAndSecret(item.second, this->_secret); jwt.isValid())
-                    return std::invoke(t,request);
+                    return std::invoke(t, request);
                 else
-                {
-                    QJsonObject res {{"message","Invalid token"}};
-                    return QHttpServerResponse(res, StatusCode::Unauthorized);
-                }
-        QJsonObject res {{"message","Token Not Found"}};
-        return QHttpServerResponse(res, StatusCode::Unauthorized);
+                    return QHttpServerResponse(QJsonObject{{"message","Invalid token"}}, StatusCode::Unauthorized);
+        return QHttpServerResponse(QJsonObject{{"message","Token Not Found"}}, StatusCode::Unauthorized);
     };
 }

@@ -19,9 +19,9 @@ public:
         bool running;
         Container(QJsonObject data)
         {
-            id      = data["Id"].toString();
-            name    = data["Name"].toString().remove(0, 1);
-            image   = data["Image"].toString();
+            id = data["Id"].toString();
+            name = data["Name"].toString().remove(0, 1);
+            image = data["Image"].toString();
             running = data["State"].toString() == "running";
             QSet<QPair<int, int>> ports_set;
             auto ports_data = data["Ports"].toArray();
@@ -33,6 +33,18 @@ public:
             for (auto port : ports_set)
                 ports << port;
         };
+        QJsonObject toJson() const
+        {
+            auto ports = QJsonObject();
+            for (auto port : this->ports)
+                ports.insert(QString::number(port.first), port.second);
+            return QJsonObject{
+                {"id", id},
+                {"image", image},
+                {"name", name},
+                {"ports", ports},
+                {"running", running}};
+        }
     };
 
     struct Image
@@ -42,14 +54,20 @@ public:
         Image(QJsonObject data)
         {
             name = data["RepoTags"].toArray()[0].toString();
-            id   = data["Id"].toString();
+            id = data["Id"].toString();
         };
+        QJsonObject toJson() const
+        {
+            return QJsonObject{
+                {"name", name},
+                {"id", id}};
+        }
     };
 
     enum ContainerOpt
     {
-        START   = 0,
-        STOP    = 1,
+        START = 0,
+        STOP = 1,
         RESTART = 2
     };
 

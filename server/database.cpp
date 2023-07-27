@@ -1,5 +1,5 @@
 #include "database.h"
-#include "globalconfig.h"
+#include "../tools/globalconfig.h"
 #include <QDebug>
 #include <QFile>
 #include <QSqlError>

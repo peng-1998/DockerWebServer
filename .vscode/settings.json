@@ -86,8 +86,28 @@
         "qjsonobject": "cpp",
         "qrandomgenerator": "cpp",
         "qtcpserver": "cpp",
+<<<<<<< HEAD
         "qstring": "cpp",
         "qexception": "cpp"
+=======
+        "qregularexpressionmatch": "cpp",
+        "qregularexpression": "cpp",
+        "qbytearray": "cpp",
+        "qmap": "cpp",
+        "qpair": "cpp",
+        "qvariant": "cpp",
+        "qstring": "cpp",
+        "__nullptr": "cpp",
+        "bitset": "cpp",
+        "__bit_reference": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "filesystem": "cpp",
+        "__locale": "cpp",
+        "locale": "cpp",
+        "qjsondocument": "cpp"
+>>>>>>> e1c16af (update)
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

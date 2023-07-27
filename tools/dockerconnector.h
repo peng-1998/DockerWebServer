@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QByteArray>
-#include <QHttpServerRequest>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -13,6 +12,7 @@
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QJsonValue>
+#include <QHttpServerRequest>
 
 typedef QList<QPair<QByteArray, QByteArray>> Headers;
 typedef std::tuple<int, Headers, QJsonValue> Response;

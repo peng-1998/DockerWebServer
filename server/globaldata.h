@@ -1,22 +1,23 @@
 #pragma once
 
+#include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
 #include <QHash>
+#include <QJsonObject>
 #include <QObject>
 #include <QSharedPointer>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QTimer>
 #include <QVariant>
 #include <QWebSocket>
 #include <QWebSocketServer>
-#include <QTcpSocket>
-#include <QTcpServer>
-#include <QJsonObject>
-#include "jsonwebtoken/src/qjsonwebtoken.h"
-#include <QTimer>
 
 class GlobalData : public QObject
 {
     Q_OBJECT
 public:
     static QSharedPointer<GlobalData> instance();
+public:
     QHash<QString, QSharedPointer<QWebSocket>> wsClients;
     QSharedPointer<QObject> webServer;
     QSharedPointer<QWebSocketServer> wsServer;
@@ -25,10 +26,13 @@ public:
     QHash<QString, QJsonObject> gpus_cache;
     QSharedPointer<QJsonWebToken> jwt;
     QTimer heartbeatTimer;
+
 private:
-    GlobalData(QObject *parent = nullptr);
+    using QObject::QObject;
     GlobalData(const GlobalData &) = delete;
     GlobalData &operator=(const GlobalData &) = delete;
     GlobalData(GlobalData &&) = delete;
     static QSharedPointer<GlobalData> _instance;
+
+
 };

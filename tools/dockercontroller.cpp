@@ -86,6 +86,7 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
     for (auto line : response.toArray())
         if (line.toObject().contains("aux"))
             return line.toObject()["aux"].toObject()["ID"].toString();
+    return std::nullopt;
 }
 
 std::optional<QString> DockerController::pushImage(const QString &name)
@@ -101,6 +102,7 @@ std::optional<QString> DockerController::pushImage(const QString &name)
         for (auto line : response.toArray())
             if (line.toObject().contains("aux"))
                 return line.toObject()["aux"].toObject()["Digest"].toString();
+    return std::nullopt;
 }
 
 std::optional<QString> DockerController::pullImage(const QString &name)
@@ -114,6 +116,7 @@ std::optional<QString> DockerController::pullImage(const QString &name)
         for (auto line : response.toArray())
             if (line.toObject()["status"].toString().contains("Digest:"))
                 return line.toObject()["status"].toString().split("Digest:")[1].trimmed();
+    return std::nullopt;
 }
 
 void DockerController::removeContainer(const QString &name)

@@ -13,6 +13,7 @@
 #include <QSqlQuery>
 #include <QStringList>
 #include <QVariant>
+
 class DataBase : public QObject
 {
     Q_OBJECT

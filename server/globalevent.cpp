@@ -7,6 +7,7 @@
 #include <QUuid>
 #include <QWebSocket>
 #include <QWebSocketServer>
+#include "globaldata.h"
 
 using StatusCode = QHttpServerResponder::StatusCode;
 

@@ -1,12 +1,14 @@
 #include "globalcommon.h"
-#include "bcrypt/qtbcrypt.h"
+#include "../tools/bcrypt/qtbcrypt.h"
+#include <QJsonDocument>
 #include <QMetaType>
 #include <QRandomGenerator>
-#include <QJsonDocument>
+
 QMap<QString, QString> GlobalCommon::parseHeaders(const QList<QPair<QByteArray, QByteArray>> &headers)
 {
     QMap<QString, QString> result;
-    for (auto &header : headers) {
+    for (auto &header : headers)
+    {
         result.insert(QString::fromUtf8(header.first), QString::fromUtf8(header.second));
     }
     return result;
@@ -29,11 +31,11 @@ QJsonObject GlobalCommon::hashToJsonObject(const QHash<QString, QVariant> &hash)
     for (auto &key : hash.keys())
     {
         auto value = hash.value(key);
-        if(value.typeId() == QMetaType::QString)
+        if (value.typeId() == QMetaType::QString)
             result.insert(key, hash.value(key).toString());
-        else if(value.typeId() == QMetaType::Int)
+        else if (value.typeId() == QMetaType::Int)
             result.insert(key, hash.value(key).toInt());
-        else if(value.typeId() == QMetaType::Bool)
+        else if (value.typeId() == QMetaType::Bool)
             result.insert(key, hash.value(key).toBool());
         else
             result.insert(key, hash.value(key).toJsonObject());
@@ -50,7 +52,8 @@ QString GlobalCommon::generateRandomString(int length)
     QRandomGenerator generator = QRandomGenerator::securelySeeded();
 
     // 生成指定长度的随机字符串
-    for (int i = 0; i < length; ++i) {
+    for (int i = 0; i < length; ++i)
+    {
         int index = generator.bounded(characters.length());
         result.append(characters.at(index));
     }
@@ -68,7 +71,7 @@ QJsonObject GlobalCommon::stringToObject(const QByteArray &string)
     return QJsonDocument::fromJson(string).object();
 }
 
-QString GlobalCommon::getJwtToken(QSharedPointer<QJsonWebToken> jwt, const QString & identity)
+QString GlobalCommon::getJwtToken(QSharedPointer<QJsonWebToken> jwt, const QString &identity)
 {
     jwt->appendClaim("identity", identity);
     // _jwt->appendClaim("iat", QDateTime::currentDateTime().toSecsSinceEpoch());
@@ -76,8 +79,10 @@ QString GlobalCommon::getJwtToken(QSharedPointer<QJsonWebToken> jwt, const QStri
     return jwt->getToken();
 }
 
-GlobalCommon::GlobalCommon(QObject *parent)
-    : QObject{parent}
+QByteArray GlobalCommon::formatMessage(QJsonObject &json)
 {
-
+    auto jsonBytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
+    qint32 length = jsonBytes.size();
+    QByteArray lengthBytes = QByteArray::fromRawData(reinterpret_cast<const char *>(&length), sizeof(length));
+    return lengthBytes + jsonBytes;
 }
