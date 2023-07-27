@@ -4,7 +4,7 @@
 typedef QList<DockerController::Container> Containers;
 typedef QList<DockerController::Image> Images;
 using Container = DockerController::Container;
-using Image     = DockerController::Image;
+using Image = DockerController::Image;
 
 QStringList opts{"start", "stop", "restart"};
 
@@ -43,7 +43,7 @@ Image DockerController::image(const QString &name)
     return Image{data.toObject()};
 }
 
-QString DockerController::createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports)
+QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports)
 {
     // QString url = QString("/containers/create?name=%1").arg(name);
     // Headers headers;
@@ -92,7 +92,7 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
 std::optional<QString> DockerController::pushImage(const QString &name)
 {
     auto splitStr = name.split(":");
-    auto url      = QString("/images/%1/push?tag=%2").arg(splitStr[0], splitStr[1]);
+    auto url = QString("/images/%1/push?tag=%2").arg(splitStr[0], splitStr[1]);
     Headers headers;
     headers << QPair<QByteArray, QByteArray>("X-Registry-Auth", "{}");
     auto [statusCode, resheaders, response] = post(url, headers, DockerConnector::empty_data);
@@ -107,8 +107,8 @@ std::optional<QString> DockerController::pushImage(const QString &name)
 
 std::optional<QString> DockerController::pullImage(const QString &name)
 {
-    auto splitStr                        = name.split(":");
-    auto url                             = QString("/images/create?fromImage=%1&tag=%2").arg(splitStr[0], splitStr[1]);
+    auto splitStr = name.split(":");
+    auto url = QString("/images/create?fromImage=%1&tag=%2").arg(splitStr[0], splitStr[1]);
     auto [statusCode, headers, response] = post(url, DockerConnector::empty_headers, DockerConnector::empty_data);
     if (response.isObject())
         return std::nullopt;
@@ -132,4 +132,12 @@ void DockerController::removeImage(const QString &name)
 void DockerController::containerOpt(const QString &name, const ContainerOpt opt)
 {
     post(QString("/containers/%1/%2").arg(name, opts[int(opt)]), DockerConnector::empty_headers, DockerConnector::empty_data);
+}
+
+void DockerController::containerExec(const QString &name, const QString &command)
+{
+}
+
+void DockerController::containerCommit(const QString &name, const QString &image)
+{
 }

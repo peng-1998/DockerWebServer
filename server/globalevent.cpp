@@ -1,5 +1,6 @@
 #include "globalevent.h"
 #include "database.h"
+#include "globaldata.h"
 #include "webserver.h"
 #include <QDebug>
 #include <QFile>
@@ -7,7 +8,6 @@
 #include <QUuid>
 #include <QWebSocket>
 #include <QWebSocketServer>
-#include "globaldata.h"
 
 using StatusCode = QHttpServerResponder::StatusCode;
 
@@ -37,12 +37,14 @@ QHttpServerResponse GlobalEvent::onHttpWSClient(const QHttpServerRequest &reques
 
 QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &request)
 {
-    auto body      = QJsonDocument::fromJson(request.body()).object();
-    auto username  = body["username"].toString();
-    auto db        = DataBase::instance();
+    auto body = QJsonDocument::fromJson(request.body()).object();
+    auto username = body["username"].toString();
+    auto db = DataBase::instance();
     if (!db->containsUser(username))
         return QHttpServerResponse({"message", "User Not Found"}, StatusCode::NotFound);
-    auto user = db->getUser(username, QStringList() << "password" << "salt").value();
+    auto user = db->getUser(username, QStringList() << "password"
+                                                    << "salt")
+                    .value();
     if (user["password"].toString() != GlobalCommon::hashPassword(body["password"].toString(), user["salt"].toString()))
         return QHttpServerResponse({"message", "Wrong Password"}, StatusCode::Unauthorized);
     return QHttpServerResponse({"access_token", GlobalCommon::getJwtToken(GlobalData::instance()->jwt, username)}, StatusCode::Ok);
@@ -50,8 +52,8 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
 
 QHttpServerResponse GlobalEvent::onApiAuthRegister(const QHttpServerRequest &request)
 {
-    auto db       = DataBase::instance();
-    auto body     = QJsonDocument::fromJson(request.body()).object();
+    auto db = DataBase::instance();
+    auto body = QJsonDocument::fromJson(request.body()).object();
     auto username = body["username"].toString();
     auto password = body["password"].toString();
     if (db->containsUser(username))
@@ -137,11 +139,13 @@ QHttpServerResponse GlobalEvent::onApiAdminAllContainers(const QString &machineI
 
 void GlobalEvent::onWSNewConnection()
 {
-    auto ws   = GlobalData::instance()->wsServer->nextPendingConnection();
+    auto ws = GlobalData::instance()->wsServer->nextPendingConnection();
     auto uuid = QUuid::createUuid().toString();
     GlobalData::instance()->wsClients.insert(uuid, QSharedPointer<QWebSocket>(ws));
-    QObject::connect(ws, &QWebSocket::textMessageReceived, [this, uuid](const QString &message) { onWSMessageReceived(message, uuid); });
-    QObject::connect(ws, &QWebSocket::disconnected, [this, uuid]() { onWSDisconnection(uuid); });
+    QObject::connect(ws, &QWebSocket::textMessageReceived, [this, uuid](const QString &message)
+                     { onWSMessageReceived(message, uuid); });
+    QObject::connect(ws, &QWebSocket::disconnected, [this, uuid]()
+                     { onWSDisconnection(uuid); });
 }
 
 void GlobalEvent::onWSDisconnection(const QString &uuid)
@@ -152,8 +156,8 @@ void GlobalEvent::onWSDisconnection(const QString &uuid)
 void GlobalEvent::onWSMessageReceived(const QString &message, const QString &uuid)
 {
     auto msg_json = QJsonDocument::fromJson(message.toUtf8()).object();
-    auto handler  = _wsHandlers[msg_json["type"].toString()];
-    auto data     = msg_json["data"].toObject();
+    auto handler = _wsHandlers[msg_json["type"].toString()];
+    auto data = msg_json["data"].toObject();
     std::invoke(handler, this, data, uuid);
 }
 
@@ -166,51 +170,59 @@ void GlobalEvent::onWSHandleContainer(QJsonObject &data, const QString &uuid)
         if (!image_.has_value())
             return;
         auto image = image_.value();
-        QJsonObject msg {
+        QJsonObject msg{
             {"type", "container"},
-            {"data", QJsonObject {
-                {"opt", "create"},
-                {"user_id", data["user_id"].toInt()},
-                {"uuid", uuid},
-                {"create_args", QJsonObject {
-                    {"name", QString("u%1_c%2").arg(data["account"].toString()).arg(GlobalCommon::generateRandomString(10))},
-                    {"image", image["imagename"].toString()},
-                    {"port", data["port"].toObject()},
-                    {"hostname",data["account"].toString()},
-                }},
-            }},
+            {"data", QJsonObject{
+                         {"opt", "create"},
+                         {"user_id", data["user_id"].toInt()},
+                         {"uuid", uuid},
+                         {"create_args", QJsonObject{
+                                             {"name", QString("u%1_c%2").arg(data["account"].toString()).arg(GlobalCommon::generateRandomString(10))},
+                                             {"image", image["imagename"].toString()},
+                                             {"port", data["port"].toObject()},
+                                             {"hostname", data["account"].toString()},
+                                         }},
+                     }},
         };
         auto init_args = QJsonDocument::fromVariant(image["init_args"]).object();
-        for(auto &key:init_args.keys())
-            msg["data"].toObject()["create_args"].toObject().insert(key,init_args[key]);
-        
+        for (auto &key : init_args.keys())
+            msg["data"].toObject()["create_args"].toObject().insert(key, init_args[key]);
     }
 }
 
-void GlobalEvent::onNewTcpConnection() 
+void GlobalEvent::onNewTcpConnection()
 {
     auto tcpserver = GlobalData::instance()->tcpServer;
     auto socket = tcpserver->nextPendingConnection();
-    socket->setProperty("buffer", QByteArray());
-    QObject::connect(socket, &QTcpSocket::readyRead, [this, socket]() { onTcpMessageReceived(); });
+    socket->setProperty("len", -1);
+    QObject::connect(socket, &QTcpSocket::readyRead, [this, socket]()
+                     { onTcpMessageReceived(); });
 }
-//
+
 void GlobalEvent::onTcpMessageReceived()
 {
     auto sder = qobject_cast<QTcpSocket *>(sender());
-    auto msg  = sder->property("buffer").toByteArray() + sder->readAll();
-    if (msg.contains('\x03')) // 为了防止粘包，使用\x03作为分隔符
+    qint32 len = sder->property("len").toInt();
+    char *buf = new char[sizeof(qint32)];
+    if (len == -1)
     {
-        auto msgs     = msg.split('\x03');
-        auto msg_json = QJsonDocument::fromJson(msgs[0]).object();
-        sder->setProperty("buffer", msgs[1]);
-        auto data = msg_json["data"].toObject();
-        auto machineId = sder->property("machine_id").toString();
-        if (msg_json["type"].toString() == "init")
-            onTcpHandleInit(data, sder);
-        else
-            std::invoke(_tcpHandlers[msg_json["type"].toString()], this, data, machineId);
+        if (sder->bytesAvailable() < sizeof(qint32))
+            return;
+        sder->read(buf, sizeof(qint32));
+        len = *reinterpret_cast<qint32 *>(buf);
+        sder->setProperty("len", len);
     }
+    if (sder->bytesAvailable() < len)
+        return;
+    QByteArray data = sder->read(len);
+    sder->setProperty("len", -1);
+    auto msg_json = QJsonDocument::fromJson(data).object();
+    auto data = msg_json["data"].toObject();
+    auto machineId = sder->property("machine_id").toString();
+    if (msg_json["type"].toString() == "init")
+        onTcpHandleInit(msg_json["data"].toObject(), sder);
+    else
+        std::invoke(_tcpHandlers[msg_json["type"].toString()], this, data, machineId);
 }
 
 void GlobalEvent::onTcpDisconnection(const QString &machineId)
@@ -222,22 +234,23 @@ void GlobalEvent::onTcpHandleInit(QJsonObject &data, QTcpSocket *sder)
 {
     auto machineId = data["machine_id"].toString();
     sder->setProperty("machine_id", machineId);
-    QObject::connect(sder, &QTcpSocket::disconnected, [this, machineId]() { onTcpDisconnection(machineId); });
+    QObject::connect(sder, &QTcpSocket::disconnected, [this, machineId]()
+                     { onTcpDisconnection(machineId); });
     GlobalData::instance()->tcpClients.insert(machineId, QSharedPointer<QTcpSocket>(sder));
-    auto url    = data["url"].toString();
-    auto gpus   = data["gpus"].toObject();
-    auto cpu    = data["cpu"].toObject();
+    auto url = data["url"].toString();
+    auto gpus = data["gpus"].toObject();
+    auto cpu = data["cpu"].toObject();
     auto memory = data["memory"].toObject();
-    auto disk   = data["disk"].toObject();
-    auto db     = DataBase::instance();
-    if(db->containsMachine(machineId))
+    auto disk = data["disk"].toObject();
+    auto db = DataBase::instance();
+    if (db->containsMachine(machineId))
         db->updateMachine(machineId, QList<QPair<QString, QVariant>>()
-            << QPair<QString, QVariant>("ip", url)
-            << QPair<QString, QVariant>("gpu", gpus)
-            << QPair<QString, QVariant>("cpu", cpu)
-            << QPair<QString, QVariant>("memory", memory)
-            << QPair<QString, QVariant>("disk", disk)
-            << QPair<QString, QVariant>("online", true));
+                                         << QPair<QString, QVariant>("ip", url)
+                                         << QPair<QString, QVariant>("gpu", gpus)
+                                         << QPair<QString, QVariant>("cpu", cpu)
+                                         << QPair<QString, QVariant>("memory", memory)
+                                         << QPair<QString, QVariant>("disk", disk)
+                                         << QPair<QString, QVariant>("online", true));
     else
         db->insertMachine(machineId, url, gpus, cpu, memory, disk, true);
     // TODO: 在任务队列中创建新队列
@@ -245,11 +258,12 @@ void GlobalEvent::onTcpHandleInit(QJsonObject &data, QTcpSocket *sder)
     auto containers = data["containers"].toArray();
     // TODO: 过滤不符合规范的容器
 
-    for(auto container:containers){
-        auto container_    = container.toObject();
+    for (auto container : containers)
+    {
+        auto container_ = container.toObject();
         auto containername = container_["name"].toString();
-        auto running       = container_["running"].toBool();
-        if(db->containsContainer(containername))
+        auto running = container_["running"].toBool();
+        if (db->containsContainer(containername))
             db->updateContainerRunning(containername, running);
         // 理论上这些容器都会在数据库中存在，因为在创建容器时会在数据库中创建容器
     }
@@ -257,19 +271,18 @@ void GlobalEvent::onTcpHandleInit(QJsonObject &data, QTcpSocket *sder)
 
 void GlobalEvent::onTcpHandleContainer(QJsonObject &data, const QString &machineId)
 {
-    auto uuid          = data["uuid"].toString();
-    auto gd            = GlobalData::instance();
-    auto opt           = data["opt"].toString();
-    auto db            = DataBase::instance();
+    auto uuid = data["uuid"].toString();
+    auto gd = GlobalData::instance();
+    auto opt = data["opt"].toString();
+    auto db = DataBase::instance();
     auto containername = data["containername"].toString();
-    if(gd->wsClients.contains(uuid))
+    if (gd->wsClients.contains(uuid))
     {
-        QJsonObject wsMsg {
+        QJsonObject wsMsg{
             {"type", "container"},
             {"opt", data["opt"]},
             {"containername", data["containername"]},
-            {"status", data["status"]}
-        };
+            {"status", data["status"]}};
         gd->wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(data));
     }
     if (opt == "create")
@@ -277,10 +290,10 @@ void GlobalEvent::onTcpHandleContainer(QJsonObject &data, const QString &machine
         {
             auto c_sp = containername.split("_");
             auto containername = original_data["containername"].toString();
-            auto showname      = c_sp[1].right(c_sp[1].length() - 1);
-            auto imagename     = original_data["imagename"].toString();
-            auto account       = c_sp[0].right(c_sp[0].length() - 1);
-            auto portlist      = original_data["portlist"].toArray();
+            auto showname = c_sp[1].right(c_sp[1].length() - 1);
+            auto imagename = original_data["imagename"].toString();
+            auto account = c_sp[0].right(c_sp[0].length() - 1);
+            auto portlist = original_data["portlist"].toArray();
             db->insertContainer(
                 containername,
                 showname,
@@ -290,7 +303,8 @@ void GlobalEvent::onTcpHandleContainer(QJsonObject &data, const QString &machine
                 portlist,
                 false);
         }
-        else{
+        else
+        {
             // TODO: 向日志中写入错误信息
         }
     else if (opt == "start" || opt == "restart")
@@ -308,21 +322,20 @@ void GlobalEvent::onTcpHandleGpus(QJsonObject &data, const QString &machineId)
 
 void GlobalEvent::onTcpHandleImage(QJsonObject &data, const QString &machineId)
 {
-    if(data.contains("uuid")){
+    if (data.contains("uuid"))
+    {
         auto uuid = data["uuid"].toString();
         auto wsClients = GlobalData::instance()->wsClients;
-        if(wsClients.contains(uuid))
+        if (wsClients.contains(uuid))
         {
-            QJsonObject wsMsg {
+            QJsonObject wsMsg{
                 {"type", "image"},
                 {"opt", data["opt"]},
-                {"status", data["status"]}
-            };
+                {"status", data["status"]}};
             wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(wsMsg));
         }
     }
     // TODO: 不知道这里要做什么
-    
 }
 
 void GlobalEvent::onTcpHandleHeartbeat(QJsonObject &data, const QString &machineId)
@@ -338,8 +351,8 @@ void GlobalEvent::onCheckHeartbeat()
     auto now = QDateTime::currentDateTime();
     auto heartbeatTimeout = (*GlobalConfig::instance())["heartbeatTimeout"].as<int>();
     std::for_each(
-        clients.begin(), 
-        clients.end(), 
+        clients.begin(),
+        clients.end(),
         [now, heartbeatTimeout](auto &client)
         {if (client->property("lastHeartbeat").toDateTime().secsTo(now) > heartbeatTimeout)
             client->disconnectFromHost(); });
@@ -348,9 +361,9 @@ void GlobalEvent::onCheckHeartbeat()
 GlobalEvent::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
-    _wsHandlers["container"]  = &GlobalEvent::onWSHandleContainer;
+    _wsHandlers["container"] = &GlobalEvent::onWSHandleContainer;
     _tcpHandlers["container"] = &GlobalEvent::onTcpHandleContainer;
-    _tcpHandlers["gpus"]      = &GlobalEvent::onTcpHandleGpus;
-    _tcpHandlers["image"]     = &GlobalEvent::onTcpHandleImage;
+    _tcpHandlers["gpus"] = &GlobalEvent::onTcpHandleGpus;
+    _tcpHandlers["image"] = &GlobalEvent::onTcpHandleImage;
     _tcpHandlers["heartbeat"] = &GlobalEvent::onTcpHandleHeartbeat;
 }

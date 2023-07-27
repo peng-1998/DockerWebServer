@@ -56,7 +56,7 @@ add_executable(DWSClient
   tools/dockercontroller.h tools/dockercontroller.cpp
   tools/globalconfig.h tools/globalconfig.cpp
   client/globalcommon.h client/globalcommon.cpp
-
+  tools/worker.hpp
   )
 
 target_link_libraries(DWSClient PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network yaml-cpp ${CUDA_LIBRARIES})

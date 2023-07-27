@@ -79,14 +79,15 @@ public:
     Container container(const QString &name);
     Image image(const QString &name);
 
-    QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports);
+    QString createContainer(const QString &image,const  QString &name,const  QString &command, const QList<QPair<int, int>> &ports);
     std::optional<QString> buildImage(const QString &dockerfile, const QString &name);
     std::optional<QString> pushImage(const QString &name);
     std::optional<QString> pullImage(const QString &name);
     void removeContainer(const QString &name);
     void removeImage(const QString &name);
-    void containerOpt(const QString &name, const ContainerOpt opt);
-
+    void containerOpt(const QString &name, ContainerOpt opt);
+    void containerExec(const QString &name, const QString &cmd);
+    void containerCommit(const QString &name, const QString &image);
     QJsonObject _defualtContainerCreateData;
 
 private:

@@ -86,3 +86,4 @@ QByteArray GlobalCommon::formatMessage(QJsonObject &json)
     QByteArray lengthBytes = QByteArray::fromRawData(reinterpret_cast<const char *>(&length), sizeof(length));
     return lengthBytes + jsonBytes;
 }
+
