@@ -1,6 +1,6 @@
 #include "globalevent.h"
-#include "../tools/Worker.h"
 #include "../tools/globalconfig.h"
+#include "../tools/worker.hpp"
 #include "globalcommon.h"
 #include "globaldata.h"
 #include <QDebug>
@@ -31,16 +31,23 @@ void GlobalEvent::onConnected()
     QJsonArray contaionersj;
     for (auto &c : contaioners)
         contaionersj.append(c.toJson());
+    auto gpus = GlobalData::instance()->gpu->getAllGPUsInfo();
+    QJsonObject gpusj;
+    for (auto i{0}; i < gpus.size(); i++)
+        gpusj.insert(QString::number(i), gpus[i].toJson());
+    auto [cpuName, cpuCores] = GlobalCommon::getCPUInfo();
+    auto [totalMemory, availableMemory] = GlobalCommon::getMemoryInfo();
+    auto [totalDisk, availableDisk] = GlobalCommon::getDiskInfo(QString::fromStdString((*config)["docker"]["path"].as<std::string>()));
     QJsonObject msg{
         {"type", "heartbeat"},
         {"data", QJsonObject{
+                     {"gpus", gpusj},
+                     {"cpu", QJsonObject{{"name", cpuName}, {"cores", cpuCores}}},
+                     {"memory", QJsonObject{{"total", totalMemory}, {"available", availableMemory}}},
+                     {"disk", QJsonObject{{"total", totalDisk}, {"available", availableDisk}}},
                      {"machineId", QString::fromStdString((*config)["machineId"].as<std::string>())},
                      {"url", QString::fromStdString((*config)["url"].as<std::string>())},
                      {"contaioners", QJsonValue(contaionersj)}}}};
-    //  {"gpus", GlobalCommon::getGpusInfo()},
-    //  {"cpu", GlobalCommon::getCpuInfo()},
-    //  {"memory", GlobalCommon::getMemoryInfo()},
-    //  {"disk", GlobalCommon::getDiskInfo()},
     server->write(GlobalCommon::formatMessage(msg));
 }
 
@@ -58,7 +65,8 @@ void GlobalEvent::onReadyRead()
     if (len == -1)
     {
         if (server->bytesAvailable() < sizeof(qint32))
-            return server->read(buf, sizeof(qint32));
+            return;
+        server->read(buf, sizeof(qint32));
         len = *reinterpret_cast<qint32 *>(buf);
         server->setProperty("len", len);
     }
@@ -69,12 +77,12 @@ void GlobalEvent::onReadyRead()
     messageHandler(QJsonDocument::fromJson(data).object());
 }
 
-void GlobalEvent::messageHandler(QJsonObject json)
+void GlobalEvent::messageHandler(const QJsonObject &json)
 {
-    std::invoke(_messageHandlers[json["type"].toString()], this, json["data"].toObject());
+    std::invoke(_messageHandlers[json["type"].toString()], json["data"].toObject());
 }
 
-void GlobalEvent::messageHandleImage(QJsonObject json)
+void GlobalEvent::messageHandleImage(const QJsonObject &json)
 {
     auto opt = json["opt"].toString();
     QJsonObject msg{
@@ -84,25 +92,24 @@ void GlobalEvent::messageHandleImage(QJsonObject json)
                      {"image", json["image"].toObject()},
                      {"uuid", json["uuid"].toString()},
                      {"status", "success"}}}};
-
+    std::function<void()> task;
     if (opt == "pull")
-        auto task = [&json, &msg]()
-        {if (auto image = GlobalData::instance()->docker->pullImage(json["image"].toString());!image.has_value())
+        task = [image = json["image"].toString(), &msg]()
+        {if (auto res = GlobalData::instance()->docker->pullImage(image);!res.has_value())
                 msg["data"].toObject()["status"] = "failed"; };
     else if (opt == "remove")
-        auto task = [&json, &msg]()
-        { GlobalData::instance()->docker->removeImage(json["image"].toString()); };
-    auto worker = new Worker(std::move(task));
-    connect(
-        worker,
+        task = [image = json["image"].toString(), &msg]()
+        { GlobalData::instance()->docker->removeImage(image); };
+    QObject::connect(
+        Worker::newTask(std::move(task)),
         &Worker::taskFinished,
         this,
-        [&msg]()
+        [msg = std::move(msg)]()
         { GlobalData::instance()->socket->write(GlobalCommon::formatMessage(msg)); },
         Qt::QueuedConnection);
 }
 
-void GlobalEvent::messageHandleContainer(const QJsonObject json)
+void GlobalEvent::messageHandleContainer(const QJsonObject &json)
 {
     auto opt = json["opt"].toString();
     QJsonObject msg{
@@ -112,48 +119,45 @@ void GlobalEvent::messageHandleContainer(const QJsonObject json)
                      {"container", json["container"].toObject()},
                      {"uuid", json["uuid"].toString()},
                      {"status", "success"}}}};
+    std::function<void()> task;
     if (opt == "create")
-        auto task = [&json, &msg]()
+        task = [json]()
         { 
             auto ports_obj = json["ports"].toObject();
             auto ports = QList<QPair<int, int>>();
             for (auto &port : ports_obj.keys())
                 ports.append({port.toInt(), ports_obj[port].toInt()});
-            GlobalData::instance()->docker->createContainer(json["image"].toObject(), json["name"].toString(),json["cmd"],ports); };
+            GlobalData::instance()->docker->createContainer(json["image"].toString(), json["name"].toString(),json["cmd"].toString(),ports); };
     else if (opt == "start")
-        auto task = [&json, &msg]()
-        { GlobalData::instance()->docker->containerOpt(json["name"].toString(), DockerController::ContainerOpt::START); };
+        task = [name = json["name"].toString()]()
+        { GlobalData::instance()->docker->containerOpt(name, DockerController::ContainerOpt::START); };
     else if (opt == "stop")
-        auto task = [&json, &msg]()
-        { GlobalData::instance()->docker->containerOpt(json["name"].toString(), DockerController::ContainerOpt::STOP); };
-    else if (opt == "remove")
-        auto task = [&json, &msg]()
-        { GlobalData::instance()->docker->removeContainer(json["container"].toString()); };
+        task = [name = json["name"].toString()]()
+        { GlobalData::instance()->docker->containerOpt(name, DockerController::ContainerOpt::STOP); };
     else if (opt == "restart")
-        auto task = [&json, &msg]()
-        { GlobalData::instance()->docker->containerOpt(json["name"].toString(), DockerController::ContainerOpt::RESTART); };
+        task = [name = json["name"].toString()]()
+        { GlobalData::instance()->docker->containerOpt(name, DockerController::ContainerOpt::RESTART); };
+    else if (opt == "remove")
+        task = [name = json["name"].toString()]()
+        { GlobalData::instance()->docker->removeContainer(name); };
     else if (opt == "exec")
-        auto task = [&json, &msg]()
+        task = [json]()
         { GlobalData::instance()->docker->containerExec(json["name"].toString(), json["cmd"].toString()); };
     else if (opt == "commit")
-        auto task = [&json, &msg]()
-        {
-            GlobalData::instance()->docker->containerCommit(json["name"].toString(), json["image"].toString());
-            GlobalData::instance()->docker->pushImage(json["image"].toString());
-        };
-    
-    auto worker = new Worker(std::move(task));
-    connect(
-        worker,
+        task = [json]()
+        { GlobalData::instance()->docker->containerCommit(json["name"].toString(), json["image"].toString()), GlobalData::instance()->docker->pushImage(json["image"].toString()); };
+
+    QObject::connect(
+        Worker::newTask(std::move(task)),
         &Worker::taskFinished,
         this,
-        [&msg]()
+        [msg = std::move(msg)]()
         { GlobalData::instance()->socket->write(GlobalCommon::formatMessage(msg)); },
         Qt::QueuedConnection);
 }
 
 GlobalEvent::GlobalEvent(QObject *parent) : QObject(parent)
 {
-    _messageHandlers["image"] = &GlobalEvent::messageHandleImage;
-    _messageHandlers["container"] = &GlobalEvent::messageHandleContainer;
+    _messageHandlers["image"] = std::bind(&GlobalEvent::messageHandleImage, this, std::placeholders::_1);
+    _messageHandlers["container"] = std::bind(&GlobalEvent::messageHandleContainer, this, std::placeholders::_1);
 }

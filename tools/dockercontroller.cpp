@@ -8,11 +8,6 @@ using Image = DockerController::Image;
 
 QStringList opts{"start", "stop", "restart"};
 
-DockerController::DockerController(QObject *parent)
-    : DockerConnector{parent}
-{
-}
-
 Containers DockerController::containers()
 {
     auto [statusCode, headers, data] = get("/containers/json");
@@ -43,7 +38,7 @@ Image DockerController::image(const QString &name)
     return Image{data.toObject()};
 }
 
-QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports)
+QString DockerController::createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports)
 {
     // QString url = QString("/containers/create?name=%1").arg(name);
     // Headers headers;

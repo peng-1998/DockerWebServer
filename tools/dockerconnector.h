@@ -22,7 +22,7 @@ class DockerConnector : public QObject
 {
     Q_OBJECT
 public:
-    explicit DockerConnector(QObject *parent = nullptr);
+    using QObject::QObject;
     Response get(const QString &path);
     Response post(const QString &path, Headers &headers, const QJsonObject &data);
     Response post(const QString &path, Headers &headers, const QByteArray &data);
@@ -31,7 +31,6 @@ public:
     static Headers empty_headers;
     static QByteArray empty_data;
     static QJsonObject empty_object;
-signals:
 
 private:
     QSharedPointer<QLocalSocket> connectDocker();

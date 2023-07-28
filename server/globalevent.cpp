@@ -156,12 +156,10 @@ void GlobalEvent::onWSDisconnection(const QString &uuid)
 void GlobalEvent::onWSMessageReceived(const QString &message, const QString &uuid)
 {
     auto msg_json = QJsonDocument::fromJson(message.toUtf8()).object();
-    auto handler = _wsHandlers[msg_json["type"].toString()];
-    auto data = msg_json["data"].toObject();
-    std::invoke(handler, this, data, uuid);
+    std::invoke(_wsHandlers[msg_json["type"].toString()], this, msg_json["data"].toObject(), uuid);
 }
 
-void GlobalEvent::onWSHandleContainer(QJsonObject &data, const QString &uuid)
+void GlobalEvent::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
 {
     auto db = DataBase::instance();
     if (data["opt"] == "create")
@@ -195,8 +193,7 @@ void GlobalEvent::onNewTcpConnection()
     auto tcpserver = GlobalData::instance()->tcpServer;
     auto socket = tcpserver->nextPendingConnection();
     socket->setProperty("len", -1);
-    QObject::connect(socket, &QTcpSocket::readyRead, [this, socket]()
-                     { onTcpMessageReceived(); });
+    QObject::connect(socket, &QTcpSocket::readyRead, [this, socket](){ onTcpMessageReceived(); });
 }
 
 void GlobalEvent::onTcpMessageReceived()
@@ -217,12 +214,10 @@ void GlobalEvent::onTcpMessageReceived()
     QByteArray data = sder->read(len);
     sder->setProperty("len", -1);
     auto msg_json = QJsonDocument::fromJson(data).object();
-    auto data = msg_json["data"].toObject();
-    auto machineId = sder->property("machine_id").toString();
     if (msg_json["type"].toString() == "init")
         onTcpHandleInit(msg_json["data"].toObject(), sder);
     else
-        std::invoke(_tcpHandlers[msg_json["type"].toString()], this, data, machineId);
+        std::invoke(_tcpHandlers[msg_json["type"].toString()], this, msg_json["data"].toObject(), sder->property("machine_id").toString());
 }
 
 void GlobalEvent::onTcpDisconnection(const QString &machineId)
@@ -230,12 +225,11 @@ void GlobalEvent::onTcpDisconnection(const QString &machineId)
     GlobalData::instance()->tcpClients.remove(machineId);
 }
 
-void GlobalEvent::onTcpHandleInit(QJsonObject &data, QTcpSocket *sder)
+void GlobalEvent::onTcpHandleInit(const QJsonObject &data, QTcpSocket *sder)
 {
     auto machineId = data["machine_id"].toString();
     sder->setProperty("machine_id", machineId);
-    QObject::connect(sder, &QTcpSocket::disconnected, [this, machineId]()
-                     { onTcpDisconnection(machineId); });
+    QObject::connect(sder, &QTcpSocket::disconnected, [this, machineId](){ onTcpDisconnection(machineId); });
     GlobalData::instance()->tcpClients.insert(machineId, QSharedPointer<QTcpSocket>(sder));
     auto url = data["url"].toString();
     auto gpus = data["gpus"].toObject();
@@ -269,7 +263,7 @@ void GlobalEvent::onTcpHandleInit(QJsonObject &data, QTcpSocket *sder)
     }
 }
 
-void GlobalEvent::onTcpHandleContainer(QJsonObject &data, const QString &machineId)
+void GlobalEvent::onTcpHandleContainer(const QJsonObject &data, const QString &machineId)
 {
     auto uuid = data["uuid"].toString();
     auto gd = GlobalData::instance();
@@ -315,12 +309,12 @@ void GlobalEvent::onTcpHandleContainer(QJsonObject &data, const QString &machine
         db->deleteContainer(containername);
 }
 
-void GlobalEvent::onTcpHandleGpus(QJsonObject &data, const QString &machineId)
+void GlobalEvent::onTcpHandleGpus(const QJsonObject &data, const QString &machineId)
 {
     GlobalData::instance()->gpus_cache[machineId] = data;
 }
 
-void GlobalEvent::onTcpHandleImage(QJsonObject &data, const QString &machineId)
+void GlobalEvent::onTcpHandleImage(const QJsonObject &data, const QString &machineId)
 {
     if (data.contains("uuid"))
     {
@@ -338,7 +332,7 @@ void GlobalEvent::onTcpHandleImage(QJsonObject &data, const QString &machineId)
     // TODO: 不知道这里要做什么
 }
 
-void GlobalEvent::onTcpHandleHeartbeat(QJsonObject &data, const QString &machineId)
+void GlobalEvent::onTcpHandleHeartbeat(const QJsonObject &data, const QString &machineId)
 {
     GlobalData::instance()->tcpClients[machineId]->setProperty("lastHeartbeat", QDateTime::currentDateTime());
 }
@@ -361,9 +355,9 @@ void GlobalEvent::onCheckHeartbeat()
 GlobalEvent::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
-    _wsHandlers["container"] = &GlobalEvent::onWSHandleContainer;
+    _wsHandlers["container"]  = &GlobalEvent::onWSHandleContainer;
     _tcpHandlers["container"] = &GlobalEvent::onTcpHandleContainer;
-    _tcpHandlers["gpus"] = &GlobalEvent::onTcpHandleGpus;
-    _tcpHandlers["image"] = &GlobalEvent::onTcpHandleImage;
+    _tcpHandlers["gpus"]      = &GlobalEvent::onTcpHandleGpus;
+    _tcpHandlers["image"]     = &GlobalEvent::onTcpHandleImage;
     _tcpHandlers["heartbeat"] = &GlobalEvent::onTcpHandleHeartbeat;
 }

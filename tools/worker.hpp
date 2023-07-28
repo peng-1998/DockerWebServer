@@ -42,5 +42,8 @@ private:
     {
         _task.get();
         emit taskFinished();
+        quit();
+        wait();
+        deleteLater();
     };
 };

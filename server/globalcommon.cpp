@@ -79,7 +79,7 @@ QString GlobalCommon::getJwtToken(QSharedPointer<QJsonWebToken> jwt, const QStri
     return jwt->getToken();
 }
 
-QByteArray GlobalCommon::formatMessage(QJsonObject &json)
+QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 {
     auto jsonBytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
     qint32 length = jsonBytes.size();

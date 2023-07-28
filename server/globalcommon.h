@@ -22,7 +22,7 @@ public:
     static QString objectToString(const QJsonObject &object);
     static QJsonObject stringToObject(const QByteArray &string);
     static QString getJwtToken(QSharedPointer<QJsonWebToken>, const QString &);
-    static QByteArray formatMessage(QJsonObject &json);
+    static QByteArray formatMessage(const QJsonObject &json);
 
 private:
     explicit GlobalCommon(QObject *parent = nullptr) = delete;

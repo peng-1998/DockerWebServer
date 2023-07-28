@@ -1,5 +1,6 @@
+#pragma once
 #ifndef NVML_INIT_FLAG_NO_GPUS
-#include <hwloc/nvml.h>
+#include <nvml.h>
 #endif
 #ifndef MAP_H
 #include <map>
@@ -36,8 +37,8 @@ struct UtilizationInfo
     QJsonObject toJson() const
     {
         return QJsonObject{
-            {"gpu", gpu_utilization},
-            {"memory", memory_utilization}};
+            {"gpu", int(gpu_utilization)},
+            {"memory", int(memory_utilization)}};
     }
 };
 
@@ -78,6 +79,7 @@ private:
     uint gpu_device_count;
     nvmlReturn_t result;
     nvmlDevice_t device;
+    bool available;
 
 public:
     NvidiaGPU();
@@ -86,4 +88,5 @@ public:
     UtilizationInfo getUtilization(int gpuid);
     ProcessInfo getProcess(int gpuid);
     GPUInfos getAllGPUsInfo();
-}
+    inline bool isVaild() const { return available; }
+};

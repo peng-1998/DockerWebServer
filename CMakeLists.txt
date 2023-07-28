@@ -15,7 +15,7 @@ find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Sql)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(CUDAToolkit REQUIRED)
+find_package(CUDAToolkit REQUIRED COMPONENTS nvml)
 include_directories(${CUDA_INCLUDE_DIRS})
 
 
@@ -35,13 +35,14 @@ add_executable(DWS
   tools/bcrypt/openwall_crypt/crypt.h tools/bcrypt/openwall_crypt/ow-crypt.h tools/bcrypt/openwall_crypt/wrapper.c tools/bcrypt/openwall_crypt/x86.S
   tools/dockerconnector.h tools/dockerconnector.cpp
   tools/dockercontroller.h tools/dockercontroller.cpp
-  tools/gpuinfo.h tools/gpuinfo.cpp
+  tools/logger.hpp
+  # tools/gpuinfo.h tools/gpuinfo.cpp
   )
 
 
 
 
-target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp ${CUDA_LIBRARIES})
+target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp)
 
 
 
@@ -50,6 +51,7 @@ install(TARGETS DWS
 
 add_executable(DWSClient
   gpuclient.cpp
+  client/client.h client/client.cpp
   client/globaldata.h client/globaldata.cpp
   client/globalevent.h client/globalevent.cpp
   tools/dockerconnector.h tools/dockerconnector.cpp
@@ -60,7 +62,7 @@ add_executable(DWSClient
   tools/worker.hpp
   )
 
-target_link_libraries(DWSClient PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network yaml-cpp ${CUDA_LIBRARIES})
+target_link_libraries(DWSClient PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network yaml-cpp CUDA::nvml)
 
 install(TARGETS DWSClient
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
