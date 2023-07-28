@@ -1,4 +1,4 @@
-#include <gpuinfo.h>
+#include "gpuinfo.h"
 
 NvidiaGPU::NvidiaGPU()
 {
@@ -65,8 +65,4 @@ GPUInfos NvidiaGPU::getAllGPUsInfo()
         all_gpus_info << GPUInfo(name, {memory.total / 1024 / 1024, memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory});
     }
     return all_gpus_info;
-}
-
-NvidiaGPU::jsonfy()
-{
 }

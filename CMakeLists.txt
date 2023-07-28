@@ -15,7 +15,7 @@ find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Sql)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(CUDA REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 
 
@@ -41,7 +41,7 @@ add_executable(DWS
 
 
 
-target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp)
+target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp ${CUDA_LIBRARIES})
 
 
 
@@ -56,6 +56,7 @@ add_executable(DWSClient
   tools/dockercontroller.h tools/dockercontroller.cpp
   tools/globalconfig.h tools/globalconfig.cpp
   client/globalcommon.h client/globalcommon.cpp
+  tools/gpuinfo.h tools/gpuinfo.cpp
   tools/worker.hpp
   )
 
