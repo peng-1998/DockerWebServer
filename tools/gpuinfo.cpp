@@ -65,7 +65,7 @@ GPUInfos NvidiaGPU::getAllGPUsInfo()
             result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
             result = nvmlDeviceGetMemoryInfo(device, &memory);
             result = nvmlDeviceGetUtilizationRates(device, &utilization);
-            all_gpus_info << GPUInfo(name, {memory.total / 1024 / 1024, memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory});
+            all_gpus_info << GPUInfo{QString(name), {(float)memory.total / 1024 / 1024, (float)memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory}};
         }
     }
     catch (const char *err)
