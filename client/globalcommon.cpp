@@ -2,6 +2,7 @@
 #include <QJsonDocument>
 #include <QStorageInfo>
 #include <QSysInfo>
+#include <QtEndian>
 
 QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 {

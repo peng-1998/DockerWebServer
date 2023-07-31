@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QMetaType>
 #include <QRandomGenerator>
+#include <QtEndian>
 
 QMap<QString, QString> GlobalCommon::parseHeaders(const QList<QPair<QByteArray, QByteArray>> &headers)
 {

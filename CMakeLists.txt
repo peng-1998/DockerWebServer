@@ -16,7 +16,6 @@ find_package(Qt6 REQUIRED COMPONENTS Sql)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(CUDAToolkit REQUIRED COMPONENTS nvml)
-include_directories(${CUDA_INCLUDE_DIRS})
 
 
 

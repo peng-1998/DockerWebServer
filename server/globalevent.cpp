@@ -42,9 +42,7 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
     auto db = DataBase::instance();
     if (!db->containsUser(username))
         return QHttpServerResponse({"message", "User Not Found"}, StatusCode::NotFound);
-    auto user = db->getUser(username, QStringList() << "password"
-                                                    << "salt")
-                    .value();
+    auto user = db->getUser(username, QStringList() << "password" << "salt").value();
     if (user["password"].toString() != GlobalCommon::hashPassword(body["password"].toString(), user["salt"].toString()))
         return QHttpServerResponse({"message", "Wrong Password"}, StatusCode::Unauthorized);
     return QHttpServerResponse({"access_token", GlobalCommon::getJwtToken(GlobalData::instance()->jwt, username)}, StatusCode::Ok);
@@ -156,7 +154,7 @@ void GlobalEvent::onWSDisconnection(const QString &uuid)
 void GlobalEvent::onWSMessageReceived(const QString &message, const QString &uuid)
 {
     auto msg_json = QJsonDocument::fromJson(message.toUtf8()).object();
-    std::invoke(_wsHandlers[msg_json["type"].toString()], this, msg_json["data"].toObject(), uuid);
+    std::invoke(_wsHandlers[msg_json["type"].toString()], msg_json["data"].toObject(), uuid);
 }
 
 void GlobalEvent::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
@@ -216,7 +214,7 @@ void GlobalEvent::onTcpMessageReceived()
     if (msg_json["type"].toString() == "init")
         onTcpHandleInit(msg_json["data"].toObject(), sder);
     else
-        std::invoke(_tcpHandlers[msg_json["type"].toString()], this, msg_json["data"].toObject(), sder->property("machine_id").toString());
+        std::invoke(_tcpHandlers[msg_json["type"].toString()], msg_json["data"].toObject(), sder->property("machine_id").toString());
 }
 
 void GlobalEvent::onTcpDisconnection(const QString &machineId)
@@ -307,11 +305,15 @@ void GlobalEvent::onTcpHandleGpus(const QJsonObject &data, const QString &machin
 void GlobalEvent::onTcpHandleImage(const QJsonObject &data, const QString &machineId)
 {
     if (data.contains("uuid"))
-        if (auto uuid = data["uuid"].toString(), auto &wsClients = GlobalData::instance()->wsClients; wsClients.contains(uuid))
+    {
+        auto uuid = data["uuid"].toString(); 
+        auto &wsClients = GlobalData::instance()->wsClients;
+        if (wsClients.contains(uuid))
             wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
                 {"type", "image"},
                 {"opt", data["opt"]},
                 {"status", data["status"]}}));
+    }
     // TODO: 不知道这里要做什么
 }
 
@@ -329,7 +331,7 @@ void GlobalEvent::onCheckHeartbeat()
     std::for_each(
         clients.begin(),
         clients.end(),
-        [now = QDateTime::currentDateTime(), heartbeatTimeout](auto &client)
+        [now = QDateTime::currentDateTime(), timeout = heartbeatTimeout](auto &client)
         {if (client->property("lastHeartbeat").toDateTime().secsTo(now) > heartbeatTimeout)
             client->disconnectFromHost(); });
 }
