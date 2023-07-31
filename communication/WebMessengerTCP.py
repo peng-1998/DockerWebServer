@@ -60,10 +60,12 @@ class WebMessengerTCP(threading.Thread, BaseServer):
 
     def send(self, data: dict, machine_id: int | str) -> None:
         data = json.dumps(data).encode()
+        data = len(data).to_bytes(4, byteorder='big') + data
         self.clients[machine_id]['socket'].send(data)
 
     def send_all(self, data: dict) -> None:
         data = json.dumps(data).encode()
+        data = len(data).to_bytes(4, byteorder='big') + data
         for client in self.clients.values():
             client['socket'].send(data)
 
@@ -82,13 +84,12 @@ class WebMessengerTCP(threading.Thread, BaseServer):
 
     def __read_msg(self, client_socket: socket.socket) -> dict:
         content = b''
-        while True:
-            data = client_socket.recv(1024)
-            if not data:
-                return None
-            content += data
-            try:
+        try:
+            length = int.from_bytes(client_socket.recv(4), byteorder='big')
+            while content.__len__() < length:
+                content += client_socket.recv(length - content.__len__())
                 content_json = json.loads(content.decode())
                 return content_json
-            except json.decoder.JSONDecodeError:
-                pass
+        except ConnectionResetError as e:
+            print(e)
+            return None

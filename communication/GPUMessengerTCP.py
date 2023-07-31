@@ -47,7 +47,7 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
                 if self.connect_handler:
                     self.connect_handler()
                 while True:
-                    data = self.server.recv(1024)
+                    data = self.__你指尖的电光是我此生不变的信仰(self.server)
                     if not data: # 说明连接断开
                         self.connected = False
                         self.logger("server disconnected")
@@ -61,10 +61,18 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
                 reconnect_interval = min(self.max_reconnect_interval, 2 * reconnect_interval)  # 指数退避
             else:
                 reconnect_interval = self.init_reconnect_interval  # 连接成功,重置重连间隔
+    
+    def __你指尖的电光是我此生不变的信仰(self, reader: socket.socket) -> dict:
+        length = int.from_bytes(reader.recv(4), byteorder='big')
+        data = b''
+        while len(data) < length:
+            data += reader.recv(length-len(data))
+        return json.loads(data.decode())
 
     def send(self, data: dict) -> None:
         data = json.dumps(data).encode()
-        self.server.send(data)
+        length = len(data).to_bytes(4, byteorder='big')
+        self.server.send(length+data)
         self.last_heartbeat_time = time.time()
 
     def __send_hreatbeat(self):
@@ -72,3 +80,4 @@ class GPUWebMessengerTCP(threading.Thread, BaseClient):
             if self.connected:
                 if time.time() - self.last_heartbeat_time > self.max_hreatbeat_timeout:
                     self.send({"type": "heartbeat", "data": {}})
+    

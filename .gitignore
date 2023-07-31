@@ -9,3 +9,5 @@ data/database.db
 pyenv/
 data
 pyenv-flask
+tools/
+server/
