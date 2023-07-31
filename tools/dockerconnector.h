@@ -16,6 +16,7 @@
 
 typedef QList<QPair<QByteArray, QByteArray>> Headers;
 typedef std::tuple<int, Headers, QJsonValue> Response;
+
 using Method = QHttpServerRequest::Method;
 
 class DockerConnector : public QObject

@@ -80,6 +80,7 @@ public:
     Image image(const QString &name);
 
     QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports);
+    QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports, const QList<QPair<QString, QString>> &volumes);
     std::optional<QString> buildImage(const QString &dockerfile, const QString &name);
     std::optional<QString> pushImage(const QString &name);
     std::optional<QString> pullImage(const QString &name);

@@ -1,8 +1,10 @@
 #include "dockercontroller.h"
 #include <QDir>
 #include <QProcess>
+
 typedef QList<DockerController::Container> Containers;
 typedef QList<DockerController::Image> Images;
+
 using Container = DockerController::Container;
 using Image = DockerController::Image;
 

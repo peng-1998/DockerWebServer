@@ -190,8 +190,7 @@ void GlobalEvent::onWSHandleContainer(const QJsonObject &data, const QString &uu
 
 void GlobalEvent::onNewTcpConnection()
 {
-    auto tcpserver = GlobalData::instance()->tcpServer;
-    auto socket = tcpserver->nextPendingConnection();
+    auto socket = GlobalData::instance()->tcpServer->nextPendingConnection();
     socket->setProperty("len", -1);
     QObject::connect(socket, &QTcpSocket::readyRead, [this, socket](){ onTcpMessageReceived(); });
 }
@@ -231,12 +230,12 @@ void GlobalEvent::onTcpHandleInit(const QJsonObject &data, QTcpSocket *sder)
     sder->setProperty("machine_id", machineId);
     QObject::connect(sder, &QTcpSocket::disconnected, [this, machineId](){ onTcpDisconnection(machineId); });
     GlobalData::instance()->tcpClients.insert(machineId, QSharedPointer<QTcpSocket>(sder));
-    auto url = data["url"].toString();
-    auto gpus = data["gpus"].toObject();
-    auto cpu = data["cpu"].toObject();
+    auto url    = data["url"].toString();
+    auto gpus   = data["gpus"].toObject();
+    auto cpu    = data["cpu"].toObject();
     auto memory = data["memory"].toObject();
-    auto disk = data["disk"].toObject();
-    auto db = DataBase::instance();
+    auto disk   = data["disk"].toObject();
+    auto db     = DataBase::instance();
     if (db->containsMachine(machineId))
         db->updateMachine(machineId, QList<QPair<QString, QVariant>>()
                                          << QPair<QString, QVariant>("ip", url)
@@ -256,9 +255,8 @@ void GlobalEvent::onTcpHandleInit(const QJsonObject &data, QTcpSocket *sder)
     {
         auto container_ = container.toObject();
         auto containername = container_["name"].toString();
-        auto running = container_["running"].toBool();
         if (db->containsContainer(containername))
-            db->updateContainerRunning(containername, running);
+            db->updateContainerRunning(containername, container_["running"].toBool());
         // 理论上这些容器都会在数据库中存在，因为在创建容器时会在数据库中创建容器
     }
 }
@@ -271,30 +269,22 @@ void GlobalEvent::onTcpHandleContainer(const QJsonObject &data, const QString &m
     auto db = DataBase::instance();
     auto containername = data["containername"].toString();
     if (gd->wsClients.contains(uuid))
-    {
-        QJsonObject wsMsg{
+        gd->wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
             {"type", "container"},
-            {"opt", data["opt"]},
-            {"containername", data["containername"]},
-            {"status", data["status"]}};
-        gd->wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(data));
-    }
+            {"opt", data["opt"].toString()},
+            {"containername", data["containername"].toString()},
+            {"status", data["status"].toString()}}));
     if (opt == "create")
         if (auto original_data = data["original_data"].toObject(); data["status"] == "success")
         {
             auto c_sp = containername.split("_");
-            auto containername = original_data["containername"].toString();
-            auto showname = c_sp[1].right(c_sp[1].length() - 1);
-            auto imagename = original_data["imagename"].toString();
-            auto account = c_sp[0].right(c_sp[0].length() - 1);
-            auto portlist = original_data["portlist"].toArray();
             db->insertContainer(
-                containername,
-                showname,
-                imagename,
-                account,
+                original_data["containername"].toString(),
+                c_sp[1].right(c_sp[1].length() - 1),
+                original_data["imagename"].toString(),
+                c_sp[0].right(c_sp[0].length() - 1),
                 machineId,
-                portlist,
+                original_data["portlist"].toArray(),
                 false);
         }
         else
@@ -317,18 +307,11 @@ void GlobalEvent::onTcpHandleGpus(const QJsonObject &data, const QString &machin
 void GlobalEvent::onTcpHandleImage(const QJsonObject &data, const QString &machineId)
 {
     if (data.contains("uuid"))
-    {
-        auto uuid = data["uuid"].toString();
-        auto wsClients = GlobalData::instance()->wsClients;
-        if (wsClients.contains(uuid))
-        {
-            QJsonObject wsMsg{
+        if (auto uuid = data["uuid"].toString(), auto &wsClients = GlobalData::instance()->wsClients; wsClients.contains(uuid))
+            wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
                 {"type", "image"},
                 {"opt", data["opt"]},
-                {"status", data["status"]}};
-            wsClients[uuid]->sendTextMessage(GlobalCommon::objectToString(wsMsg));
-        }
-    }
+                {"status", data["status"]}}));
     // TODO: 不知道这里要做什么
 }
 
@@ -342,12 +325,11 @@ void GlobalEvent::onCheckHeartbeat()
     auto &clients = GlobalData::instance()->tcpClients;
     if (clients.isEmpty())
         return;
-    auto now = QDateTime::currentDateTime();
-    auto heartbeatTimeout = (*GlobalConfig::instance())["heartbeatTimeout"].as<int>();
+    static auto heartbeatTimeout = (*GlobalConfig::instance())["heartbeatTimeout"].as<int>();
     std::for_each(
         clients.begin(),
         clients.end(),
-        [now, heartbeatTimeout](auto &client)
+        [now = QDateTime::currentDateTime(), heartbeatTimeout](auto &client)
         {if (client->property("lastHeartbeat").toDateTime().secsTo(now) > heartbeatTimeout)
             client->disconnectFromHost(); });
 }
@@ -355,9 +337,9 @@ void GlobalEvent::onCheckHeartbeat()
 GlobalEvent::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
-    _wsHandlers["container"]  = &GlobalEvent::onWSHandleContainer;
-    _tcpHandlers["container"] = &GlobalEvent::onTcpHandleContainer;
-    _tcpHandlers["gpus"]      = &GlobalEvent::onTcpHandleGpus;
-    _tcpHandlers["image"]     = &GlobalEvent::onTcpHandleImage;
-    _tcpHandlers["heartbeat"] = &GlobalEvent::onTcpHandleHeartbeat;
+    _wsHandlers["container"]  = std::bind(&GlobalEvent::onWSHandleContainer, this, std::placeholders::_1, std::placeholders::_2);
+    _tcpHandlers["container"] = std::bind(&GlobalEvent::onTcpHandleContainer, this, std::placeholders::_1, std::placeholders::_2);
+    _tcpHandlers["gpus"]      = std::bind(&GlobalEvent::onTcpHandleGpus, this, std::placeholders::_1, std::placeholders::_2);
+    _tcpHandlers["image"]     = std::bind(&GlobalEvent::onTcpHandleImage, this, std::placeholders::_1, std::placeholders::_2);
+    _tcpHandlers["heartbeat"] = std::bind(&GlobalEvent::onTcpHandleHeartbeat, this, std::placeholders::_1, std::placeholders::_2);
 }

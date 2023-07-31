@@ -7,6 +7,8 @@ QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 {
     auto jsonBytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
     qint32 length = jsonBytes.size();
+    if (std::endian::native == std::endian::big)
+        length = qToLittleEndian(length);
     QByteArray lengthBytes = QByteArray::fromRawData(reinterpret_cast<const char *>(&length), sizeof(length));
     return lengthBytes + jsonBytes;
 }

@@ -52,6 +52,6 @@ private:
     GlobalEvent &operator=(const GlobalEvent &) = delete;
     GlobalEvent(GlobalEvent &&) = delete;
     static QSharedPointer<GlobalEvent> _instance;
-    QHash<QString, std::function<void(GlobalEvent *, const QJsonObject &, const QString &)>> _wsHandlers;
-    QHash<QString, std::function<void(GlobalEvent *, const QJsonObject &, const QString &)>> _tcpHandlers;
+    QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _wsHandlers;
+    QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _tcpHandlers;
 };
