@@ -17,7 +17,7 @@ WebServer::WebServer(QObject *parent)
     _jwt    = QSharedPointer<QJsonWebToken>::create();
     GlobalData::instance()->tcpServer = QSharedPointer<QTcpServer>(new QTcpServer());
     GlobalData::instance()->tcpServer->listen(QHostAddress::Any, (*GlobalConfig::instance())["TCP"]["port"].as<int>());
-    GlobalData::instance()->waitQueue = QSharedPointer<WaitQueue>::create();
+    GlobalData::instance()->waitQueue = WaitQueue::instance();
     connect(GlobalData::instance()->tcpServer.get(), &QTcpServer::newConnection, GlobalEvent::instance().get(), &GlobalEvent::onNewTcpConnection);
     connect(&GlobalData::instance()->heartbeatTimer, &QTimer::timeout, GlobalEvent::instance().get(), &GlobalEvent::onCheckHeartbeat);
     GlobalData::instance()->heartbeatTimer.start(1000);

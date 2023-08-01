@@ -59,11 +59,14 @@ GPUInfos NvidiaGPU::getAllGPUsInfo()
     nvmlUtilization_t utilization;
     try
     {
-        result = nvmlDeviceGetHandleByIndex_v2(i, &device);
-        result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
-        result = nvmlDeviceGetMemoryInfo(device, &memory);
-        result = nvmlDeviceGetUtilizationRates(device, &utilization);
-        all_gpus_info << GPUInfo{name, {(float)memory.total / 1024 / 1024, (float)memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory}};
+        for (int i = 0; i < gpu_device_count; i++)
+        {
+            result = nvmlDeviceGetHandleByIndex_v2(i, &device);
+            result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
+            result = nvmlDeviceGetMemoryInfo(device, &memory);
+            result = nvmlDeviceGetUtilizationRates(device, &utilization);
+            all_gpus_info << GPUInfo{name, {(float)memory.total / 1024 / 1024, (float)memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory}};
+        }
     }
     catch (const char *err)
     {

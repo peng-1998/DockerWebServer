@@ -51,7 +51,6 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
 
 QHttpServerResponse GlobalEvent::onApiAuthRegister(const QHttpServerRequest &request)
 {
-    qint8
     auto db       = DataBase::instance();
     auto body     = QJsonDocument::fromJson(request.body()).object();
     auto username = body["username"].toString();
@@ -399,14 +398,17 @@ void GlobalEvent::onRunTask(Task task)
                        { onTaskTimeout(task.id, task.machineId); });
     static QStringList sel{"account"};
     auto account = DataBase::instance()->getUser(task.userId, sel).value()["account"].toString();
+    QJsonArray gpuids;
+    for (auto gpuId : task.gpuIds)
+        gpuids.append(gpuId);
     GlobalData::instance()->tcpClients[task.machineId]->write(GlobalCommon::formatMessage(QJsonObject{
         {"type", "task"},
         {"data", QJsonObject{
                      {"opt", "run"},
-                     {"taskId", task.id},
+                     {"taskId", QString::number(task.id)},
                      {"account",account,},
-                     {"containername", task.containername},
-                     {"gpus", QJsonArray::fromVariantList(task.gpus)},
+                     {"containername", task.containerName},
+                     {"gpus", gpuids},
                      {"command", task.command},
                  }}}));
 }
@@ -420,7 +422,7 @@ void GlobalEvent::onTaskTimeout(quint64 taskId, const QString &machineId)
         {"type", "task"},
         {"data", QJsonObject{
                      {"opt", "cancel"},
-                     {"taskId", taskId},
+                     {"taskId", QString::number(taskId)},
                  }}}));
 }
 

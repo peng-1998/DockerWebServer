@@ -94,7 +94,7 @@ void WaitQueue::cancelTask(quint64 taskId, QString machineId, std::optional<bool
             _status.end(), 
             [taskId](const auto &machine)
             { return machine.waitingTasks.contains(taskId) or machine.runningTasks.contains(taskId); });
-        machineId = item->key();
+        machineId = item.key();
     }
     auto running_ = false;
     if(running.has_value())
