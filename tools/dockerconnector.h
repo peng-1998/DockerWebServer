@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QByteArray>
-#include <QHttpServerRequest>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -13,16 +12,18 @@
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QJsonValue>
+#include <QHttpServerRequest>
 
 typedef QList<QPair<QByteArray, QByteArray>> Headers;
 typedef std::tuple<int, Headers, QJsonValue> Response;
+
 using Method = QHttpServerRequest::Method;
 
 class DockerConnector : public QObject
 {
     Q_OBJECT
 public:
-    explicit DockerConnector(QObject *parent = nullptr);
+    using QObject::QObject;
     Response get(const QString &path);
     Response post(const QString &path, Headers &headers, const QJsonObject &data);
     Response post(const QString &path, Headers &headers, const QByteArray &data);
@@ -31,7 +32,6 @@ public:
     static Headers empty_headers;
     static QByteArray empty_data;
     static QJsonObject empty_object;
-signals:
 
 private:
     QSharedPointer<QLocalSocket> connectDocker();

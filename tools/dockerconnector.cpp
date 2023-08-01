@@ -6,10 +6,6 @@ Headers DockerConnector::empty_headers;
 QByteArray DockerConnector::empty_data;
 QJsonObject DockerConnector::empty_object;
 
-DockerConnector::DockerConnector(QObject *parent)
-    : QObject{parent}
-{
-}
 
 Response DockerConnector::get(const QString &path)
 {

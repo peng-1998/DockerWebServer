@@ -8,7 +8,7 @@
 class DockerController : public DockerConnector
 {
 public:
-    explicit DockerController(QObject *parent = nullptr);
+    using DockerConnector::DockerConnector;
 
     struct Container
     {
@@ -19,9 +19,9 @@ public:
         bool running;
         Container(QJsonObject data)
         {
-            id      = data["Id"].toString();
-            name    = data["Name"].toString().remove(0, 1);
-            image   = data["Image"].toString();
+            id = data["Id"].toString();
+            name = data["Name"].toString().remove(0, 1);
+            image = data["Image"].toString();
             running = data["State"].toString() == "running";
             QSet<QPair<int, int>> ports_set;
             auto ports_data = data["Ports"].toArray();
@@ -33,6 +33,18 @@ public:
             for (auto port : ports_set)
                 ports << port;
         };
+        QJsonObject toJson() const
+        {
+            auto ports = QJsonObject();
+            for (auto port : this->ports)
+                ports.insert(QString::number(port.first), port.second);
+            return QJsonObject{
+                {"id", id},
+                {"image", image},
+                {"name", name},
+                {"ports", ports},
+                {"running", running}};
+        }
     };
 
     struct Image
@@ -42,14 +54,20 @@ public:
         Image(QJsonObject data)
         {
             name = data["RepoTags"].toArray()[0].toString();
-            id   = data["Id"].toString();
+            id = data["Id"].toString();
         };
+        QJsonObject toJson() const
+        {
+            return QJsonObject{
+                {"name", name},
+                {"id", id}};
+        }
     };
 
     enum ContainerOpt
     {
-        START   = 0,
-        STOP    = 1,
+        START = 0,
+        STOP = 1,
         RESTART = 2
     };
 
@@ -62,13 +80,15 @@ public:
     Image image(const QString &name);
 
     QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports);
+    QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports, const QList<QPair<QString, QString>> &volumes);
     std::optional<QString> buildImage(const QString &dockerfile, const QString &name);
     std::optional<QString> pushImage(const QString &name);
     std::optional<QString> pullImage(const QString &name);
     void removeContainer(const QString &name);
     void removeImage(const QString &name);
-    void containerOpt(const QString &name, const ContainerOpt opt);
-
+    void containerOpt(const QString &name, ContainerOpt opt);
+    void containerExec(const QString &name, const QString &cmd);
+    void containerCommit(const QString &name, const QString &image);
     QJsonObject _defualtContainerCreateData;
 
 private:

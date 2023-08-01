@@ -1,8 +1,8 @@
 #pragma once
 
 #include "globalcommon.h"
-#include "globalconfig.h"
-#include "jsonwebtoken/src/qjsonwebtoken.h"
+#include "../tools/globalconfig.h"
+#include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
 #include <QHttpServerRequest>
 #include <QHttpServerResponse>
 #include <QJsonArray>
@@ -18,8 +18,7 @@ class GlobalEvent : public QObject
     Q_OBJECT
 public:
     static QSharedPointer<GlobalEvent> instance();
-
-public:
+public slots:
     static QHttpServerResponse onHttpIndex(const QHttpServerRequest &request);
     static QHttpServerResponse onHttpWSServer(const QHttpServerRequest &request);
     static QHttpServerResponse onHttpWSClient(const QHttpServerRequest &request);
@@ -35,15 +34,15 @@ public:
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);
     void onWSMessageReceived(const QString &message, const QString &uuid);
-    void onWSHandleContainer(QJsonObject &data, const QString &uuid);
+    void onWSHandleContainer(const QJsonObject &data, const QString &uuid);
     void onNewTcpConnection();
     void onTcpMessageReceived();
     void onTcpDisconnection(const QString &machineId);
-    void onTcpHandleInit(QJsonObject &data, QTcpSocket *sder);
-    void onTcpHandleContainer(QJsonObject &data, const QString &machineId);
-    void onTcpHandleGpus(QJsonObject &data, const QString &machineId);
-    void onTcpHandleImage(QJsonObject &data, const QString &machineId);
-    void onTcpHandleHeartbeat(QJsonObject &data, const QString &machineId);
+    void onTcpHandleInit(const QJsonObject &data, QTcpSocket *sder);
+    void onTcpHandleContainer(const QJsonObject &data, const QString &machineId);
+    void onTcpHandleGpus(const QJsonObject &data, const QString &machineId);
+    void onTcpHandleImage(const QJsonObject &data, const QString &machineId);
+    void onTcpHandleHeartbeat(const QJsonObject &data, const QString &machineId);
     void onCheckHeartbeat();
 signals:
 
@@ -53,9 +52,6 @@ private:
     GlobalEvent &operator=(const GlobalEvent &) = delete;
     GlobalEvent(GlobalEvent &&) = delete;
     static QSharedPointer<GlobalEvent> _instance;
-    QHash<QString, std::function<void(GlobalEvent *, QJsonObject &data, const QString &uuid)>> _wsHandlers;
-    QHash<QString, std::function<void(GlobalEvent *, QJsonObject &data, const QString &machineId)>> _tcpHandlers;
-    
-    // int _heartbeatTimeout;
-    // int _checkHeartbeatInterval;
+    QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _wsHandlers;
+    QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _tcpHandlers;
 };

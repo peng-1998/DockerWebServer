@@ -1,8 +1,9 @@
 #include <QCoreApplication>
-#include "server/webserver.h"
+#include "client/client.h"
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    WebServer server(qApp);
+    Client client(qApp);
     return a.exec();
 }

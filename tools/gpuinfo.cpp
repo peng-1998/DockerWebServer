@@ -4,11 +4,16 @@ NvidiaGPU::NvidiaGPU()
 {
     result = nvmlInit();
     result = nvmlDeviceGetCount(&gpu_device_count);
+    // if (result != NVML_SUCCESS) // 难以被catch
+    //     throw "Failed to initialize NVML" + std::string(nvmlErrorString(result));
+    available = result == NVML_SUCCESS;
 }
 
 NvidiaGPU::~NvidiaGPU()
 {
     result = nvmlShutdown();
+    // if (result != NVML_SUCCESS) // 无法被catch
+    //     throw "Failed to shutdown NVML." + std::string(nvmlErrorString(result));
 }
 
 MemoryInfo NvidiaGPU::getMemory(int gpuid)
@@ -52,13 +57,19 @@ GPUInfos NvidiaGPU::getAllGPUsInfo()
     char name[NVML_DEVICE_NAME_BUFFER_SIZE];
     nvmlMemory_t memory;
     nvmlUtilization_t utilization;
-    for (int i = 0; i < gpu_device_count; i++)
+    try
     {
-        result = nvmlDeviceGetHandleByIndex(i, &device);
+        result = nvmlDeviceGetHandleByIndex_v2(i, &device);
         result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
         result = nvmlDeviceGetMemoryInfo(device, &memory);
         result = nvmlDeviceGetUtilizationRates(device, &utilization);
         all_gpus_info << GPUInfo{name, {(float)memory.total / 1024 / 1024, (float)memory.used / 1024 / 1024}, {utilization.gpu, utilization.memory}};
     }
+    catch (const char *err)
+    {
+        qCritical() << err;
+        return GPUInfos();
+    }
+
     return all_gpus_info;
 }
