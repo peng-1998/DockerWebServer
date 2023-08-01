@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QWeakPointer>
 #include <QWebSocket>
+#include "waitqueue.h"
 class GlobalEvent : public QObject
 {
     Q_OBJECT
@@ -31,6 +32,11 @@ public slots:
     static QHttpServerResponse onApiAdminAllUsers(const QHttpServerRequest &request);
     static QHttpServerResponse onApiAdminAllImages(const QHttpServerRequest &request);
     static QHttpServerResponse onApiAdminAllContainers(const QString &machineId, const QHttpServerRequest &request);
+    static QHttpServerResponse onApiTaskCancel(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiTaskRequest(const QHttpServerRequest &request);
+    static QHttpServerResponse onApiTaskUser(const QString &account, const QHttpServerRequest &request);
+    static QHttpServerResponse onApiTaskMachine(const QString &machineId, const QHttpServerRequest &request);
+    static QHttpServerResponse onApiAdminAllTasks(const QHttpServerRequest &request);
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);
     void onWSMessageReceived(const QString &message, const QString &uuid);
@@ -44,6 +50,9 @@ public slots:
     void onTcpHandleImage(const QJsonObject &data, const QString &machineId);
     void onTcpHandleHeartbeat(const QJsonObject &data, const QString &machineId);
     void onCheckHeartbeat();
+    void onRunTask(Task task);
+    void onTaskTimeout(quint64 taskId, const QString &machineId);
+
 signals:
 
 private:

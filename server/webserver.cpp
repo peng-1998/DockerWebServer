@@ -17,6 +17,7 @@ WebServer::WebServer(QObject *parent)
     _jwt    = QSharedPointer<QJsonWebToken>::create();
     GlobalData::instance()->tcpServer = QSharedPointer<QTcpServer>(new QTcpServer());
     GlobalData::instance()->tcpServer->listen(QHostAddress::Any, (*GlobalConfig::instance())["TCP"]["port"].as<int>());
+    GlobalData::instance()->waitQueue = QSharedPointer<WaitQueue>::create();
     connect(GlobalData::instance()->tcpServer.get(), &QTcpServer::newConnection, GlobalEvent::instance().get(), &GlobalEvent::onNewTcpConnection);
     connect(&GlobalData::instance()->heartbeatTimer, &QTimer::timeout, GlobalEvent::instance().get(), &GlobalEvent::onCheckHeartbeat);
     GlobalData::instance()->heartbeatTimer.start(1000);
@@ -43,6 +44,7 @@ WebServer::WebServer(QObject *parent)
     _httpServer->route("/api/admin/all_users", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllUsers));
     _httpServer->route("/api/admin/all_images", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllImages));
     _httpServer->route("/api/admin/all_containers/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiAdminAllContainers));
+    _httpServer->route("/api/task/cancel", Method::Post, jwtDecorator(&GlobalEvent::onApiTaskCancel));
 
     _wsServer = QSharedPointer<QWebSocketServer>::create("WebSocketServer", QWebSocketServer::NonSecureMode);
     _wsServer->listen(QHostAddress::Any, (*_config)["WebSocket"]["port"].as<int>());

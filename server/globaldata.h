@@ -11,6 +11,7 @@
 #include <QVariant>
 #include <QWebSocket>
 #include <QWebSocketServer>
+#include "waitqueue.h"
 
 class GlobalData : public QObject
 {
@@ -25,6 +26,7 @@ public:
     QHash<QString, QSharedPointer<QTcpSocket>> tcpClients;
     QHash<QString, QJsonObject> gpus_cache;
     QSharedPointer<QJsonWebToken> jwt;
+    QSharedPointer<WaitQueue> waitQueue;
     QTimer heartbeatTimer;
 
 private:

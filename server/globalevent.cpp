@@ -51,6 +51,7 @@ QHttpServerResponse GlobalEvent::onApiAuthLogin(const QHttpServerRequest &reques
 
 QHttpServerResponse GlobalEvent::onApiAuthRegister(const QHttpServerRequest &request)
 {
+    qint8
     auto db       = DataBase::instance();
     auto body     = QJsonDocument::fromJson(request.body()).object();
     auto username = body["username"].toString();
@@ -134,6 +135,61 @@ QHttpServerResponse GlobalEvent::onApiAdminAllContainers(const QString &machineI
     for (auto &container : containers)
         result.append(GlobalCommon::hashToJsonObject(container));
     return QHttpServerResponse(result, StatusCode::Ok);
+}
+
+QHttpServerResponse GlobalEvent::onApiTaskCancel(const QHttpServerRequest &request)
+{
+    auto body = QJsonDocument::fromJson(request.body()).object();
+    GlobalData::instance()->waitQueue->cancelTask(body["taskId"].toString().toLongLong(), body["machine_id"].toString());
+    return {StatusCode::Ok};
+}
+
+QHttpServerResponse GlobalEvent::onApiTaskRequest(const QHttpServerRequest &request)
+{
+    auto body = QJsonDocument::fromJson(request.body()).object();
+    if(body.contains("gpu_count"))
+        GlobalData::instance()->waitQueue->newTask(
+        body["user_id"].toInt(), 
+        body["machine_id"].toString(),
+        body["containername"].toString(), 
+        body["command"].toString(),
+        body["duration"].toInt(),
+        body["gpu_count"].toInt());
+    else{
+        QList<int> gpus;
+        for(auto gpu : body["gpus"].toArray())
+            gpus.append(gpu.toInt());
+        GlobalData::instance()->waitQueue->newTask(
+        body["user_id"].toInt(),
+        body["machine_id"].toString(),
+        body["containername"].toString(),
+        body["command"].toString(),
+        body["duration"].toInt(),
+        gpus.size(),
+        gpus);
+    }
+    return {StatusCode::Ok};
+}
+
+QHttpServerResponse GlobalEvent::onApiTaskUser(const QString &account, const QHttpServerRequest &request)
+{
+    QJsonArray result;
+    //TODO: 查找用户的所有任务 （包括所有机器？）
+    return {result, StatusCode::Ok};
+}
+
+QHttpServerResponse GlobalEvent::onApiTaskMachine(const QString &machineId, const QHttpServerRequest &request)
+{
+    QJsonArray result;
+    //TODO: 查找机器的所有任务 
+    return {result, StatusCode::Ok};
+}
+
+QHttpServerResponse GlobalEvent::onApiAdminAllTasks(const QHttpServerRequest &request)
+{
+    QJsonArray result;
+    //TODO: 查找所有任务
+    return {result, StatusCode::Ok};
 }
 
 void GlobalEvent::onWSNewConnection()
@@ -335,6 +391,37 @@ void GlobalEvent::onCheckHeartbeat()
         [now = QDateTime::currentDateTime(), timeout = heartbeatTimeout](auto &client)
         {if (client->property("lastHeartbeat").toDateTime().secsTo(now) > heartbeatTimeout)
             client->disconnectFromHost(); });
+}
+
+void GlobalEvent::onRunTask(Task task)
+{
+    QTimer::singleShot(task.duration * 3600 * 1000, [this, task = std::move(task)]()
+                       { onTaskTimeout(task.id, task.machineId); });
+    static QStringList sel{"account"};
+    auto account = DataBase::instance()->getUser(task.userId, sel).value()["account"].toString();
+    GlobalData::instance()->tcpClients[task.machineId]->write(GlobalCommon::formatMessage(QJsonObject{
+        {"type", "task"},
+        {"data", QJsonObject{
+                     {"opt", "run"},
+                     {"taskId", task.id},
+                     {"account",account,},
+                     {"containername", task.containername},
+                     {"gpus", QJsonArray::fromVariantList(task.gpus)},
+                     {"command", task.command},
+                 }}}));
+}
+
+void GlobalEvent::onTaskTimeout(quint64 taskId, const QString &machineId)
+{
+    auto gd = GlobalData::instance();
+    gd->waitQueue->cancelTask(taskId, machineId,true);
+    auto client = gd->tcpClients[machineId];
+    client->write(GlobalCommon::formatMessage(QJsonObject{
+        {"type", "task"},
+        {"data", QJsonObject{
+                     {"opt", "cancel"},
+                     {"taskId", taskId},
+                 }}}));
 }
 
 GlobalEvent::GlobalEvent(QObject *parent)

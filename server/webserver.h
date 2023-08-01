@@ -11,7 +11,7 @@
 #include <QWeakPointer>
 #include <QWebSocketServer>
 #include <QWebSocket>
-
+#include "waitqueue.h"
 class WebServer final : public QObject
 {
     Q_OBJECT
