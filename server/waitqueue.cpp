@@ -5,9 +5,7 @@ QSharedPointer<WaitQueue> WaitQueue::_instance = nullptr;
 WaitQueue::WaitQueue(QObject *parent)
     : QObject{parent}, _status{}, _taskId{0}
 {
-    _schedulingStrategy = [](const MachineStatus &machine) -> std::optional<quint64> {
-        return std::nullopt;
-    };
+    _schedulingStrategy = std::bind(&WaitQueue::defaultSchedulingStrategy, this, std::placeholders::_1);
 }
 
 std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus &machine)
