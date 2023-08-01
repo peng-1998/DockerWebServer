@@ -35,6 +35,7 @@ add_executable(DWS
   tools/dockerconnector.h tools/dockerconnector.cpp
   tools/dockercontroller.h tools/dockercontroller.cpp
   tools/logger.hpp
+  server/waitqueue.h server/waitqueue.cpp
   # tools/gpuinfo.h tools/gpuinfo.cpp
   )
 
