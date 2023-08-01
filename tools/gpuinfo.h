@@ -1,5 +1,5 @@
 #ifndef NVML_INIT_FLAG_NO_GPUS
-#include "nvml.h"
+#include <nvml.h>
 #endif
 #ifndef MAP_H
 #include <map>
@@ -55,4 +55,4 @@ public:
     UtilizationInfo getUtilization(int gpuid);
     ProcessInfo getProcess(int gpuid);
     GPUInfos getAllGPUsInfo();
-}
+};
