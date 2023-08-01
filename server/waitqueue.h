@@ -41,7 +41,8 @@ private:
     quint64 _taskId;
     std::function<std::optional<quint64>(const MachineStatus &)> _schedulingStrategy;
     std::optional<quint64> defaultSchedulingStrategy(const MachineStatus &machine);
-
+    void _stopTask(quint64 taskId, const QString &machineId);
+    void _cancelTask(quint64 taskId, const QString &machineId);
 signals:
     void taskStart(Task task);
 
@@ -52,4 +53,8 @@ public:
     quint64 newTask(const int &userId, const QString &machineId, const QString &containerName, const QString &command, int duration, int gpuCount,  const QList<int> &gpuIds = QList<int>());
     void newMachine(const QString &machineId, int gpuCount);
     std::optional<quint64> tryStartTask(const QString &machineId);
+    void cancelTask(quint64 taskId, QString machineId = "", std::optional<bool> running = std::nullopt);
+    
+
+
 };

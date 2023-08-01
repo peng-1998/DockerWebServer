@@ -21,6 +21,14 @@ std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus 
     return task == waitingTasks.end() ? std::nullopt : std::optional<quint64>{task->id};
 }
 
+void WaitQueue::_stopTask(quint64 taskId, const QString &machineId)
+{
+}
+
+void WaitQueue::_cancelTask(quint64 taskId, const QString &machineId)
+{
+}
+
 QSharedPointer<WaitQueue> WaitQueue::instance()
 {
     if (_instance.isNull())
@@ -76,4 +84,27 @@ std::optional<quint64> WaitQueue::tryStartTask(const QString &machineId)
         emit taskStart(task);
     }
     return result;
+}
+
+void WaitQueue::cancelTask(quint64 taskId, QString machineId, std::optional<bool> running)
+{
+    if(machineId.isEmpty()){
+        auto item = std::find_if(
+            _status.begin(), 
+            _status.end(), 
+            [taskId](const auto &machine)
+            { return machine.waitingTasks.contains(taskId) or machine.runningTasks.contains(taskId); });
+        machineId = item->key();
+    }
+    auto running_ = false;
+    if(running.has_value())
+        running_ = running.value();
+    else{
+        auto &machine = _status[machineId];
+        running_ = machine.runningTasks.contains(taskId);
+    }
+    if(running_)
+        _stopTask(taskId, machineId);
+    else
+        _cancelTask(taskId, machineId);
 }
