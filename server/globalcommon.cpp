@@ -9,9 +9,7 @@ QMap<QString, QString> GlobalCommon::parseHeaders(const QList<QPair<QByteArray, 
 {
     QMap<QString, QString> result;
     for (auto &header : headers)
-    {
         result.insert(QString::fromUtf8(header.first), QString::fromUtf8(header.second));
-    }
     return result;
 }
 
@@ -29,36 +27,17 @@ std::tuple<QString, QString> GlobalCommon::generateSaltAndHash(const QString &pa
 QJsonObject GlobalCommon::hashToJsonObject(const QHash<QString, QVariant> &hash)
 {
     QJsonObject result;
-    for (auto &key : hash.keys())
-    {
-        auto value = hash.value(key);
-        if (value.typeId() == QMetaType::QString)
-            result.insert(key, hash.value(key).toString());
-        else if (value.typeId() == QMetaType::Int)
-            result.insert(key, hash.value(key).toInt());
-        else if (value.typeId() == QMetaType::Bool)
-            result.insert(key, hash.value(key).toBool());
-        else
-            result.insert(key, hash.value(key).toJsonObject());
-    }
+    for (auto kv = hash.constKeyValueBegin(); kv != hash.constKeyValueEnd(); kv++)
+        result.insert(kv->first, QJsonValue::fromVariant(kv->second));
     return result;
 }
 
 QString GlobalCommon::generateRandomString(int length)
 {
-    QString result;
-    const QString characters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-
-    // 使用 QRandomGenerator 生成随机数
-    QRandomGenerator generator = QRandomGenerator::securelySeeded();
-
-    // 生成指定长度的随机字符串
-    for (int i = 0; i < length; ++i)
-    {
-        int index = generator.bounded(characters.length());
-        result.append(characters.at(index));
-    }
-
+    static QString characters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+    static QRandomGenerator * generator = QRandomGenerator::global();
+    QString result(length, QChar(' '));
+    std::generate(result.begin(), result.end(), [&]() { return characters.at(generator->bounded(characters.length())); });
     return result;
 }
 
