@@ -1,6 +1,7 @@
 #include "dockerconnector.h"
 #include <QCoreApplication>
 #include <QEventLoop>
+#include "tools.hpp"
 
 Headers DockerConnector::empty_headers;
 QByteArray DockerConnector::empty_data;
@@ -48,8 +49,7 @@ Response DockerConnector::post(const QString &path, Headers &headers, const QByt
     QByteArray request = formatRequest(path, Method::Post, headers, data);
     socket->write(request);
     socket->waitForBytesWritten(100);
-    while (socket->isValid())
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
+    await(!socket->isValid());
     QString response = QString::fromUtf8(socket->readAll());
     return parseResponse(response);
 }
