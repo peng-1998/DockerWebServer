@@ -1,11 +1,12 @@
 #pragma once
 #include <QEventLoop>
-#define await(x) tools::await([&](){ return x; })
+#include <QCoreApplication>
 namespace tools
 {
-    void await(std::function<bool()> &&function){
+    void __await(std::function<bool()> &&function){
         while(!function()){
-            QEventLoop::processEvents(QEventLoop::AllEvents, 500);
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 500);
         }
     }
 }
+#define await(x) tools::__await([&](){ return x; })
