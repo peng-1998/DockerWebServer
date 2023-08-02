@@ -54,7 +54,8 @@ public:
     void newMachine(const QString &machineId, int gpuCount);
     std::optional<quint64> tryStartTask(const QString &machineId);
     void cancelTask(quint64 taskId, QString machineId = "", std::optional<bool> running = std::nullopt);
-    
+    QList<Task> getMachineTasks(const QString &machineId);
+    QList<Task> getUserTasks(const int &userId);
 
 
 };
