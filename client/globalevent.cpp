@@ -1,11 +1,11 @@
 #include "globalevent.h"
 #include "../tools/globalconfig.h"
-#include "../tools/worker.hpp"
 #include "globalcommon.h"
 #include "globaldata.h"
 #include <QDebug>
 #include <QFile>
 #include <QJsonObject>
+#include <QtConcurrent>
 QSharedPointer<GlobalEvent> GlobalEvent::_instance = QSharedPointer<GlobalEvent>(new GlobalEvent());
 
 QSharedPointer<GlobalEvent> GlobalEvent::instance()
@@ -85,7 +85,7 @@ void GlobalEvent::messageHandler(const QJsonObject &json)
 void GlobalEvent::messageHandleImage(const QJsonObject &json)
 {
     auto opt = json["opt"].toString();
-    QJsonObject msg{
+    QJsonObject * msg = new QJsonObject{
         {"type", "image"},
         {"data", QJsonObject{
                      {"opt", opt},
@@ -94,19 +94,14 @@ void GlobalEvent::messageHandleImage(const QJsonObject &json)
                      {"status", "success"}}}};
     std::function<void()> task;
     if (opt == "pull")
-        task = [image = json["image"].toString(), &msg]()
+        task = [image = json["image"].toString(), msg]()
         {if (auto res = GlobalData::instance()->docker->pullImage(image);!res.has_value())
-                msg["data"].toObject()["status"] = "failed"; };
+                (*msg)["data"].toObject()["status"] = "failed"; };
     else if (opt == "remove")
         task = [image = json["image"].toString(), &msg]()
         { GlobalData::instance()->docker->removeImage(image); };
-    QObject::connect(
-        Worker::newTask(std::move(task)),
-        &Worker::taskFinished,
-        this,
-        [msg = std::move(msg)]()
-        { GlobalData::instance()->socket->write(GlobalCommon::formatMessage(msg)); },
-        Qt::QueuedConnection);
+    QtConcurrent::run(std::move(task)).then(this, [msg]()
+                                            { GlobalData::instance()->socket->write(GlobalCommon::formatMessage(*msg)); delete msg; });
 }
 
 void GlobalEvent::messageHandleContainer(const QJsonObject &json)
@@ -146,14 +141,8 @@ void GlobalEvent::messageHandleContainer(const QJsonObject &json)
     else if (opt == "commit")
         task = [json]()
         { GlobalData::instance()->docker->containerCommit(json["name"].toString(), json["image"].toString()), GlobalData::instance()->docker->pushImage(json["image"].toString()); };
-
-    QObject::connect(
-        Worker::newTask(std::move(task)),
-        &Worker::taskFinished,
-        this,
-        [msg = std::move(msg)]()
-        { GlobalData::instance()->socket->write(GlobalCommon::formatMessage(msg)); },
-        Qt::QueuedConnection);
+    QtConcurrent::run(std::move(task)).then(this, [msg]()
+    { GlobalData::instance()->socket->write(GlobalCommon::formatMessage(msg)); });
 }
 
 GlobalEvent::GlobalEvent(QObject *parent) : QObject(parent)
