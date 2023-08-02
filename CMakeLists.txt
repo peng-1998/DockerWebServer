@@ -39,9 +39,6 @@ add_executable(DWS
   # tools/gpuinfo.h tools/gpuinfo.cpp
   )
 
-
-
-
 target_link_libraries(DWS PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network Qt6::Sql Qt6::Concurrent yaml-cpp)
 
 
@@ -59,10 +56,9 @@ add_executable(DWSClient
   tools/globalconfig.h tools/globalconfig.cpp
   client/globalcommon.h client/globalcommon.cpp
   tools/gpuinfo.h tools/gpuinfo.cpp
-  tools/worker.hpp
   )
 
-target_link_libraries(DWSClient PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network yaml-cpp CUDA::nvml)
+target_link_libraries(DWSClient PRIVATE Qt6::Core Qt6::HttpServer crypt Qt6::Network yaml-cpp CUDA::nvml Qt6::Concurrent)
 
 install(TARGETS DWSClient
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
