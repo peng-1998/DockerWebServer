@@ -63,7 +63,8 @@ QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 {
     auto jsonBytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
     qint32 length = jsonBytes.size();
-    if (QSysInfo::ByteOrder == QSysInfo::BigEndian)
+    static bool isLittleEndian = QSysInfo::ByteOrder == QSysInfo::LittleEndian;
+    if (Q_UNLIKELY(isLittleEndian))
         length = qToLittleEndian(length);
     QByteArray lengthBytes = QByteArray::fromRawData(reinterpret_cast<const char *>(&length), sizeof(length));
     return lengthBytes + jsonBytes;

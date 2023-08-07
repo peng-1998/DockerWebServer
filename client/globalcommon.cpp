@@ -8,7 +8,8 @@ QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 {
     auto jsonBytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
     qint32 length = jsonBytes.size();
-    if (QSysInfo::ByteOrder == QSysInfo::BigEndian)
+    static bool isLittleEndian = QSysInfo::ByteOrder == QSysInfo::LittleEndian;
+    if (Q_UNLIKELY(isLittleEndian))
         length = qToLittleEndian(length);
     QByteArray lengthBytes = QByteArray::fromRawData(reinterpret_cast<const char *>(&length), sizeof(length));
     return lengthBytes + jsonBytes;
@@ -17,7 +18,7 @@ QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 std::tuple<QString, int> GlobalCommon::getCPUInfo()
 {
     // 检查是否为 linux 或者 freebsd 系统
-    if ((QSysInfo::kernelType() != "linux" and QSysInfo::kernelType() != "freebsd") or !QFile::exists("/proc/cpuinfo"))
+    if (Q_UNLIKELY((QSysInfo::kernelType() != "linux" and QSysInfo::kernelType() != "freebsd") or !QFile::exists("/proc/cpuinfo")))
         return std::make_tuple("Unknown", 0);
     QProcess process;
     process.start("cat /proc/cpuinfo | grep 'model name' | uniq");
@@ -33,7 +34,7 @@ std::tuple<QString, int> GlobalCommon::getCPUInfo()
 std::tuple<float, float> GlobalCommon::getMemoryInfo()
 {
     // 检查是否为 linux 或者 freebsd 系统
-    if ((QSysInfo::kernelType() != "linux" and QSysInfo::kernelType() != "freebsd") or !QFile::exists("/proc/meminfo"))
+    if (Q_UNLIKELY((QSysInfo::kernelType() != "linux" and QSysInfo::kernelType() != "freebsd") or !QFile::exists("/proc/meminfo")))
         return std::make_tuple(0, 0);
     QProcess process;
     process.start("cat /proc/meminfo | grep 'MemTotal'");
@@ -49,7 +50,7 @@ std::tuple<float, float> GlobalCommon::getDiskInfo(const QString &path)
 {
     // 检查是否为 linux 或者 freebsd 系统
     QStorageInfo storage(path);
-    if (storage.isValid())
+    if (Q_LIKELY(storage.isValid()))
         return std::make_tuple(storage.bytesTotal() / 1024 / 1024 / 1024, storage.bytesAvailable() / 1024 / 1024 / 1024);
     return std::make_tuple(0, 0);
 }

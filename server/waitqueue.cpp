@@ -6,6 +6,7 @@ WaitQueue::WaitQueue(QObject *parent)
     : QObject{parent}, _status{}, _taskId{0}
 {
     _schedulingStrategy = std::bind(&WaitQueue::defaultSchedulingStrategy, this, std::placeholders::_1);
+    connect(this, &WaitQueue::taskStop, this, &WaitQueue::taskStopped);
 }
 
 std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus &machine)
@@ -26,10 +27,18 @@ std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus 
 
 void WaitQueue::_stopTask(quint64 taskId, const QString &machineId)
 {
+    auto &machine = _status[machineId];
+    auto &task = machine.runningTasks[taskId];
+    machine.runningTasks.remove(taskId);
+    auto &gpuStatus = machine.gpuStatus;
+    for (auto gpuId : task.gpuIds)
+        gpuStatus[gpuId] = false;
+    emit taskStop(task);
 }
 
 void WaitQueue::_cancelTask(quint64 taskId, const QString &machineId)
 {
+    _status[machineId].waitingTasks.remove(taskId);
 }
 
 QSharedPointer<WaitQueue> WaitQueue::instance()
@@ -52,8 +61,7 @@ quint64 WaitQueue::newTask(const int &userId, const QString &machineId, const QS
         command,
         std::nullopt};
     _status[machineId].waitingTasks[task.id] = task;
-    while (tryStartTask(machineId).has_value())
-        ;
+    while (tryStartTask(machineId).has_value());
     return task.id;
 }
 
@@ -75,7 +83,6 @@ std::optional<quint64> WaitQueue::tryStartTask(const QString &machineId)
         machine.waitingTasks.remove(task.id);
         auto &gpuStatus = machine.gpuStatus;
         if (task.gpuIds.isEmpty())
-        {
             for (int i{0}, count{0}; i < gpuStatus.size() && count < task.gpuCount; ++i)
                 if (!gpuStatus[i])
                 {
@@ -83,16 +90,19 @@ std::optional<quint64> WaitQueue::tryStartTask(const QString &machineId)
                     task.gpuIds.append(i);
                     ++count;
                 }
-        }
         else
-        {
             for (auto gpuId : task.gpuIds)
                 gpuStatus[gpuId] = true;
-        }
         task.startTime = QDateTime::currentDateTime();
         emit taskStart(task);
     }
     return result;
+}
+
+void WaitQueue::onTaskStopped(Task task)
+{
+    QTimer::singleShot(1000, [this,task]() //等待一段时间，用于gpu服务器清理资源
+    {this->tryStartTask(task.machineId);});
 }
 
 void WaitQueue::cancelTask(quint64 taskId, QString machineId, std::optional<bool> running)
@@ -110,10 +120,7 @@ void WaitQueue::cancelTask(quint64 taskId, QString machineId, std::optional<bool
     if (running.has_value())
         running_ = running.value();
     else
-    {
-        auto &machine = _status[machineId];
-        running_ = machine.runningTasks.contains(taskId);
-    }
+        running_ = _status[machineId].runningTasks.contains(taskId);
     if (running_)
         _stopTask(taskId, machineId);
     else
@@ -145,4 +152,9 @@ QList<Task> WaitQueue::getUserTasks(const int &userId)
             { return task.userId == userId; });
     }
     return tasks;
+}
+
+void WaitQueue::setSchedulingStrategy(const SchedulingStrategy &strategy)
+{
+    _schedulingStrategy = strategy;
 }

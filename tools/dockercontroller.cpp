@@ -81,7 +81,7 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
     if (lastResponse.contains("errorDetail"))
         return std::nullopt;
     for (auto line : response.toArray())
-        if (line.toObject().contains("aux"))
+        if (Q_UNLIKELY(line.toObject().contains("aux")))
             return line.toObject()["aux"].toObject()["ID"].toString();
     return std::nullopt;
 }

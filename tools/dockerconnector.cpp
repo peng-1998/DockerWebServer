@@ -77,7 +77,7 @@ Response DockerConnector::parseResponse(const QString &data)
         QJsonArray body;
         for (int i{0}; i < body_list.size(); i++)
         {
-            if (body_list[i].isEmpty())
+            if (Q_UNLIKELY(body_list[i].isEmpty()))
                 continue;
             body << QJsonDocument::fromJson(body_list[i].toUtf8()).object();
         }
