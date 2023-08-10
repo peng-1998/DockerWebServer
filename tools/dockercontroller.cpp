@@ -12,7 +12,7 @@ QStringList opts{"start", "stop", "restart"};
 
 Containers DockerController::containers()
 {
-    auto [statusCode, headers, data] = get("/containers/json");
+    auto &&[statusCode, headers, data] = get("/containers/json");
     Containers containers;
     for (auto container_data : data.toArray())
         containers << Container{container_data.toObject()};
@@ -21,7 +21,7 @@ Containers DockerController::containers()
 
 Images DockerController::images()
 {
-    auto [statusCode, headers, data] = get("/containers/json");
+    auto &&[statusCode, headers, data] = get("/containers/json");
     Images images;
     for (auto image_data : data.toArray())
         images << Image{image_data.toObject()};
@@ -30,13 +30,13 @@ Images DockerController::images()
 
 Container DockerController::container(const QString &name)
 {
-    auto [statusCode, headers, data] = get(QString("/containers/%1/json").arg(name));
+    auto &&[statusCode, headers, data] = get(QString("/containers/%1/json").arg(name));
     return Container{data.toObject()};
 }
 
 Image DockerController::image(const QString &name)
 {
-    auto [statusCode, headers, data] = get(QString("/images/%1/json").arg(name));
+    auto &&[statusCode, headers, data] = get(QString("/images/%1/json").arg(name));
     return Image{data.toObject()};
 }
 
@@ -76,7 +76,7 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
     QString url = QString("/build?t=%1").arg(name);
     Headers headers;
     headers << QPair<QByteArray, QByteArray>("Content-Type", "application/tar");
-    auto [statusCode, resheaders, response] = post(url, headers, tarData);
+    auto &&[statusCode, resheaders, response] = post(url, headers, tarData);
     auto lastResponse = response.toArray().last().toObject();
     if (lastResponse.contains("errorDetail"))
         return std::nullopt;
@@ -92,7 +92,7 @@ std::optional<QString> DockerController::pushImage(const QString &name)
     auto url = QString("/images/%1/push?tag=%2").arg(splitStr[0], splitStr[1]);
     Headers headers;
     headers << QPair<QByteArray, QByteArray>("X-Registry-Auth", "{}");
-    auto [statusCode, resheaders, response] = post(url, headers, DockerConnector::empty_data);
+    auto &&[statusCode, resheaders, response] = post(url, headers, DockerConnector::empty_data);
     if (response.isObject())
         return std::nullopt;
     else
@@ -131,10 +131,25 @@ void DockerController::containerOpt(const QString &name, const ContainerOpt opt)
     post(QString("/containers/%1/%2").arg(name, opts[int(opt)]), DockerConnector::empty_headers, DockerConnector::empty_data);
 }
 
-void DockerController::containerExec(const QString &name, const QString &command)
+void DockerController::containerExec(const QString &name, const QString &command, const QStringList &env)
 {
+    auto url = QString("/containers/%1/exec").arg(name);
+    Headers headers;
+    headers << QPair<QByteArray, QByteArray>("Content-Type", "application/json");
+    QJsonObject data{
+        {"AttachStdin", false},
+        {"AttachStdout", true},
+        {"AttachStderr", true},
+        {"Tty", false},
+        {"Cmd", command},
+        {"Env", QJsonArray::fromStringList(env)}};
+    auto &&[statusCode, resheaders, response] = post(url, headers, data);
 }
 
 void DockerController::containerCommit(const QString &name, const QString &image)
 {
+    auto url = QString("/commit?container=%1&tag=%2").arg(name, image);
+    Headers headers;
+    headers << QPair<QByteArray, QByteArray>("Content-Type", "application/json");
+    auto &&[statusCode, resheaders, response] = post(url, headers, DockerConnector::empty_data);
 }

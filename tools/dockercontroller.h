@@ -87,7 +87,7 @@ public:
     void removeContainer(const QString &name);
     void removeImage(const QString &name);
     void containerOpt(const QString &name, ContainerOpt opt);
-    void containerExec(const QString &name, const QString &cmd);
+    void containerExec(const QString &name, const QString &cmd, const QStringList &env = QStringList());
     void containerCommit(const QString &name, const QString &image);
     QJsonObject _defualtContainerCreateData;
 

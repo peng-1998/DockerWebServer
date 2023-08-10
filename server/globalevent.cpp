@@ -57,7 +57,7 @@ QHttpServerResponse GlobalEvent::onApiAuthRegister(const QHttpServerRequest &req
     auto password = body["password"].toString();
     if (db->containsUser(username))
         return {{"message", "User Already Exists"}, StatusCode::Conflict};
-    auto [salt, hash] = GlobalCommon::generateSaltAndHash(password);
+    auto &&[salt, hash] = GlobalCommon::generateSaltAndHash(password);
     db->insertUser(username, hash, salt, username, "", "", QString::fromStdString((*GlobalConfig::instance())["defaultPhoto"].as<std::string>()));
     return {StatusCode::Ok};
 }
@@ -239,6 +239,15 @@ void GlobalEvent::onWSHandleContainer(const QJsonObject &data, const QString &uu
         auto init_args = QJsonDocument::fromVariant(image["init_args"]).object();
         for (auto &key : init_args.keys())
             msg["data"].toObject()["create_args"].toObject().insert(key, init_args[key]);
+    }
+}
+
+void GlobalEvent::onWSHandleImage(const QJsonObject &data, const QString &uuid)
+{
+    if(data["opt"]=="build")
+    {
+        auto docker = DockerController::instance();
+        docker->buildImage(data["dockerfile"].toString(), data["name"].toString());
     }
 }
 

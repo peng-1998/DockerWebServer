@@ -2,6 +2,9 @@
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QThread>
+
+constexpr unsigned long await_timeout = 100l;
+
 namespace tools
 {
     void __await(std::function<bool()> &&function)
@@ -11,13 +14,14 @@ namespace tools
         {
             while (!function())
             {
-                eventDispatcher->processEvents(QEventLoop::AllEvents, 100);
+                eventDispatcher->processEvents(QEventLoop::AllEvents, await_timeout);
             }
         }
-        else{
+        else
+        {
             while (!function())
             {
-                QThread::sleep(100);
+                QThread::sleep(await_timeout);
             }
         }
     }
