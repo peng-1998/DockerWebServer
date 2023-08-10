@@ -1,12 +1,25 @@
 #pragma once
-#include <QEventLoop>
 #include <QCoreApplication>
+#include <QEventLoop>
+#include <QThread>
 namespace tools
 {
-    void __await(std::function<bool()> &&function){
-        while(!function()){
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 500);
+    void __await(std::function<bool()> &&function)
+    {
+        QAbstractEventDispatcher *eventDispatcher = QThread::currentThread()->eventDispatcher();
+        if (eventDispatcher->hasPendingEvents())
+        {
+            while (!function())
+            {
+                eventDispatcher->processEvents(QEventLoop::AllEvents, 100);
+            }
+        }
+        else{
+            while (!function())
+            {
+                QThread::sleep(100);
+            }
         }
     }
 }
-#define await(x) tools::__await([&](){ return x; })
+#define await(x) tools::__await([&]() { return x; })
