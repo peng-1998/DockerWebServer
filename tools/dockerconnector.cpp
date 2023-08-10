@@ -10,11 +10,10 @@ QJsonObject DockerConnector::empty_object;
 
 Response DockerConnector::get(const QString &path)
 {
-    auto socket = connectDocker();
+    auto    socket  = connectDocker();
     QString request = QString("GET %1 HTTP/1.1\r\nHost: localhost\r\n\r\n").arg(path);
     socket->write(request.toUtf8());
-    socket->waitForBytesWritten(100);
-    socket->waitForDisconnected(1000);
+    await(!socket->isValid());
     QString response = QString::fromUtf8(socket->readAll());
     return parseResponse(response);
 }
@@ -24,9 +23,7 @@ Response DockerConnector::post(const QString &path, Headers &headers, const QJso
     auto       socket  = connectDocker();
     QByteArray request = formatRequest(path, Method::Post, headers, data);
     socket->write(request);
-    socket->waitForBytesWritten(100);
-    while (socket->isValid())
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
+    await(!socket->isValid());
     QString response = QString::fromUtf8(socket->readAll());
     return parseResponse(response);
 }
@@ -36,9 +33,7 @@ Response DockerConnector::delete_(const QString &path)
     auto       socket  = connectDocker();
     QByteArray request = formatRequest(path, Method::Delete, DockerConnector::empty_headers, DockerConnector::empty_data);
     socket->write(request);
-    socket->waitForBytesWritten(100);
-    while (socket->isValid())
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
+    await(!socket->isValid());
     QString response = QString::fromUtf8(socket->readAll());
     return parseResponse(response);
 }
@@ -48,7 +43,6 @@ Response DockerConnector::post(const QString &path, Headers &headers, const QByt
     auto       socket  = connectDocker();
     QByteArray request = formatRequest(path, Method::Post, headers, data);
     socket->write(request);
-    socket->waitForBytesWritten(100);
     await(!socket->isValid());
     QString response = QString::fromUtf8(socket->readAll());
     return parseResponse(response);
