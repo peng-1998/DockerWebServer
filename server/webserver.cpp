@@ -56,6 +56,24 @@ WebServer::~WebServer()
 {
 }
 
+// template <typename Func>
+// auto WebServer::jwtDecoratorArg(Func && f)
+// {
+//     return [this,std::forward<Func>(f)](auto && ...args,auto request)->auto
+//     {
+//         auto header = request.headers();
+//         for (auto &item : header)
+//             if (item.first == "Authorization")
+//                 if (auto jwt = QJsonWebToken::fromTokenAndSecret(item.second, this->_secret); jwt.isValid())
+//                     return std::invoke(f, std::forward<decltype(args)>(args)..., request);
+//                 else
+//                     return QHttpServerResponse(QJsonObject{{"message","Invalid token"}}, StatusCode::Unauthorized);
+//         return QHttpServerResponse(QJsonObject{{"message","Token Not Found"}}, StatusCode::Unauthorized);
+//     };
+// };
+
+
+
 template <typename T>
 std::function<QHttpServerResponse (QString ,const QHttpServerRequest &)> WebServer::jwtDecoratorArg(T && t)
 {

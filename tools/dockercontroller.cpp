@@ -1,6 +1,9 @@
 #include "dockercontroller.h"
 #include <QDir>
 #include <QProcess>
+#include "tools.hpp"
+
+DockerController *DockerController::_instance = nullptr;
 
 typedef QList<DockerController::Container> Containers;
 typedef QList<DockerController::Image> Images;
@@ -67,7 +70,7 @@ std::optional<QString> DockerController::buildImage(const QString &dockerfile, c
     file.close();
     QProcess process;
     process.start(QString("tar -czvf %1 -C %2 .").arg(dir.absoluteFilePath("build.tar.gz"), dir.absoluteFilePath("build")));
-    process.waitForFinished();
+    await(process.waitForFinished(1));
     process.close();
     QFile tarFile{dir.absoluteFilePath("build.tar.gz")};
     tarFile.open(QIODevice::ReadOnly);
@@ -152,4 +155,31 @@ void DockerController::containerCommit(const QString &name, const QString &image
     Headers headers;
     headers << QPair<QByteArray, QByteArray>("Content-Type", "application/json");
     auto &&[statusCode, resheaders, response] = post(url, headers, DockerConnector::empty_data);
+}
+
+QString DockerController::dockerfilePath() const
+{
+    return _dockerfilePath;
+}
+
+void DockerController::setDockerfilePath(const QString &dockerfilePath)
+{
+    _dockerfilePath = dockerfilePath;
+}
+
+QJsonObject DockerController::defualtContainerCreateData() const
+{
+    return _defualtContainerCreateData;
+}
+
+void DockerController::setDefualtContainerCreateData(const QJsonObject &defualtContainerCreateData)
+{
+    _defualtContainerCreateData = defualtContainerCreateData;
+}
+
+DockerController *DockerController::instance()
+{
+    if (_instance == nullptr)
+        _instance = new DockerController();
+    return _instance;
 }

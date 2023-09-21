@@ -2,24 +2,27 @@
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QThread>
+#include <QAbstractEventDispatcher>
 
 constexpr unsigned long await_timeout = 100l;
 
 namespace tools
 {
-    void __await(std::function<bool()> &&function)
+    template <typename Func>
+    void __await(Func &&func)
     {
+        static_assert(std::is_same_v<bool, decltype(func())>, "await() requires a function returning bool");
         QAbstractEventDispatcher *eventDispatcher = QThread::currentThread()->eventDispatcher();
-        if (eventDispatcher->hasPendingEvents())
+        if (eventDispatcher)
         {
-            while (!function())
+            while (!func())
             {
-                eventDispatcher->processEvents(QEventLoop::AllEvents, await_timeout);
+                eventDispatcher->processEvents(QEventLoop::AllEvents);
             }
         }
         else
         {
-            while (!function())
+            while (!func())
             {
                 QThread::sleep(await_timeout);
             }

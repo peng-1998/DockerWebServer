@@ -80,7 +80,7 @@ public:
     Image image(const QString &name);
 
     QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports);
-    QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports, const QList<QPair<QString, QString>> &volumes);
+    // QString createContainer(const QString &image, const QString &name, const QString &command, const QList<QPair<int, int>> &ports, const QList<QPair<QString, QString>> &volumes);
     std::optional<QString> buildImage(const QString &dockerfile, const QString &name);
     std::optional<QString> pushImage(const QString &name);
     std::optional<QString> pullImage(const QString &name);
@@ -89,8 +89,15 @@ public:
     void containerOpt(const QString &name, ContainerOpt opt);
     void containerExec(const QString &name, const QString &cmd, const QStringList &env = QStringList());
     void containerCommit(const QString &name, const QString &image);
-    QJsonObject _defualtContainerCreateData;
+    QString dockerfilePath() const;
+    void setDockerfilePath(const QString &dockerfilePath);
+    QJsonObject defualtContainerCreateData() const;
+    void setDefualtContainerCreateData(const QJsonObject &defualtContainerCreateData);
+
+    static DockerController *instance();
 
 private:
     QString _dockerfilePath;
+    QJsonObject _defualtContainerCreateData;
+    static DockerController *_instance;
 };

@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QSharedPointer>
 #include <QString>
-
+#include <QTimer>
 
 struct Task
 {
@@ -31,7 +31,7 @@ struct MachineStatus
     bool isRunning;
 };
 
-typedef SchedulingStrategy std::function<std::optional<quint64>(const MachineStatus &)>;
+typedef std::function<std::optional<quint64>(const MachineStatus &)> SchedulingStrategy;
 
 class WaitQueue : public QObject
 {
@@ -47,7 +47,7 @@ private:
     void _cancelTask(quint64 taskId, const QString &machineId);
     std::optional<quint64> tryStartTask(const QString &machineId);
 
-slots:
+public slots:
     void onTaskStopped(Task task);
 
 public:
@@ -60,7 +60,7 @@ public:
     void cancelTask(quint64 taskId, QString machineId = "", std::optional<bool> running = std::nullopt);
     QList<Task> getMachineTasks(const QString &machineId);
     QList<Task> getUserTasks(const int &userId);
-    void setSchedulingStrategy(const SchedulingStrategy &strategy);
+    void setSchedulingStrategy(SchedulingStrategy &strategy);
 signals:
     void taskStart(Task task);
     void taskStop(Task task);

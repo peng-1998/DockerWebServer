@@ -1,17 +1,17 @@
 #pragma once
 
 #include "../tools/globalconfig.h"
-#include "globaldata.h"
-#include "globalcommon.h"
-#include "globalevent.h"
 #include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
+#include "globalcommon.h"
+#include "globaldata.h"
+#include "globalevent.h"
+#include "waitqueue.h"
 #include <QHttpServer>
 #include <QObject>
 #include <QSharedPointer>
 #include <QWeakPointer>
-#include <QWebSocketServer>
 #include <QWebSocket>
-#include "waitqueue.h"
+#include <QWebSocketServer>
 class WebServer final : public QObject
 {
     Q_OBJECT
@@ -28,6 +28,8 @@ private:
     QSharedPointer<QJsonWebToken> _jwt;
     QString _secret;
 
+    // template <typename Func>
+    // auto WebServer::jwtDecoratorArg(Func &&f)
     template <typename T>
     std::function<QHttpServerResponse(const QHttpServerRequest &)> jwtDecorator(T && t);
     template <typename T>

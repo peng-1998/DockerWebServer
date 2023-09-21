@@ -6,7 +6,7 @@ WaitQueue::WaitQueue(QObject *parent)
     : QObject{parent}, _status{}, _taskId{0}
 {
     _schedulingStrategy = std::bind(&WaitQueue::defaultSchedulingStrategy, this, std::placeholders::_1);
-    connect(this, &WaitQueue::taskStop, this, &WaitQueue::taskStopped);
+    connect(this, &WaitQueue::taskStop, this, &WaitQueue::onTaskStopped);
 }
 
 std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus &machine)
@@ -154,7 +154,7 @@ QList<Task> WaitQueue::getUserTasks(const int &userId)
     return tasks;
 }
 
-void WaitQueue::setSchedulingStrategy(const SchedulingStrategy &strategy)
+void WaitQueue::setSchedulingStrategy(SchedulingStrategy &strategy)
 {
     _schedulingStrategy = strategy;
 }
