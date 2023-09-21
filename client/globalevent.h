@@ -6,7 +6,7 @@ class GlobalEvent : public QObject
 {
     Q_OBJECT
 public:
-    static QSharedPointer<GlobalEvent> instance();
+    static GlobalEvent& instance();
 
 public slots:
     void onSendHeartbeat();
@@ -21,6 +21,5 @@ private:
     GlobalEvent(const GlobalEvent &) = delete;
     GlobalEvent &operator=(const GlobalEvent &) = delete;
     GlobalEvent(GlobalEvent &&) = delete;
-    static QSharedPointer<GlobalEvent> _instance;
     QHash<QString, std::function<void(const QJsonObject&)>> _messageHandlers;
 };

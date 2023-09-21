@@ -20,5 +20,5 @@ public:
 
 private:
     QTimer _timer;
-    QSharedPointer<QTcpSocket> _socket;
+    QTcpSocket _socket;
 };

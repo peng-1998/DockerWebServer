@@ -1,6 +1,5 @@
 #include "waitqueue.h"
 
-QSharedPointer<WaitQueue> WaitQueue::_instance = nullptr;
 
 WaitQueue::WaitQueue(QObject *parent)
     : QObject{parent}, _status{}, _taskId{0}
@@ -41,10 +40,9 @@ void WaitQueue::_cancelTask(quint64 taskId, const QString &machineId)
     _status[machineId].waitingTasks.remove(taskId);
 }
 
-QSharedPointer<WaitQueue> WaitQueue::instance()
+WaitQueue& WaitQueue::instance()
 {
-    if (_instance.isNull())
-        _instance = QSharedPointer<WaitQueue>(new WaitQueue());
+    static WaitQueue _instance;
     return _instance;
 }
 

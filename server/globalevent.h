@@ -18,7 +18,7 @@ class GlobalEvent : public QObject
 {
     Q_OBJECT
 public:
-    static QSharedPointer<GlobalEvent> instance();
+    static GlobalEvent& instance();
 public slots:
     static QHttpServerResponse onHttpIndex(const QHttpServerRequest &request);
     static QHttpServerResponse onHttpWSServer(const QHttpServerRequest &request);
@@ -61,7 +61,6 @@ private:
     GlobalEvent(const GlobalEvent &) = delete;
     GlobalEvent &operator=(const GlobalEvent &) = delete;
     GlobalEvent(GlobalEvent &&) = delete;
-    static QSharedPointer<GlobalEvent> _instance;
     QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _wsHandlers;
     QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _tcpHandlers;
 };

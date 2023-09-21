@@ -17,16 +17,16 @@ class GlobalData : public QObject
 {
     Q_OBJECT
 public:
-    static QSharedPointer<GlobalData> instance();
+    static GlobalData& instance();
 public:
     QHash<QString, QSharedPointer<QWebSocket>> wsClients;
-    QSharedPointer<QObject> webServer;
-    QSharedPointer<QWebSocketServer> wsServer;
-    QSharedPointer<QTcpServer> tcpServer;
+    QObject* webServer;
+    QWebSocketServer* wsServer;
+    QTcpServer* tcpServer;
     QHash<QString, QSharedPointer<QTcpSocket>> tcpClients;
     QHash<QString, QJsonObject> gpus_cache;
-    QSharedPointer<QJsonWebToken> jwt;
-    QSharedPointer<WaitQueue> waitQueue;
+    QJsonWebToken* jwt;
+    WaitQueue* waitQueue;
     QTimer heartbeatTimer;
 
 private:
@@ -34,7 +34,6 @@ private:
     GlobalData(const GlobalData &) = delete;
     GlobalData &operator=(const GlobalData &) = delete;
     GlobalData(GlobalData &&) = delete;
-    static QSharedPointer<GlobalData> _instance;
-
-
 };
+
+

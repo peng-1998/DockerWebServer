@@ -8,52 +8,48 @@ using Method = QHttpServerRequest::Method;
 using StatusCode = QHttpServerResponder::StatusCode;
 
 WebServer::WebServer(QObject *parent)
-    : QObject{parent}
+    : QObject{parent}, _tcpServer{this}, _httpServer{this}
 {
-    GlobalConfig::init("config.yaml");
-    _config = GlobalConfig::instance();
-    _data   = GlobalData::instance();
-    _event  = GlobalEvent::instance();
-    _jwt    = QSharedPointer<QJsonWebToken>::create();
-    GlobalData::instance()->tcpServer = QSharedPointer<QTcpServer>(new QTcpServer());
-    GlobalData::instance()->tcpServer->listen(QHostAddress::Any, (*GlobalConfig::instance())["TCP"]["port"].as<int>());
-    GlobalData::instance()->waitQueue = WaitQueue::instance();
-    connect(GlobalData::instance()->tcpServer.get(), &QTcpServer::newConnection, GlobalEvent::instance().get(), &GlobalEvent::onNewTcpConnection);
-    connect(&GlobalData::instance()->heartbeatTimer, &QTimer::timeout, GlobalEvent::instance().get(), &GlobalEvent::onCheckHeartbeat);
-    GlobalData::instance()->heartbeatTimer.start(1000);
-    _data->jwt = _jwt;
+    GlobalConfig::instance().init("config.yaml");
     
-    _jwt->setSecret(QString::fromStdString((*_config)["JWT"]["secret"].as<std::string>()));
-    _jwt->setAlgorithmStr(QString::fromStdString((*_config)["JWT"]["algorithm"].as<std::string>()));
-    _jwt->appendClaim("iss", QString::fromStdString((*_config)["JWT"]["iss"].as<std::string>()));
-    _httpServer = QSharedPointer<QHttpServer>::create();
-    _httpServer->listen(QHostAddress::Any,(*_config)["Http"]["port"].as<int>());
-    _httpServer->afterRequest([] (QHttpServerResponse &&resp) { 
+    _jwt = QJsonWebToken{};
+
+    GlobalData::instance().tcpServer = &_tcpServer;
+    _tcpServer.listen(QHostAddress::Any, GlobalConfig::instance()["TCP"]["port"].as<int>());
+
+    GlobalData::instance().waitQueue = &WaitQueue::instance();
+    connect(GlobalData::instance().tcpServer, &QTcpServer::newConnection, &GlobalEvent::instance(), &GlobalEvent::onNewTcpConnection);
+    connect(&GlobalData::instance().heartbeatTimer, &QTimer::timeout, &GlobalEvent::instance(), &GlobalEvent::onCheckHeartbeat);
+    GlobalData::instance().heartbeatTimer.start(1000);
+    GlobalData::instance().jwt = &_jwt;
+    
+    _jwt.setSecret(QString::fromStdString(GlobalConfig::instance()["JWT"]["secret"].as<std::string>()));
+    _jwt.setAlgorithmStr(QString::fromStdString(GlobalConfig::instance()["JWT"]["algorithm"].as<std::string>()));
+    _jwt.appendClaim("iss", QString::fromStdString(GlobalConfig::instance()["JWT"]["iss"].as<std::string>()));
+
+    _httpServer.listen(QHostAddress::Any,GlobalConfig::instance()["Http"]["port"].as<int>());
+    _httpServer.afterRequest([] (QHttpServerResponse &&resp) { 
         resp.addHeader("Access-Control-Allow-Origin", "*");
-        return std::move(resp); 
+        return std::move(resp);
     });
-    _httpServer->route("/", Method::Get, &GlobalEvent::onHttpIndex);
-    _httpServer->route("/ws/server", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSServer));
-    _httpServer->route("/ws/client", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSClient));
-    _httpServer->route("/api/auth/login", Method::Post, &GlobalEvent::onApiAuthLogin);
-    _httpServer->route("/api/auth/register", Method::Post, &GlobalEvent::onApiAuthRegister);
-    _httpServer->route("/api/user/set_profile", Method::Post, jwtDecorator(&GlobalEvent::onApiUserSetProfile));
-    _httpServer->route("/api/user/set_photo", Method::Get, jwtDecorator(&GlobalEvent::onApiUserSetPhoto));
-    _httpServer->route("/api/user/get_user/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiUserGetUser));
-    _httpServer->route("/api/machines/info", Method::Get, jwtDecorator(&GlobalEvent::onApiMachinesInfo));
-    _httpServer->route("/api/admin/all_users", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllUsers));
-    _httpServer->route("/api/admin/all_images", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllImages));
-    _httpServer->route("/api/admin/all_containers/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiAdminAllContainers));
-    _httpServer->route("/api/task/cancel", Method::Post, jwtDecorator(&GlobalEvent::onApiTaskCancel));
+    _httpServer.route("/", Method::Get, &GlobalEvent::onHttpIndex);
+    _httpServer.route("/ws/server", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSServer));
+    _httpServer.route("/ws/client", Method::Get, jwtDecorator(&GlobalEvent::onHttpWSClient));
+    _httpServer.route("/api/auth/login", Method::Post, &GlobalEvent::onApiAuthLogin);
+    _httpServer.route("/api/auth/register", Method::Post, &GlobalEvent::onApiAuthRegister);
+    _httpServer.route("/api/user/set_profile", Method::Post, jwtDecorator(&GlobalEvent::onApiUserSetProfile));
+    _httpServer.route("/api/user/set_photo", Method::Get, jwtDecorator(&GlobalEvent::onApiUserSetPhoto));
+    _httpServer.route("/api/user/get_user/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiUserGetUser));
+    _httpServer.route("/api/machines/info", Method::Get, jwtDecorator(&GlobalEvent::onApiMachinesInfo));
+    _httpServer.route("/api/admin/all_users", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllUsers));
+    _httpServer.route("/api/admin/all_images", Method::Get, jwtDecorator(&GlobalEvent::onApiAdminAllImages));
+    _httpServer.route("/api/admin/all_containers/<arg>", Method::Get, jwtDecoratorArg(&GlobalEvent::onApiAdminAllContainers));
+    _httpServer.route("/api/task/cancel", Method::Post, jwtDecorator(&GlobalEvent::onApiTaskCancel));
 
-    _wsServer = QSharedPointer<QWebSocketServer>::create("WebSocketServer", QWebSocketServer::NonSecureMode);
-    _wsServer->listen(QHostAddress::Any, (*_config)["WebSocket"]["port"].as<int>());
-    GlobalData::instance()->wsServer = _wsServer;
-    connect(_wsServer.get(), &QWebSocketServer::newConnection, _event.get(), &GlobalEvent::onWSNewConnection);
-}
-
-WebServer::~WebServer()
-{
+    _wsServer = new QWebSocketServer("WebSocketServer", QWebSocketServer::NonSecureMode);
+    _wsServer->listen(QHostAddress::Any, GlobalConfig::instance()["WebSocket"]["port"].as<int>());
+    GlobalData::instance().wsServer = _wsServer;
+    connect(_wsServer, &QWebSocketServer::newConnection, &GlobalEvent::instance(), &GlobalEvent::onWSNewConnection);
 }
 
 // template <typename Func>

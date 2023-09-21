@@ -1,10 +1,7 @@
 #include "globaldata.h"
 
-QSharedPointer<GlobalData> GlobalData::_instance = nullptr;
-
-QSharedPointer<GlobalData> GlobalData::instance()
+GlobalData& GlobalData::instance()
 {
-    if (_instance.isNull())
-        _instance = QSharedPointer<GlobalData>(new GlobalData());
+    static GlobalData _instance;
     return _instance;
 }

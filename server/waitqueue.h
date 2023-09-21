@@ -38,7 +38,6 @@ class WaitQueue : public QObject
     Q_OBJECT
 private:
     WaitQueue(QObject *parent = nullptr);
-    static QSharedPointer<WaitQueue> _instance;
     QHash<QString, MachineStatus> _status;
     quint64 _taskId;
     SchedulingStrategy _schedulingStrategy;
@@ -53,7 +52,7 @@ public slots:
 public:
     ~WaitQueue() = default;
 
-    static QSharedPointer<WaitQueue> instance();
+    static WaitQueue& instance();
     quint64 newTask(const int &userId, const QString &machineId, const QString &containerName, const QString &command, int duration, int gpuCount,  const QList<int> &gpuIds = QList<int>());
     void newMachine(const QString &machineId, int gpuCount);
     

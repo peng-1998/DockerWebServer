@@ -3,8 +3,6 @@
 #include <QProcess>
 #include "tools.hpp"
 
-DockerController *DockerController::_instance = nullptr;
-
 typedef QList<DockerController::Container> Containers;
 typedef QList<DockerController::Image> Images;
 
@@ -177,9 +175,8 @@ void DockerController::setDefualtContainerCreateData(const QJsonObject &defualtC
     _defualtContainerCreateData = defualtContainerCreateData;
 }
 
-DockerController *DockerController::instance()
+DockerController& DockerController::instance()
 {
-    if (_instance == nullptr)
-        _instance = new DockerController();
+    static DockerController _instance;
     return _instance;
 }

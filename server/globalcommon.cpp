@@ -51,7 +51,7 @@ QJsonObject GlobalCommon::stringToObject(const QByteArray &string)
     return QJsonDocument::fromJson(string).object();
 }
 
-QString GlobalCommon::getJwtToken(QSharedPointer<QJsonWebToken> jwt, const QString &identity)
+QString GlobalCommon::getJwtToken(QJsonWebToken* jwt, const QString &identity)
 {
     jwt->appendClaim("identity", identity);
     // _jwt->appendClaim("iat", QDateTime::currentDateTime().toSecsSinceEpoch());

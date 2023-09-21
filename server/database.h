@@ -18,7 +18,7 @@ class DataBase : public QObject
 {
     Q_OBJECT
 public:
-    static QSharedPointer<DataBase> instance();
+    static DataBase& instance();
     ~DataBase() = default;
     void insertUser(const QString &account, const QString &password, const QString &salt, QString nickname = "", QString email = "", QString phone = "", QString photo = "");
     std::optional<QHash<QString, QVariant>> getUser(const int id, const std::optional<QStringList> &select = std::nullopt);
@@ -75,7 +75,6 @@ private:
     DataBase(DataBase &&) = delete;
     QSqlDatabase _db;
     QSqlQuery _query;
-    static QSharedPointer<DataBase> _instance;
     void creatTable();
     static QStringList _user_column;
     static QStringList _image_column;

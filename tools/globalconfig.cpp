@@ -1,9 +1,5 @@
 #include "globalconfig.h"
 
-bool GlobalConfig::_isInit = false;
-
-QSharedPointer<GlobalConfig> GlobalConfig::_instance = nullptr;
-
 GlobalConfig::GlobalConfig(const QString &fileName)
     : QObject{nullptr}, Node{YAML::LoadFile(fileName.toStdString())}
 {
@@ -11,15 +7,11 @@ GlobalConfig::GlobalConfig(const QString &fileName)
 
 void GlobalConfig::init(const QString &fileName)
 {
-    if (_isInit)
-        return;
-    _isInit = true;
-    _instance = QSharedPointer<GlobalConfig>(new GlobalConfig(fileName));
+    this->Node::operator=(YAML::LoadFile(fileName.toStdString()));
 }
 
-QSharedPointer<GlobalConfig> GlobalConfig::instance()
+GlobalConfig& GlobalConfig::instance()
 {
-    if (!_isInit)
-        throw std::runtime_error("GlobalConfig is not init, please call GlobalConfig::init() first");
-    return GlobalConfig::_instance;
+    static GlobalConfig _instance;
+    return _instance;
 }

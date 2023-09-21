@@ -1,11 +1,11 @@
 #pragma once
 
+#include <QAnyStringView>
 #include <QObject>
 #include <QSettings>
 #include <QSharedPointer>
-#include <yaml-cpp/yaml.h>
 #include <QVariant>
-#include <QAnyStringView>
+#include <yaml-cpp/yaml.h>
 
 using Node = YAML::Node;
 
@@ -13,15 +13,14 @@ class GlobalConfig : public QObject, public Node
 {
     Q_OBJECT
 public:
-    static QSharedPointer<GlobalConfig> instance();
+    static GlobalConfig &instance();
     ~GlobalConfig() = default;
-    static void init(const QString &fileName);
+    void init(const QString &fileName);
 
 private:
+    GlobalConfig() = default;
     GlobalConfig(const QString &fileName);
     GlobalConfig(const GlobalConfig &) = delete;
     GlobalConfig &operator=(const GlobalConfig &) = delete;
     GlobalConfig(GlobalConfig &&) = delete;
-    static QSharedPointer<GlobalConfig> _instance;
-    static bool _isInit;
 };

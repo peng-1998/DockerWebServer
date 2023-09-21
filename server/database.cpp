@@ -6,17 +6,16 @@
 #include <QSqlRecord>
 #include <QtConcurrent>
 #include <algorithm>
-QSharedPointer<DataBase> DataBase::_instance{nullptr};
+
 QStringList DataBase::_user_column{"id", "account", "nickname", "password", "salt", "email", "phone", "photo"};
 QStringList DataBase::_image_column{"id", "showname", "imagename", "init_args", "description"};
 QStringList DataBase::_container_column{"id", "imageid", "userid", "showname", "containername", "portlist", "running"};
 QStringList DataBase::_machine_column{"id", "ip", "gpu", "cpu", "memory", "online"};
 QStringList JsonKeys{"gpu", "cpu", "memory", "disk", "init_args", "portlist"};
 
-QSharedPointer<DataBase> DataBase::instance()
+DataBase& DataBase::instance()
 {
-    if (_instance == nullptr)
-        _instance = QSharedPointer<DataBase>(new DataBase());
+    static DataBase _instance;
     return _instance;
 }
 
@@ -352,7 +351,7 @@ bool DataBase::containsMachine(const QString &id)
 DataBase::DataBase(QObject *parent)
     : QObject{parent}
 {
-    QString dbPath = QString::fromStdString((*GlobalConfig::instance())["DataBase"]["db_file"].as<std::string>());
+    QString dbPath = QString::fromStdString(GlobalConfig::instance()["DataBase"]["db_file"].as<std::string>());
     _db = QSqlDatabase::addDatabase("QSQLITE");
     _db.setDatabaseName(dbPath);
     _db.setConnectOptions("QSQLITE_OPEN_URI;QSQLITE_OPEN_READWRITE;QSQLITE_OPEN_CREATE;QSQLITE_OPEN_SHAREDCACHE");

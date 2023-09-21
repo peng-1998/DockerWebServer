@@ -21,7 +21,7 @@ public:
     static QString generateRandomString(int length = 32);
     static QString objectToString(const QJsonObject &object);
     static QJsonObject stringToObject(const QByteArray &string);
-    static QString getJwtToken(QSharedPointer<QJsonWebToken>, const QString &);
+    static QString getJwtToken(QJsonWebToken *, const QString &);
     static QByteArray formatMessage(const QJsonObject &json);
 
 private:

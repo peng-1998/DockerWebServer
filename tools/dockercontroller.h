@@ -94,10 +94,13 @@ public:
     QJsonObject defualtContainerCreateData() const;
     void setDefualtContainerCreateData(const QJsonObject &defualtContainerCreateData);
 
-    static DockerController *instance();
+    static DockerController &instance();
+    DockerController(const DockerController &) = delete;
+    DockerController &operator=(const DockerController &) = delete;
+    DockerController(DockerController &&) = delete;
 
 private:
     QString _dockerfilePath;
     QJsonObject _defualtContainerCreateData;
-    static DockerController *_instance;
+
 };
