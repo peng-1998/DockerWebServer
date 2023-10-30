@@ -53,3 +53,155 @@ web服务器建立一个镜像仓库
    公共镜像的镜像名应该是public/image:tag
    其他服务器的docker应该配置好镜像仓库的地址，这样才能拉取镜像
 5. 自定义镜像的创建参数应当继承基础镜像的创建参数
+
+
+# web api 接口规范
+## 变量名
+变量名使用下划线分割，例如：user_id
+| 变量名 | 含义 | 类型 | 说明 |
+|: ----: |: ----: |: ----: |: ----: |
+| user_id | 用户id | int | 主键，递增 |
+| image_id | 镜像id | int | 主键，递增 |
+| container_id | 容器id | int | 主键，递增 |
+| machine_id | 机器id | str | 主键，由GPU服务器给出 |
+| account | 用户账号 | str | |
+| nickname | 用户昵称 | str | 可选 |
+| password | 用户密码 | str | 实际上是密码的哈希值 |
+| email | 用户邮箱 | str | 可选 |
+| phone | 用户手机 | str | 可选 |
+| photo | 用户头像 | str | 可选 |
+| new_password | 新密码 | str | 实际上是密码的哈希值 |
+
+
+## web接口
+### 登陆
+#### request
+/api/auth/login POST 
+body(json):
+```
+{
+    "account": "xxx",
+    "password": "xxx" // 密码的哈希值
+}
+```
+#### response
+StatusCode: 200 | 401 (Wrong Password) | 404 (no such user)
+200 body(json):
+```
+{"access_token": "x.x.x"}
+```
+
+### 注册
+#### request
+/api/auth/register POST
+body(json):
+```
+{
+    "account": "xxx",
+    "password": "xxx" // 密码的哈希值
+}
+```
+#### response
+StatusCode: 200 | 409 (user already exists)
+
+### 获取用户信息
+#### request
+/api/user/get_user/<account> GET
+#### response
+StatusCode: 200 
+body(json):
+```
+{
+    "user_id": 1,
+    "account": "xxx",
+    "nickname": "xxx",
+    "email": "xxx",
+    "phone": "xxx",
+    "photo": "xxx"
+}
+```
+
+### 修改用户信息
+#### request
+/api/user/set_profile POST
+body(json):
+```
+{
+   field: key in {"nickname", "email", "phone"}
+   value: new value
+}
+```
+#### response
+StatusCode: 200
+
+
+### 修改密码
+#### request
+/api/user/set_password POST
+body(json):
+```
+{
+   "user_id": x,
+   "new_password": "xxx",
+}
+```
+#### response
+StatusCode: 200
+
+### 修改头像
+#### request
+/api/user/set_photo/custom POST
+header:
+```
+"user_id": x,
+"account": "xxx",
+"content-type": "multipart/form-data"; boundary=----xxx(随机字符串)
+```
+body(binary):
+```
+----xxx \n
+Content-Disposition: form-data; name="photo"; filename="account.png" \n 
+Content-Type: image/jpeg \n
+photo file data
+----xxx \n
+```
+#### response
+StatusCode: 200
+
+#### request
+/api/user/set_photo/default POST
+body(json):
+```
+{
+   "user_id": x,
+   "photo": "abc.png",
+}
+```
+#### response
+StatusCode: 200
+### 获取所有GPU服务器信息
+#### request
+/api/machine/info GET
+#### response
+StatusCode: 200
+body(json):
+```
+[
+   {
+      machine_id: "xxx",
+      ip: "xxx",
+      gpu: {0:{"type":"RTX 3060","memory":10240}},
+      cpu: {0:{"type":"Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz","cores":8}},
+      disk: {"total":1024,"free":512},
+      memory: {"total":1024,"free":512},
+      online: true
+   },
+   {
+      ...
+   }
+]
+```
+
+
+
+## websocket接口

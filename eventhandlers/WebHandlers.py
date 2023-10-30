@@ -92,14 +92,13 @@ async def connect_handler(info: dict) -> dict:
     """
     url = info['url']
     current_app.config['info_logger'](f'connect from {url} by machine_id: {info["machine_id"]}')
-    db: BaseDB = current_app.config['DB']
-    machine_id = info['machine_id']
-    del info['machine_id']
-    gpus          = info['gpus']
-    machines_list = db.get_machine(search_key={'id': machine_id})
-    cpu           = info['cpu']
-    memory        = info['memory']
-    disk = info['disk']
+    db            :BaseDB = current_app.config['DB']
+    machine_id    :str    = info['machine_id']
+    gpus          :dict   = info['gpus']
+    machines_list :list   = db.get_machine(search_key={'id': machine_id})
+    cpu           :dict   = info['cpu']
+    memory        :dict   = info['memory']
+    disk          :dict   = info['disk']
 
     if len(machines_list) == 0:
         db.insert_machine(machine={'id': machine_id, 'ip': url, 'gpu': gpus, 'cpu': cpu, 'memory': memory, 'disk': disk, 'online': True})
