@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 from .BaseDB import BaseDB
 from warnings import warn
 from .DataProcess import check_and_serialize, deserialize_data, TABEL_INFO
@@ -19,14 +20,20 @@ class SQLiteDB(BaseDB):
         for table_name in TABEL_INFO.keys():
             self._create_table(table_name=table_name)
         self.db.commit()
+        self.lock = threading.Lock()
 
     # 线程安全的数据库操作，在API操作完成之后，关闭连接。
     @staticmethod
-    def runthenclose(func):
+    def threadingopt(func):
+
         def wrapper(self, *args, **kwargs):
+            self.lock.acquire()
+            self.db = sqlite3.connect(self.db_path)
+            self.cursor = self.db.cursor()
             func(self, *args, **kwargs)
             self.cursor.close()
             self.db.close()
+            self.lock.release()
 
         return wrapper
     
@@ -37,7 +44,7 @@ class SQLiteDB(BaseDB):
             f"CREATE TABLE IF NOT EXISTS {table_name} {TABEL_INFO[table_name]}"
         )
 
-    @runthenclose
+    @threadingopt
     def _insert(self, table_name: str, data_dict: dict):
         try:
             check_and_serialize(table_name, data_dict)
@@ -50,7 +57,7 @@ class SQLiteDB(BaseDB):
         except:
             return False
 
-    @runthenclose
+    @threadingopt
     def _delete(self, table_name: str, search_key: dict):
         try:
             self.cursor.execute(
@@ -62,7 +69,7 @@ class SQLiteDB(BaseDB):
         except:
             return False
 
-    # @runthenclose
+    # @threadingopt
     # def _get(
     #     self,
     #     table_name: str,
@@ -81,7 +88,7 @@ class SQLiteDB(BaseDB):
     #     info = self.cursor.fetchall()
     #     return info
     
-    @runthenclose
+    @threadingopt
     def _get(
     self,
     table_name: str,
@@ -104,7 +111,7 @@ class SQLiteDB(BaseDB):
         info = self.cursor.fetchall()
         return info
 
-    @runthenclose
+    @threadingopt
     def _update(self, table_name: str, search_key: dict, update_key: dict):
         self.cursor.execute(
             f"UPDATE {table_name.lower()} SET {', '.join([f'{k} = ?' for k in update_key.keys()])} WHERE {f' AND '.join([f'{k} = ?' for k in search_key.keys()])}",
@@ -179,22 +186,22 @@ class SQLiteDB(BaseDB):
     def update_machine(self, search_key: dict, update_key: dict) -> bool:
         return self._update("machine", search_key, update_key)
 
-    @runthenclose
+    @threadingopt
     def all_user(self) -> list:
         self.cursor.execute("SELECT * FROM user")
         return self.cursor.fetchall()
 
-    @runthenclose
+    @threadingopt
     def all_image(self) -> list:
         self.cursor.execute("SELECT * FROM image")
         return self.cursor.fetchall()
 
-    @runthenclose
+    @threadingopt
     def all_container(self) -> list:
         self.cursor.execute("SELECT * FROM container")
         return self.cursor.fetchall()
 
-    @runthenclose
+    @threadingopt
     def all_machine(self) -> list:
         self.cursor.execute("SELECT * FROM machine")
         return self.cursor.fetchall()
