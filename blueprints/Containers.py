@@ -2,19 +2,15 @@ import random
 import string
 from queue import Queue
 
-from quart import Blueprint, g, jsonify, make_response, request,current_app
+from quart import Blueprint, g, jsonify, make_response, request,current_app,session
 
 from database import BaseDB
 
 containers = Blueprint('containers', __name__)
 
-# @containers.route('/', methods=['GET'])
-# def index():
-#     ...
-
-
-@containers.route('/mycontainer/<user_id>', methods=['GET'])
-async def mycontainer(user_id):
+@containers.route('/mycontainer', methods=['GET'])
+async def mycontainer():
+    user_id = session['user_id']
     db: BaseDB = current_app.config['DB']
     containers = db.get_container({'userid': user_id}, return_key=['showname', 'portlist', 'containername', 'running'])
     return await make_response(jsonify(containers), 200)

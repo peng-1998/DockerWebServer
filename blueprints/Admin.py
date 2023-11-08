@@ -1,10 +1,13 @@
-from quart import Blueprint, g, jsonify, make_response, request,current_app
+from quart import Blueprint, jsonify, make_response, request,current_app,session
 
 from communication import BaseServer, DockerController
 from database import BaseDB
 
 admin = Blueprint('admin', __name__)
 
+# @admin.before_request
+# async def is_admin():
+#     if 'is_ad'
 
 # 转移到ws
 @admin.route('/build_image', methods=['POST'])

@@ -4,7 +4,7 @@ import uuid
 
 import yaml
 from quart import (Quart, Websocket, g, jsonify, make_response, request,
-                   websocket)
+                   websocket,session)
 from quart_cors import cors
 from quart_jwt_extended import JWTManager, verify_jwt_in_request
 from quart_jwt_extended.exceptions import NoAuthorizationError
@@ -68,30 +68,39 @@ async def init():
         Mail_Class = getattr(MB, configs['Components']['Mail']['Class'])
         app.config['mail'] = Mail_Class(**configs['Components']['Mail']['args'], logger=app.config['info_logger'])
 
-
+# 暂时使用session来保存登录状态
 @app.before_request
-async def is_jwt_valid():
-    """
-    enpoint_name should be like this: [BlueprintName].[function_name]
-    check if the jwt is valid, if not, return 401
-    except the login and register request
-    """
-    if request.endpoint in ['auth.login', 'auth.register', 'ws_client', 'ws_server']:
+async def is_session_logged_in():
+    # 排除登录和注册请求
+    if request.endpoint in ['auth.login', 'auth.register']:
         return
-    try:
-        await verify_jwt_in_request()
-    except NoAuthorizationError:
-        return await make_response(jsonify({'message': 'Invalid token'}), 401)
+    # 检查session中是否有登录状态
+    if 'logged_in' not in session:
+        return await make_response(jsonify({'message': 'Please login first'}), 401)
+    if not session['logged_in']:
+        return await make_response(jsonify({'message': 'Please login first'}), 401)
+
+
+
+
+
+# @app.before_request
+# async def is_jwt_valid():
+#     """
+#     enpoint_name should be like this: [BlueprintName].[function_name]
+#     check if the jwt is valid, if not, return 401
+#     except the login and register request
+#     """
+#     if request.endpoint in ['auth.login', 'auth.register', 'ws_client', 'ws_server']:
+#         return
+#     try:
+#         await verify_jwt_in_request()
+#     except NoAuthorizationError:
+#         return await make_response(jsonify({'message': 'Invalid token'}), 401)
 
 
 @app.websocket('/ws/client')
 async def ws_client():
-    # if (
-    #     websocket.authorization.username != USERNAME or
-    #     websocket.authorization.password != PASSWORD
-    # ):
-    #     return 'Invalid password', 403  # or abort(403)
-    # 生成一个随机的uuid作为key
     key = str(uuid.uuid4())
     app.config['clients'][key] = websocket
     try:
