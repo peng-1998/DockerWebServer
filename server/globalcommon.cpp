@@ -35,9 +35,10 @@ QJsonObject GlobalCommon::hashToJsonObject(const QHash<QString, QVariant> &hash)
 QString GlobalCommon::generateRandomString(int length)
 {
     static QString characters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-    static QRandomGenerator * generator = QRandomGenerator::global();
+    static QRandomGenerator *generator = QRandomGenerator::global();
     QString result(length, QChar(' '));
-    std::generate(result.begin(), result.end(), [&]() { return characters.at(generator->bounded(characters.length())); });
+    std::generate(result.begin(), result.end(), [&]()
+                  { return characters.at(generator->bounded(characters.length())); });
     return result;
 }
 
@@ -51,12 +52,14 @@ QJsonObject GlobalCommon::stringToObject(const QByteArray &string)
     return QJsonDocument::fromJson(string).object();
 }
 
-QString GlobalCommon::getJwtToken(QJsonWebToken* jwt, const QString &identity)
+QString GlobalCommon::getJwtToken(QJsonWebToken &jwt, const QString &identity)
 {
-    jwt->appendClaim("identity", identity);
+    jwt.appendClaim("identity", identity);
     // _jwt->appendClaim("iat", QDateTime::currentDateTime().toSecsSinceEpoch());
     // _jwt->appendClaim("exp", QDateTime::currentDateTime().addDays(1).toSecsSinceEpoch());
-    return jwt->getToken();
+    auto token = jwt.getToken();
+    jwt.removeClaim("identity");
+    return token;
 }
 
 QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
@@ -69,4 +72,3 @@ QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
     QByteArray lengthBytes = QByteArray::fromRawData(reinterpret_cast<const char *>(&length), sizeof(length));
     return lengthBytes + jsonBytes;
 }
-
