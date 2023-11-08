@@ -25,7 +25,6 @@ add_executable(DWS
   server/globaldata.h server/globaldata.cpp
   server/globalevent.h server/globalevent.cpp
   server/globalcommon.h server/globalcommon.cpp
-  server/webserver.h server/webserver.cpp
   server/database.h server/database.cpp
   tools/jsonwebtoken/src/qjsonwebtoken.h tools/jsonwebtoken/src/qjsonwebtoken.cpp 
   tools/bcrypt/qtbcrypt.h tools/bcrypt/qtbcrypt.cpp 
