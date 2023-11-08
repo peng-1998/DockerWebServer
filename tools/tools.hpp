@@ -14,19 +14,11 @@ namespace tools
         static_assert(std::is_same_v<bool, decltype(func())>, "await() requires a function returning bool");
         QAbstractEventDispatcher *eventDispatcher = QThread::currentThread()->eventDispatcher();
         if (eventDispatcher)
-        {
             while (!func())
-            {
                 eventDispatcher->processEvents(QEventLoop::AllEvents);
-            }
-        }
         else
-        {
             while (!func())
-            {
                 QThread::sleep(await_timeout);
-            }
-        }
     }
 }
 #define await(x) tools::__await([&]() { return x; })

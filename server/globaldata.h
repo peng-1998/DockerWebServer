@@ -19,14 +19,17 @@ class GlobalData : public QObject
 public:
     static GlobalData& instance();
 public:
+    QHttpServer httpServer;
+    QWebSocketServer wsServer;
+    QTcpServer tcpServer;
+    WaitQueue waitQueue;
+    QJsonWebToken jwt;
+
+
     QHash<QString, QSharedPointer<QWebSocket>> wsClients;
-    QObject* webServer;
-    QWebSocketServer* wsServer;
-    QTcpServer* tcpServer;
     QHash<QString, QSharedPointer<QTcpSocket>> tcpClients;
     QHash<QString, QJsonObject> gpus_cache;
-    QJsonWebToken* jwt;
-    WaitQueue* waitQueue;
+    QHash<QString, QJsonObject> session_cache;
     QTimer heartbeatTimer;
 
 private:

@@ -11,3 +11,4 @@ tools/CMakeLists.txt
 tools/test.cpp
 tools/.vscode
 tools/.qt
+flow.drawio

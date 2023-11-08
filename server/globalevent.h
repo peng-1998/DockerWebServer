@@ -1,9 +1,10 @@
 #pragma once
 
-#include "globalcommon.h"
 #include "../tools/globalconfig.h"
 #include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
-#include <QHttpServerRequest>
+#include "globalcommon.h"
+#include "waitqueue.h"
+#include <HttpReq>
 #include <QHttpServerResponse>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -13,30 +14,67 @@
 #include <QTimer>
 #include <QWeakPointer>
 #include <QWebSocket>
-#include "waitqueue.h"
+
+
+#define request_ const HttpReq &request
+#define session_ const QString &session
 class GlobalEvent : public QObject
 {
     Q_OBJECT
+    using HttpRep = QHttpServerResponse;
+    using HttpReq = QHttpServerrequest;
 public:
-    static GlobalEvent& instance();
+    static GlobalEvent &instance();
 public slots:
-    static QHttpServerResponse onHttpIndex(const QHttpServerRequest &request);
-    static QHttpServerResponse onHttpWSServer(const QHttpServerRequest &request);
-    static QHttpServerResponse onHttpWSClient(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiAuthLogin(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiAuthRegister(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiUserSetProfile(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiUserSetPhoto(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiUserGetUser(const QString &account, const QHttpServerRequest &request);
-    static QHttpServerResponse onApiMachinesInfo(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiAdminAllUsers(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiAdminAllImages(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiAdminAllContainers(const QString &machineId, const QHttpServerRequest &request);
-    static QHttpServerResponse onApiTaskCancel(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiTaskRequest(const QHttpServerRequest &request);
-    static QHttpServerResponse onApiTaskUser(const QString &account, const QHttpServerRequest &request);
-    static QHttpServerResponse onApiTaskMachine(const QString &machineId, const QHttpServerRequest &request);
-    static QHttpServerResponse onApiAdminAllTasks(const QHttpServerRequest &request);
+    // http handlers
+    // static HttpRep onHttpIndex(request_);
+    // static HttpRep onHttpWSServer(request_);
+    // static HttpRep onHttpWSClient(request_);
+
+    static HttpRep onApiAuthLogin(request_);
+    static HttpRep onApiAuthRegister(request_);
+    static HttpRep onApiAuthLogout(request_, session_);
+    static HttpRep onApiAuthsession(request_, session_);
+    static HttpRep onApiUserSetProfile(request_, session_);
+    static HttpRep onApiUserSetPhoto(request_, session_);
+    static HttpRep onApiUserGetUser(request_, session_);
+    static HttpRep onApiMachinesInfo(request_, session_);
+    static HttpRep onApiAdminAllUsers(request_, session_);
+    static HttpRep onApiAdminAllImages(request_, session_);
+    static HttpRep onApiAdminAllContainers(const QString &machineId, request_, session_);
+    static HttpRep onApiTaskCancel(request_, session_);
+    static HttpRep onApiTaskrequest_(request_, session_);
+    static HttpRep onApiTaskUser(const QString &account, request_, session_);
+    static HttpRep onApiTaskMachine(const QString &machineId, request_, session_);
+    static HttpRep onApiAdminAllTasks(request_, session_);
+
+    auto GlobalEvent::sessionDecorator(auto &&f)
+    {
+        return [std::forward<decltype(f)>(f)](auto &&...args, request_, session_) -> HttpRep
+        {
+            auto header = request_.headers();
+            for (auto &item : header)
+                if (item.first == "Authorization")
+                    if (
+                        auto jwt = QJsonWebToken::fromTokenAndSecret(
+                            item.second, GlobalData::instance().jwt.getSecret());
+                        jwt.isValid())
+                    {
+                        if (!GlobalData::instance().session_cache.contains(item.second))
+                        {
+                            auto account = jwt.getClaim("identity").toString();
+                            GlobalData::instance().session_cache.insert(
+                                item.second,
+                                account);
+                        }
+                        return std::invoke(f, std::forward<decltype(args)>(args)..., request, item.second);
+                    }
+                    else
+                        return HttpRep(QJsonObject{{"message", "Invalid token"}}, StatusCode::Unauthorized);
+            return HttpRep(QJsonObject{{"message", "Token Not Found"}}, StatusCode::Unauthorized);
+        };
+    }
+
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);
     void onWSMessageReceived(const QString &message, const QString &uuid);
@@ -64,3 +102,6 @@ private:
     QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _wsHandlers;
     QHash<QString, std::function<void(const QJsonObject &, const QString &)>> _tcpHandlers;
 };
+
+#undef request_
+#undef session_
