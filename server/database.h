@@ -18,7 +18,7 @@ class DataBase : public QObject
 {
     Q_OBJECT
 public:
-    static DataBase& instance();
+    explicit DataBase(QObject *parent = nullptr);
     ~DataBase() = default;
     void insertUser(const QString &account, const QString &password, const QString &salt, QString nickname = "", QString email = "", QString phone = "", QString photo = "");
     std::optional<QHash<QString, QVariant>> getUser(const int id, const std::optional<QStringList> &select = std::nullopt);
@@ -68,7 +68,7 @@ public:
 signals:
 
 private:
-    explicit DataBase(QObject *parent = nullptr);
+    
 
     DataBase(const DataBase &) = delete;
     DataBase &operator=(const DataBase &) = delete;

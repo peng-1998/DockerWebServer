@@ -1,10 +1,10 @@
-#include "GE.h"
+#include "globalevent.h"
 #include "../tools/dockercontroller.h"
 #include "database.h"
 #include "globaldata.h"
-#include "webserver.h"
 #include <QDebug>
 #include <QFile>
+#include <QHttpServerResponse>
 #include <QJsonObject>
 #include <QUuid>
 #include <QWebSocket>
@@ -12,7 +12,7 @@
 
 #define globalData GlobalData::instance()
 #define globalConfig GlobalConfig::instance()
-#define database DataBase::instance()
+#define database GlobalData::instance().database
 
 #define request_ const QHttpServerRequest &request
 #define session_ const QString &session
@@ -20,22 +20,26 @@
 #define toQStr QString::fromStdString
 #define hashToObj GlobalCommon::hashToJsonObject
 #define jload(x) QJsonDocument::fromJson(x).object()
+#define jdump(x) QJsonDocument(x).toJson()
 
 #define bodyStr(x) body[x].toString()
 #define bodyInt(x) body[x].toInt()
+#define dataStr(x) data[x].toString()
+#define dataInt(x) data[x].toInt()
 
 #define __STATICsessionCache static auto *sessionCacheStaticPtr = &globalData.session_cache;
 #define __STATICdatabase static auto *databaseStaticPtr = &database;
 #define __STATICglobalData static auto *globalDataStaticPtr = &globalData;
 #define __STATICwsClients static auto *wsClientsStaticPtr = &globalData.wsClients;
 
-#define __GETaccount auto account = sessionCacheStaticPtr->value(session)["account"];
+#define __GETaccount auto account = sessionCacheStaticPtr->value(session).account;
+#define __GETuserId auto userId = sessionCacheStaticPtr->value(session).id;
 
 #define __LOADbody auto body = jload(request.body());
 #define __LOADheader auto headers = GlobalCommon::parseHeaders(request.headers());
 
 using StatusCode = QHttpServerResponder::StatusCode;
-using Response = QHttpServerResponse;
+using HResponse = QHttpServerResponse;
 using KVList = QList<QPair<QString, QVariant>>;
 using KV = QPair<QString, QVariant>;
 using GE = GlobalEvent;
@@ -46,18 +50,18 @@ GE &GE::instance()
     return _instance;
 }
 
-// Response GE::onHttpIndex(request_)
+// HResponse GE::onHttpIndex(request_)
 // {
 //     return {"Hello World!", StatusCode::Ok};
 // }
 
-// Response GE::onHttpWSServer(request_)
+// HResponse GE::onHttpWSServer(request_)
 // {
 //     int wsport = globalConfig["WebSocket"]["port"].as<int>();
 //     return Response{"{\"port\":" + QByteArray::number(wsport) + "}", StatusCode::Ok};
 // }
 
-// Response GE::onHttpWSClient(request_)
+// HResponse GE::onHttpWSClient(request_)
 // {
 //     int wsport = globalConfig["WebSocket"]["port"].as<int>();
 //     return Response{"{\"port\":" + QByteArray::number(wsport) + "}", StatusCode::Ok};
@@ -67,15 +71,16 @@ QString getJwtToken(QJsonWebToken &jwt, const QString &identity)
 {
     static int duration = globalConfig["JWT"]["duration"].as<int>();
 
-    jwt.appendClaim("identity", identity);                                                     // 设置验证信息：account
-    jwt.appendClaim("exp", QDateTime::currentDateTime().addDays(duration).toSecsSinceEpoch()); // 设置过期时间
-    auto token = jwt.getToken();                                                               // 生成token
-    jwt.removeClaim("identity");                                                               // 清除验证信息
+    jwt.appendClaim("identity", identity); // 设置验证信息：account
+    jwt.appendClaim("exp",
+                    QString::number(QDateTime::currentDateTime().addDays(duration).toSecsSinceEpoch())); // 设置过期时间
+    auto token = jwt.getToken();                                                                         // 生成token
+    jwt.removeClaim("identity");                                                                         // 清除验证信息
     jwt.removeClaim("exp");
     return token;
 }
 
-Response GE::onApiAuthLogin(request_)
+HResponse GE::onApiAuthLogin(request_)
 {
     static QStringList sel{"password", "salt"};
     __STATICdatabase;
@@ -90,7 +95,7 @@ Response GE::onApiAuthLogin(request_)
     return {{"access_token", getJwtToken(globalData.jwt, account)}, StatusCode::Ok};
 }
 
-Response GE::onApiAuthRegister(request_)
+HResponse GE::onApiAuthRegister(request_)
 {
     __STATICdatabase;
     static auto defaultPhoto = toQStr(globalConfig["defaultPhoto"].as<std::string>());
@@ -105,7 +110,7 @@ Response GE::onApiAuthRegister(request_)
     return {StatusCode::Ok};
 }
 
-Response GE::onApiAuthLogout(request_, session_)
+HResponse GE::onApiAuthLogout(request_, session_)
 {
     __STATICsessionCache;
 
@@ -113,7 +118,7 @@ Response GE::onApiAuthLogout(request_, session_)
     return {StatusCode::Ok};
 }
 
-Response GE::onApiAuthSession(request_, session_)
+HResponse GE::onApiAuthSession(request_, session_)
 {
     __STATICglobalData;
     __STATICsessionCache;
@@ -121,11 +126,11 @@ Response GE::onApiAuthSession(request_, session_)
 
     auto newSession = getJwtToken(globalDataStaticPtr->jwt, account);
     (*sessionCacheStaticPtr)[newSession] = (*sessionCacheStaticPtr)[session];
-    globalDataStaticPtr->remove(session);
+    sessionCacheStaticPtr->remove(session);
     return {{"access_token", newSession}, StatusCode::Ok};
 }
 
-Response GE::onApiUserSetProfile(request_, session_)
+HResponse GE::onApiUserSetProfile(request_, session_)
 {
     __STATICsessionCache;
     __GETaccount;
@@ -135,7 +140,7 @@ Response GE::onApiUserSetProfile(request_, session_)
     return {StatusCode::Ok};
 }
 
-Response GE::onApiUserSetPhoto(request_, session_)
+HResponse GE::onApiUserSetPhoto(request_, session_)
 {
     __STATICsessionCache;
     __STATICglobalData;
@@ -161,19 +166,19 @@ Response GE::onApiUserSetPhoto(request_, session_)
     return {StatusCode::Ok};
 }
 
-Response GE::onApiUserGetUser(request_, session_)
+HResponse GE::onApiUserGetUser(request_, session_)
 {
     __STATICdatabase;
     __STATICsessionCache;
 
-    __GETaccount;
-    auto result = databaseStaticPtr->getUser(account);
+    __GETuserId;
+    auto result = databaseStaticPtr->getUser(userId);
     if (result.has_value())
         return {StatusCode::NotFound};
-    return Response(hashToObj(result.value()), StatusCode::Ok);
+    return {hashToObj(result.value()), StatusCode::Ok};
 }
 
-Response GE::onApiMachinesInfo(request_, session_)
+HResponse GE::onApiMachinesInfo(request_, session_)
 {
     __STATICdatabase;
 
@@ -184,7 +189,7 @@ Response GE::onApiMachinesInfo(request_, session_)
     return {result, StatusCode::Ok};
 }
 
-Response GE::onApiAdminAllUsers(request_, session_)
+HResponse GE::onApiAdminAllUsers(request_, session_)
 {
     __STATICdatabase;
 
@@ -195,7 +200,7 @@ Response GE::onApiAdminAllUsers(request_, session_)
     return {result, StatusCode::Ok};
 }
 
-Response GE::onApiAdminAllImages(request_, session_)
+HResponse GE::onApiAdminAllImages(request_, session_)
 {
     __STATICdatabase;
 
@@ -206,7 +211,7 @@ Response GE::onApiAdminAllImages(request_, session_)
     return {result, StatusCode::Ok};
 }
 
-Response GE::onApiAdminAllContainers(const QString &machineId, request_, session_)
+HResponse GE::onApiAdminAllContainers(const QString &machineId, request_, session_)
 {
     __STATICdatabase;
 
@@ -214,10 +219,10 @@ Response GE::onApiAdminAllContainers(const QString &machineId, request_, session
     QJsonArray result;
     for (auto &container : containers)
         result.append(hashToObj(container));
-    return Response(result, StatusCode::Ok);
+    return {result, StatusCode::Ok};
 }
 
-Response GE::onApiTaskCancel(request_, session_)
+HResponse GE::onApiTaskCancel(request_, session_)
 {
     __STATICglobalData;
 
@@ -226,7 +231,7 @@ Response GE::onApiTaskCancel(request_, session_)
     return {StatusCode::Ok};
 }
 
-Response GE::onApiTaskRequest(request_, session_)
+HResponse GE::onApiTaskRequest(request_, session_)
 {
     __STATICglobalData;
 
@@ -256,21 +261,56 @@ Response GE::onApiTaskRequest(request_, session_)
     return {StatusCode::Ok};
 }
 
-Response GE::onApiTaskUser(const QString &account, request_)
+HResponse GE::onApiTaskUser(const QString &account, request_, session_)
 {
+    __STATICsessionCache;
+    static auto *waitQueueStaticPtr = &globalData.waitQueue;
+
+    __GETuserId;
     QJsonArray result;
     // TODO: 查找用户的所有任务 （包括所有机器？）
+    auto result_ = waitQueueStaticPtr->getUserTasks(userId);
+    for (Task &task : result_)
+    {
+        QJsonArray gpuids;
+        for (auto &gpuId : task.gpuIds)
+            gpuids.append(gpuId);
+        result.append(QJsonObject{
+            {"machine_id", task.machineId},
+            {"duration", task.duration},
+            {"containername", task.containerName},
+            {"command", task.command},
+            {"gpu_count", task.gpuCount},
+            {"gpu_ids", gpuids},
+            {"start_time", task.startTime.has_value() ? task.startTime.value().toString("yyyy-MM-dd hh:mm:ss") : ""}});
+    }
     return {result, StatusCode::Ok};
 }
 
-Response GE::onApiTaskMachine(const QString &machineId, request_)
+HResponse GE::onApiTaskMachine(const QString &machineId, request_, session_)
 {
+    static auto *waitQueueStaticPtr = &globalData.waitQueue;
     QJsonArray result;
     // TODO: 查找机器的所有任务
+    auto result_ = waitQueueStaticPtr->getMachineTasks(machineId);
+    for (Task &task : result_)
+    {
+        QJsonArray gpuids;
+        for (auto &gpuId : task.gpuIds)
+            gpuids.append(gpuId);
+        result.append(QJsonObject{
+            {"user_id", task.userId},
+            {"duration", task.duration},
+            {"containername", task.containerName},
+            {"command", task.command},
+            {"gpu_count", task.gpuCount},
+            {"gpu_ids", gpuids},
+            {"start_time", task.startTime.has_value() ? task.startTime.value().toString("yyyy-MM-dd hh:mm:ss") : ""}});
+    }
     return {result, StatusCode::Ok};
 }
 
-Response GE::onApiAdminAllTasks(request_)
+HResponse GE::onApiAdminAllTasks(request_, session_)
 {
     QJsonArray result;
     // TODO: 查找所有任务
@@ -307,7 +347,10 @@ void GE::onWSMessageReceived(const QString &message, const QString &uuid)
 void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
 {
     __STATICdatabase;
-    if (data["opt"] == "create")
+    __STATICglobalData;
+    static auto *tcpClientsStaticPtr = &globalData.tcpClients;
+    // TODO: 检查是否有权限
+    if (dataStr("opt") == "create")
     {
         auto image_ = databaseStaticPtr->getImage(data["image_id"].toInt());
         if (!image_.has_value())
@@ -330,7 +373,63 @@ void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
         auto init_args = QJsonDocument::fromVariant(image["init_args"]).object();
         for (auto &key : init_args.keys())
             msg["data"].toObject()["create_args"].toObject().insert(key, init_args[key]);
+        auto machineId = data["machine_id"].toString();
+        auto client = tcpClientsStaticPtr->value(machineId);
+        client->write(GlobalCommon::formatMessage(msg));
     }
+    else if (dataStr("opt") == "delete")
+    {
+        auto machineId = data["machine_id"].toString();
+        auto client = tcpClientsStaticPtr->value(machineId);
+        client->write(GlobalCommon::formatMessage(QJsonObject{
+            {"type", "container"},
+            {"data", QJsonObject{
+                         {"opt", "delete"},
+                         {"user_id", data["user_id"].toInt()},
+                         {"uuid", uuid},
+                         {"containername", data["containername"].toString()},
+                     }}}));
+    }
+    else if (dataStr("opt") == "start")
+    {
+        auto machineId = data["machine_id"].toString();
+        auto client = tcpClientsStaticPtr->value(machineId);
+        client->write(GlobalCommon::formatMessage(QJsonObject{
+            {"type", "container"},
+            {"data", QJsonObject{
+                         {"opt", "start"},
+                         {"user_id", data["user_id"].toInt()},
+                         {"uuid", uuid},
+                         {"containername", data["containername"].toString()},
+                     }}}));
+    }
+    else if (dataStr("opt") == "stop")
+    {
+        auto machineId = data["machine_id"].toString();
+        auto client = tcpClientsStaticPtr->value(machineId);
+        client->write(GlobalCommon::formatMessage(QJsonObject{
+            {"type", "container"},
+            {"data", QJsonObject{
+                         {"opt", "stop"},
+                         {"user_id", data["user_id"].toInt()},
+                         {"uuid", uuid},
+                         {"containername", data["containername"].toString()},
+                     }}}));
+    }
+    else if (dataStr("opt") == "restart")
+    {
+        auto machineId = data["machine_id"].toString();
+        auto client = tcpClientsStaticPtr->value(machineId);
+        client->write(GlobalCommon::formatMessage(QJsonObject{
+            {"type", "container"},
+            {"data", QJsonObject{
+                         {"opt", "restart"},
+                         {"user_id", data["user_id"].toInt()},
+                         {"uuid", uuid},
+                         {"containername", data["containername"].toString()},
+                     }}}));
+    }
+
     // TODO 剩余逻辑
 }
 
@@ -342,7 +441,8 @@ void GE::onWSHandleImage(const QJsonObject &data, const QString &uuid)
 
 void GE::onNewTcpConnection()
 {
-    auto socket = globalData.tcpServer->nextPendingConnection();
+    static auto *tcpServer = &globalData.tcpServer;
+    auto socket = tcpServer->nextPendingConnection();
     socket->setProperty("len", -1);
     QObject::connect(socket, &QTcpSocket::readyRead, [this, socket]()
                      { onTcpMessageReceived(); });
@@ -459,7 +559,7 @@ void GE::onTcpHandleGpus(const QJsonObject &data, const QString &machineId)
 {
     static auto *gpus_cache = &globalData.gpus_cache;
 
-    (*gpus_cache)[machineId] = data;
+    (*gpus_cache)[machineId] = jdump(data);
 }
 
 void GE::onTcpHandleImage(const QJsonObject &data, const QString &machineId)
@@ -488,8 +588,8 @@ void GE::onCheckHeartbeat()
 {
     static auto *tcpClients = &globalData.tcpClients;
     static auto heartbeatTimeout = globalConfig["heartbeatTimeout"].as<int>();
-    
-    if (clients.isEmpty())
+
+    if (tcpClients->isEmpty())
         return;
     std::for_each(
         tcpClients->begin(),
@@ -530,7 +630,7 @@ void GE::onTaskTimeout(quint64 taskId, const QString &machineId)
 {
     __STATICglobalData;
 
-    globalDataStaticPtr->waitQueue->cancelTask(taskId, machineId, true);
+    globalDataStaticPtr->waitQueue.cancelTask(taskId, machineId, true);
     auto client = globalDataStaticPtr->tcpClients[machineId];
     client->write(GlobalCommon::formatMessage(QJsonObject{
         {"type", "task"},
@@ -540,7 +640,7 @@ void GE::onTaskTimeout(quint64 taskId, const QString &machineId)
                  }}}));
 }
 
-GE::GE(QObject *parent)
+GE::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
     _wsHandlers["container"] = std::bind(&GE::onWSHandleContainer, this, std::placeholders::_1, std::placeholders::_2);

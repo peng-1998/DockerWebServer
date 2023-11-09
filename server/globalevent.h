@@ -2,9 +2,11 @@
 
 #include "../tools/globalconfig.h"
 #include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
+#include "database.h"
 #include "globalcommon.h"
+#include "globaldata.h"
 #include "waitqueue.h"
-#include <HttpReq>
+#include <QHttpServerRequest>
 #include <QHttpServerResponse>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -14,7 +16,7 @@
 #include <QTimer>
 #include <QWeakPointer>
 #include <QWebSocket>
-
+#include <functional>
 
 #define request_ const HttpReq &request
 #define session_ const QString &session
@@ -22,9 +24,87 @@ class GlobalEvent : public QObject
 {
     Q_OBJECT
     using HttpRep = QHttpServerResponse;
-    using HttpReq = QHttpServerrequest;
+    using HttpReq = QHttpServerRequest;
+
 public:
     static GlobalEvent &instance();
+    auto sessionDecorator(std::function<HttpRep(const QString &, const HttpReq &, const QString &)> &&f)
+    {
+        return [f = std::forward<decltype(f)>(f)](const QString &args, request_) -> HttpRep
+        {
+            using namespace std;
+            using StatusCode = QHttpServerResponse::StatusCode;
+            static auto *const globalData_ptr = &GlobalData::instance();
+            static auto *const session_cache_ptr = &(globalData_ptr->session_cache);
+            static auto *const database_ptr = &(globalData_ptr->database);
+            auto header = request.headers();
+            for (auto &item : header)
+                if (item.first == "Authorization")
+                    if (
+                        auto jwt = QJsonWebToken::fromTokenAndSecret(
+                            item.second, globalData_ptr->jwt.getSecret());
+                        jwt.isValid())
+                    {
+                        if (!session_cache_ptr->contains(item.second))
+                        {
+                            auto account = jwt.claim("identity");
+                            auto userId_ = database_ptr->getUser(account, {{{"id"}}});
+                            if (userId_.has_value())
+                            {
+                                uint userId = userId_.value()["id"].toInt();
+                                session_cache_ptr->insert(
+                                    QString(item.second),
+                                    {userId, account});
+                            }
+                            else
+                                return HttpRep(QJsonObject{{"message", "User not include"}}, StatusCode::Unauthorized);
+                        }
+                        return std::invoke(f, std::forward<decltype(args)>(args), request, item.second);
+                    }
+                    else
+                        return HttpRep(QJsonObject{{"message", "Invalid token"}}, StatusCode::Unauthorized);
+            return HttpRep(QJsonObject{{"message", "Token Not Found"}}, StatusCode::Unauthorized);
+        };
+    };
+
+    auto sessionDecorator(std::function<HttpRep(const HttpReq &, const QString &)> &&f)
+    {
+        return [f = std::forward<decltype(f)>(f)](request_) -> HttpRep
+        {
+            using namespace std;
+            using StatusCode = QHttpServerResponse::StatusCode;
+            static auto *const globalData_ptr = &GlobalData::instance();
+            static auto *const session_cache_ptr = &(globalData_ptr->session_cache);
+            static auto *const database_ptr = &(globalData_ptr->database);
+            auto header = request.headers();
+            for (auto &item : header)
+                if (item.first == "Authorization")
+                    if (
+                        auto jwt = QJsonWebToken::fromTokenAndSecret(
+                            item.second, globalData_ptr->jwt.getSecret());
+                        jwt.isValid())
+                    {
+                        if (!session_cache_ptr->contains(item.second))
+                        {
+                            auto account = jwt.claim("identity");
+                            auto userId_ = database_ptr->getUser(account, {{{"id"}}});
+                            if (userId_.has_value())
+                            {
+                                uint userId = userId_.value()["id"].toInt();
+                                session_cache_ptr->insert(
+                                    QString(item.second),
+                                    {userId, account});
+                            }
+                            else
+                                return HttpRep(QJsonObject{{"message", "User not include"}}, StatusCode::Unauthorized);
+                        }
+                        return std::invoke(f, request, item.second);
+                    }
+                    else
+                        return HttpRep(QJsonObject{{"message", "Invalid token"}}, StatusCode::Unauthorized);
+            return HttpRep(QJsonObject{{"message", "Token Not Found"}}, StatusCode::Unauthorized);
+        };
+    };
 public slots:
     // http handlers
     // static HttpRep onHttpIndex(request_);
@@ -34,7 +114,7 @@ public slots:
     static HttpRep onApiAuthLogin(request_);
     static HttpRep onApiAuthRegister(request_);
     static HttpRep onApiAuthLogout(request_, session_);
-    static HttpRep onApiAuthsession(request_, session_);
+    static HttpRep onApiAuthSession(request_, session_);
     static HttpRep onApiUserSetProfile(request_, session_);
     static HttpRep onApiUserSetPhoto(request_, session_);
     static HttpRep onApiUserGetUser(request_, session_);
@@ -43,37 +123,10 @@ public slots:
     static HttpRep onApiAdminAllImages(request_, session_);
     static HttpRep onApiAdminAllContainers(const QString &machineId, request_, session_);
     static HttpRep onApiTaskCancel(request_, session_);
-    static HttpRep onApiTaskrequest_(request_, session_);
+    static HttpRep onApiTaskRequest(request_, session_);
     static HttpRep onApiTaskUser(const QString &account, request_, session_);
     static HttpRep onApiTaskMachine(const QString &machineId, request_, session_);
     static HttpRep onApiAdminAllTasks(request_, session_);
-
-    auto GlobalEvent::sessionDecorator(auto &&f)
-    {
-        return [std::forward<decltype(f)>(f)](auto &&...args, request_, session_) -> HttpRep
-        {
-            auto header = request_.headers();
-            for (auto &item : header)
-                if (item.first == "Authorization")
-                    if (
-                        auto jwt = QJsonWebToken::fromTokenAndSecret(
-                            item.second, GlobalData::instance().jwt.getSecret());
-                        jwt.isValid())
-                    {
-                        if (!GlobalData::instance().session_cache.contains(item.second))
-                        {
-                            auto account = jwt.getClaim("identity").toString();
-                            GlobalData::instance().session_cache.insert(
-                                item.second,
-                                account);
-                        }
-                        return std::invoke(f, std::forward<decltype(args)>(args)..., request, item.second);
-                    }
-                    else
-                        return HttpRep(QJsonObject{{"message", "Invalid token"}}, StatusCode::Unauthorized);
-            return HttpRep(QJsonObject{{"message", "Token Not Found"}}, StatusCode::Unauthorized);
-        };
-    }
 
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);

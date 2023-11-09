@@ -13,11 +13,6 @@ QStringList DataBase::_container_column{"id", "imageid", "userid", "showname", "
 QStringList DataBase::_machine_column{"id", "ip", "gpu", "cpu", "memory", "online"};
 QStringList JsonKeys{"gpu", "cpu", "memory", "disk", "init_args", "portlist"};
 
-DataBase& DataBase::instance()
-{
-    static DataBase _instance;
-    return _instance;
-}
 
 void DataBase::insertUser(const QString &account, const QString &password, const QString &salt, const QString nickname, const QString email, const QString phone, const QString photo)
 {

@@ -37,7 +37,7 @@ class WaitQueue : public QObject
 {
     Q_OBJECT
 private:
-    WaitQueue(QObject *parent = nullptr);
+    
     QHash<QString, MachineStatus> _status;
     quint64 _taskId;
     SchedulingStrategy _schedulingStrategy;
@@ -50,6 +50,7 @@ public slots:
     void onTaskStopped(Task task);
 
 public:
+    WaitQueue(QObject *parent = nullptr);
     ~WaitQueue() = default;
 
     static WaitQueue& instance();
