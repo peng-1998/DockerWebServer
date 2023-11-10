@@ -8,7 +8,7 @@ WaitQueue::WaitQueue(QObject *parent)
     connect(this, &WaitQueue::taskStop, this, &WaitQueue::onTaskStopped);
 }
 
-std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus &machine)
+std::optional<int> WaitQueue::defaultSchedulingStrategy(const MachineStatus &machine)
 {
     auto &[waitingTasks, runningTasks, gpuStatus, isRunning] = machine;
     if (!isRunning or std::all_of(gpuStatus.begin(), gpuStatus.end(), [](bool b)
@@ -21,10 +21,10 @@ std::optional<quint64> WaitQueue::defaultSchedulingStrategy(const MachineStatus 
                              (task.gpuIds.begin() == task.gpuIds.end() or 
                              std::all_of(task.gpuIds.begin(), task.gpuIds.end(), [&gpuStatus](int gpuId){ return !gpuStatus[gpuId]; }));
                              });
-    return task == waitingTasks.end() ? std::nullopt : std::optional<quint64>{task->id};
+    return task == waitingTasks.end() ? std::nullopt : std::optional<int>{task->id};
 }
 
-void WaitQueue::_stopTask(quint64 taskId, const QString &machineId)
+void WaitQueue::_stopTask(int taskId, const QString &machineId)
 {
     auto &machine = _status[machineId];
     auto &task = machine.runningTasks[taskId];
@@ -35,7 +35,7 @@ void WaitQueue::_stopTask(quint64 taskId, const QString &machineId)
     emit taskStop(task);
 }
 
-void WaitQueue::_cancelTask(quint64 taskId, const QString &machineId)
+void WaitQueue::_cancelTask(int taskId, const QString &machineId)
 {
     _status[machineId].waitingTasks.remove(taskId);
 }
@@ -46,7 +46,7 @@ WaitQueue& WaitQueue::instance()
     return _instance;
 }
 
-quint64 WaitQueue::newTask(const int &userId, const QString &machineId, const QString &containerName, const QString &command, int duration, int gpuCount, const QList<int> &gpuIds)
+int WaitQueue::newTask(const int &userId, const QString &machineId, const QString &containerName, const QString &command, int duration, int gpuCount, const QList<int> &gpuIds)
 {
     Task task{
         _taskId++,
@@ -70,7 +70,7 @@ void WaitQueue::newMachine(const QString &machineId, int gpuCount)
     _status[machineId] = MachineStatus{TaskSet{}, TaskSet{}, GpuStatus(gpuCount, false), true};
 }
 
-std::optional<quint64> WaitQueue::tryStartTask(const QString &machineId)
+std::optional<int> WaitQueue::tryStartTask(const QString &machineId)
 {
     auto &machine = _status[machineId];
     auto result = _schedulingStrategy(machine);
@@ -103,7 +103,7 @@ void WaitQueue::onTaskStopped(Task task)
     {this->tryStartTask(task.machineId);});
 }
 
-void WaitQueue::cancelTask(quint64 taskId, QString machineId, std::optional<bool> running)
+void WaitQueue::cancelTask(int taskId, QString machineId, std::optional<bool> running)
 {
     if (machineId.isEmpty())
     {

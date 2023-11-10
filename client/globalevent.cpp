@@ -149,3 +149,4 @@ GlobalEvent::GlobalEvent(QObject *parent) : QObject(parent)
     _messageHandlers["image"] = std::bind(&GlobalEvent::messageHandleImage, this, std::placeholders::_1);
     _messageHandlers["container"] = std::bind(&GlobalEvent::messageHandleContainer, this, std::placeholders::_1);
 }
+

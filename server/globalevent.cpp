@@ -359,20 +359,64 @@ void GE::onWSMessageReceived(const QString &message, const QString &uuid)
     __STATICwsClients;
     auto msg_json = jload(message.toUtf8());
     auto wsc = wsClientsStaticPtr->value(uuid);
-    if(msg_json["type"].toString() != "auth" and wsc->property("userId").isNull())
+    if (msg_json["type"].toString() != "auth" and wsc->property("userId").isNull())
         wsc->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
             {"type", "error"},
             {"message", "Please verify your identity first"}}));
     std::invoke(_wsHandlers[msg_json["type"].toString()], msg_json["data"].toObject(), uuid);
 }
 
+void GE::onWSHandleAuth(const QJsonObject &data, const QString &uuid)
+{
+    __STATICwsClients;
+    __STATICsessionCache;
+    auto ws = wsClientsStaticPtr->value(uuid);
+    auto token = dataStr("token");
+    auto jwt = QJsonWebToken::fromTokenAndSecret(token, globalData.jwt.getSecret());
+    if (!jwt.isValid())
+    {
+        ws->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
+            {"type", "error"},
+            {"message", "Invalid token"}}));
+        return;
+    }
+    if (auto exp = QDateTime::fromSecsSinceEpoch(jwt.claim("exp").toUInt()); exp < QDateTime::currentDateTime())
+    {
+        ws->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
+            {"type", "error"},
+            {"message", "Token expired"}}));
+        return;
+    }
+    if (!sessionCacheStaticPtr->contains(token))
+    {
+        ws->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
+            {"type", "error"},
+            {"message", "Token expired"}}));
+    }
+    ws->setProperty("token", token);
+    ws->sendTextMessage(
+        GlobalCommon::objectToString(QJsonObject{
+            {"type", "auth"},
+            {"status", "success"}}));
+}
+
 void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
 {
     __STATICdatabase;
     __STATICglobalData;
+    __STATICsessionCache;
+    __STATICwsClients;
     static auto *tcpClientsStaticPtr = &globalData.tcpClients;
 
-    if (dataStr("opt") == "create")
+    auto ws = wsClientsStaticPtr->value(uuid);
+    auto token = ws->property("token").toString();
+    auto &session = (*sessionCacheStaticPtr)[token];
+
+    auto opt = dataStr("opt");
+    auto machineId = dataStr("machine_id");
+    auto client = tcpClientsStaticPtr->value(machineId);
+
+    if (opt == "create")
     {
         auto image_ = databaseStaticPtr->getImage(data["image_id"].toInt());
         if (!image_.has_value())
@@ -382,27 +426,23 @@ void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
             {"type", "container"},
             {"data", QJsonObject{
                          {"opt", "create"},
-                         {"user_id", data["user_id"].toInt()},
+                         {"user_id", session.id},
                          {"uuid", uuid},
                          {"create_args", QJsonObject{
-                                             {"name", QString("u%1_c%2").arg(data["account"].toString()).arg(GlobalCommon::generateRandomString(10))},
+                                             {"name", QString("u%1_c%2").arg(session.account).arg(GlobalCommon::generateRandomString(10))},
                                              {"image", image["imagename"].toString()},
                                              {"port", data["port"].toObject()},
-                                             {"hostname", data["account"].toString()},
+                                             {"hostname", session.account},
                                          }},
                      }},
         };
         auto init_args = QJsonDocument::fromVariant(image["init_args"]).object();
         for (auto &key : init_args.keys())
             msg["data"].toObject()["create_args"].toObject().insert(key, init_args[key]);
-        auto machineId = data["machine_id"].toString();
-        auto client = tcpClientsStaticPtr->value(machineId);
         client->write(GlobalCommon::formatMessage(msg));
     }
-    else if (dataStr("opt") == "delete")
+    else if (opt == "delete")
     {
-        auto machineId = data["machine_id"].toString();
-        auto client = tcpClientsStaticPtr->value(machineId);
         client->write(GlobalCommon::formatMessage(QJsonObject{
             {"type", "container"},
             {"data", QJsonObject{
@@ -412,10 +452,8 @@ void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
                          {"containername", data["containername"].toString()},
                      }}}));
     }
-    else if (dataStr("opt") == "start")
+    else if (opt == "start")
     {
-        auto machineId = data["machine_id"].toString();
-        auto client = tcpClientsStaticPtr->value(machineId);
         client->write(GlobalCommon::formatMessage(QJsonObject{
             {"type", "container"},
             {"data", QJsonObject{
@@ -425,10 +463,8 @@ void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
                          {"containername", data["containername"].toString()},
                      }}}));
     }
-    else if (dataStr("opt") == "stop")
+    else if (opt == "stop")
     {
-        auto machineId = data["machine_id"].toString();
-        auto client = tcpClientsStaticPtr->value(machineId);
         client->write(GlobalCommon::formatMessage(QJsonObject{
             {"type", "container"},
             {"data", QJsonObject{
@@ -438,10 +474,8 @@ void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
                          {"containername", data["containername"].toString()},
                      }}}));
     }
-    else if (dataStr("opt") == "restart")
+    else if (opt == "restart")
     {
-        auto machineId = data["machine_id"].toString();
-        auto client = tcpClientsStaticPtr->value(machineId);
         client->write(GlobalCommon::formatMessage(QJsonObject{
             {"type", "container"},
             {"data", QJsonObject{
@@ -665,6 +699,7 @@ void GE::onTaskTimeout(quint64 taskId, const QString &machineId)
 GE::GlobalEvent(QObject *parent)
     : QObject{parent}
 {
+
     _wsHandlers["container"] = std::bind(&GE::onWSHandleContainer, this, std::placeholders::_1, std::placeholders::_2);
     _tcpHandlers["container"] = std::bind(&GE::onTcpHandleContainer, this, std::placeholders::_1, std::placeholders::_2);
     _tcpHandlers["gpus"] = std::bind(&GE::onTcpHandleGpus, this, std::placeholders::_1, std::placeholders::_2);

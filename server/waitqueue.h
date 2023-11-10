@@ -9,7 +9,7 @@
 
 struct Task
 {
-    quint64 id;
+    int id;
     int userId;
     int duration;
     QString machineId;
@@ -31,7 +31,7 @@ struct MachineStatus
     bool isRunning;
 };
 
-typedef std::function<std::optional<quint64>(const MachineStatus &)> SchedulingStrategy;
+typedef std::function<std::optional<int>(const MachineStatus &)> SchedulingStrategy;
 
 class WaitQueue : public QObject
 {
@@ -39,12 +39,12 @@ class WaitQueue : public QObject
 private:
     
     QHash<QString, MachineStatus> _status;
-    quint64 _taskId;
+    int _taskId;
     SchedulingStrategy _schedulingStrategy;
-    std::optional<quint64> defaultSchedulingStrategy(const MachineStatus &machine);
-    void _stopTask(quint64 taskId, const QString &machineId);
-    void _cancelTask(quint64 taskId, const QString &machineId);
-    std::optional<quint64> tryStartTask(const QString &machineId);
+    std::optional<int> defaultSchedulingStrategy(const MachineStatus &machine);
+    void _stopTask(int taskId, const QString &machineId);
+    void _cancelTask(int taskId, const QString &machineId);
+    std::optional<int> tryStartTask(const QString &machineId);
 
 public slots:
     void onTaskStopped(Task task);
@@ -54,10 +54,10 @@ public:
     ~WaitQueue() = default;
 
     static WaitQueue& instance();
-    quint64 newTask(const int &userId, const QString &machineId, const QString &containerName, const QString &command, int duration, int gpuCount,  const QList<int> &gpuIds = QList<int>());
+    int newTask(const int &userId, const QString &machineId, const QString &containerName, const QString &command, int duration, int gpuCount,  const QList<int> &gpuIds = QList<int>());
     void newMachine(const QString &machineId, int gpuCount);
     
-    void cancelTask(quint64 taskId, QString machineId = "", std::optional<bool> running = std::nullopt);
+    void cancelTask(int taskId, QString machineId = "", std::optional<bool> running = std::nullopt);
     QList<Task> getMachineTasks(const QString &machineId);
     QList<Task> getUserTasks(const int &userId);
     void setSchedulingStrategy(SchedulingStrategy &strategy);

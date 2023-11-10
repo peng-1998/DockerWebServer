@@ -6,7 +6,7 @@
 #include <QJsonArray>
 struct Session
 {
-    uint id;
+    int id;
     QString account;
 };
 

@@ -137,6 +137,7 @@ public slots:
     void onWSNewConnection();
     void onWSDisconnection(const QString &uuid);
     void onWSMessageReceived(const QString &message, const QString &uuid);
+    void onWSHandleAuth(const QJsonObject &data, const QString &uuid);
     void onWSHandleContainer(const QJsonObject &data, const QString &uuid);
     void onWSHandleImage(const QJsonObject &data, const QString &uuid);
     void onNewTcpConnection();

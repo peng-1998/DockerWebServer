@@ -84,7 +84,7 @@ void global_init()
     // 设置路由
     globalData.httpServer.route("/api/auth/login", Method::Post, &GlobalEvent::onApiAuthLogin);
     globalData.httpServer.route("/api/auth/register", Method::Post, &GlobalEvent::onApiAuthRegister);
-    sessionDecoratedRoute("/api/auth/logout", Method::Post | Method::Get, &GlobalEvent::onApiAuthLogout);
+    sessionDecoratedRoute("/api/auth/logout", Method::Post, &GlobalEvent::onApiAuthLogout);
     sessionDecoratedRoute("/api/auth/session", Method::Get, &GlobalEvent::onApiAuthSession);
     sessionDecoratedRoute("/api/user/set_profile", Method::Post, &GlobalEvent::onApiUserSetProfile);
     sessionDecoratedRoute("/api/user/set_photo", Method::Post, &GlobalEvent::onApiUserSetPhoto);
