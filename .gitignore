@@ -12,3 +12,4 @@ tools/test.cpp
 tools/.vscode
 tools/.qt
 flow.drawio
+.vscode

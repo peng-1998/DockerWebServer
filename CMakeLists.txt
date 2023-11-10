@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(DWS LANGUAGES CXX)
 
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -26,6 +27,7 @@ add_executable(DWS
   server/globalevent.h server/globalevent.cpp
   server/globalcommon.h server/globalcommon.cpp
   server/database.h server/database.cpp
+  server/datastructure.hpp
   tools/jsonwebtoken/src/qjsonwebtoken.h tools/jsonwebtoken/src/qjsonwebtoken.cpp 
   tools/bcrypt/qtbcrypt.h tools/bcrypt/qtbcrypt.cpp 
   tools/bcrypt/openwall_crypt/crypt_blowfish.h tools/bcrypt/openwall_crypt/crypt_blowfish.c 
