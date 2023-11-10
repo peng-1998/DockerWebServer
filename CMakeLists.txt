@@ -22,8 +22,8 @@ find_package(CUDAToolkit REQUIRED COMPONENTS nvml)
 
 add_executable(DWS
   webserver.cpp
-  tools/globalconfig.h tools/globalconfig.cpp
-  server/globaldata.h server/globaldata.cpp
+  tools/globalconfig.hpp 
+  server/globaldata.hpp
   server/globalevent.h server/globalevent.cpp
   server/globalcommon.h server/globalcommon.cpp
   server/database.h server/database.cpp
@@ -54,7 +54,7 @@ add_executable(DWSClient
   client/globalevent.h client/globalevent.cpp
   tools/dockerconnector.h tools/dockerconnector.cpp
   tools/dockercontroller.h tools/dockercontroller.cpp
-  tools/globalconfig.h tools/globalconfig.cpp
+  tools/globalconfig.hpp 
   client/globalcommon.h client/globalcommon.cpp
   tools/gpuinfo.h tools/gpuinfo.cpp
   )

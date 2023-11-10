@@ -1,7 +1,6 @@
 #include "globalevent.h"
 #include "../tools/dockercontroller.h"
 #include "database.h"
-#include "globaldata.h"
 #include <QDebug>
 #include <QFile>
 #include <QHttpServerResponse>

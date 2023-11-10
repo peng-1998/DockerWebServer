@@ -1,7 +1,7 @@
 #pragma once
 
 #include "globalcommon.h"
-#include "../tools/globalconfig.h"
+#include "../tools/globalconfig.hpp"
 #include "../tools/gpuinfo.h"
 #include "../tools/dockercontroller.h"
 #include "globaldata.h"

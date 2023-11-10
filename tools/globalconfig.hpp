@@ -13,13 +13,20 @@ class GlobalConfig : public QObject, public Node
 {
     Q_OBJECT
 public:
-    static GlobalConfig &instance();
+    static GlobalConfig &instance()
+    {
+        static GlobalConfig _instance;
+        return _instance;
+    };
+
+    void init(const QString &fileName)
+    {
+        this->Node::operator=(YAML::LoadFile(fileName.toStdString()));
+    };
     ~GlobalConfig() = default;
-    void init(const QString &fileName);
 
 private:
     GlobalConfig() = default;
-    GlobalConfig(const QString &fileName);
     GlobalConfig(const GlobalConfig &) = delete;
     GlobalConfig &operator=(const GlobalConfig &) = delete;
     GlobalConfig(GlobalConfig &&) = delete;

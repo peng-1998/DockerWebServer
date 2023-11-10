@@ -1,6 +1,6 @@
-#include "server/globaldata.h"
+#include "server/globaldata.hpp"
 #include "server/globalevent.h"
-#include "tools/globalconfig.h"
+#include "tools/globalconfig.hpp"
 #include <QCoreApplication>
 
 void global_init();

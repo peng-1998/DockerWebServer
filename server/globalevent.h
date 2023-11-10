@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../tools/globalconfig.h"
+#include "../tools/globalconfig.hpp"
 #include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
 #include "database.h"
 #include "globalcommon.h"
-#include "globaldata.h"
+#include "globaldata.hpp"
 #include "waitqueue.h"
 #include <QHttpServerRequest>
 #include <QHttpServerResponse>

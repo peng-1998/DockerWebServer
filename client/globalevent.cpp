@@ -1,5 +1,5 @@
 #include "globalevent.h"
-#include "../tools/globalconfig.h"
+#include "../tools/globalconfig.hpp"
 #include "globalcommon.h"
 #include "globaldata.h"
 #include <QDebug>
