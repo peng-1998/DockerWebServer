@@ -45,6 +45,9 @@ public:
                             item.second, globalData_ptr->jwt.getSecret());
                         jwt.isValid())
                     {
+                        if (auto exp = QDateTime::fromSecsSinceEpoch(jwt.claim("exp").toUInt());
+                            exp < QDateTime::currentDateTime())
+                            return HttpRep(QJsonObject{{"message", "Token expired"}}, StatusCode::Unauthorized);
                         if (!session_cache_ptr->contains(item.second))
                         {
                             auto account = jwt.claim("identity");
@@ -84,6 +87,9 @@ public:
                             item.second, globalData_ptr->jwt.getSecret());
                         jwt.isValid())
                     {
+                        if (auto exp = QDateTime::fromSecsSinceEpoch(jwt.claim("exp").toUInt());
+                            exp < QDateTime::currentDateTime())
+                            return HttpRep(QJsonObject{{"message", "Token expired"}}, StatusCode::Unauthorized);
                         if (!session_cache_ptr->contains(item.second))
                         {
                             auto account = jwt.claim("identity");
@@ -117,7 +123,7 @@ public slots:
     static HttpRep onApiAuthSession(request_, session_);
     static HttpRep onApiUserSetProfile(request_, session_);
     static HttpRep onApiUserSetPhoto(request_, session_);
-    static HttpRep onApiUserGetUser(request_, session_);
+    static HttpRep onApiUserInfo(request_, session_);
     static HttpRep onApiMachinesInfo(request_, session_);
     static HttpRep onApiAdminAllUsers(request_, session_);
     static HttpRep onApiAdminAllImages(request_, session_);

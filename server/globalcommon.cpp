@@ -62,6 +62,14 @@ QString GlobalCommon::getJwtToken(QJsonWebToken &jwt, const QString &identity)
     return token;
 }
 
+QList<QPair<QString, QVariant>> GlobalCommon::jsonToKVList(const QJsonObject &json)
+{
+    QList<QPair<QString, QVariant>> result;
+    for (auto kv = json.constBegin(); kv != json.constEnd(); kv++)
+        result.append({kv.key(), kv.value().toVariant()});
+    return result;
+}
+
 QByteArray GlobalCommon::formatMessage(const QJsonObject &json)
 {
     auto jsonBytes = QJsonDocument(json).toJson(QJsonDocument::Compact);

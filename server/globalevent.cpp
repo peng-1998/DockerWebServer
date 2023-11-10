@@ -18,6 +18,7 @@
 
 #define toQStr QString::fromStdString
 #define hashToObj GlobalCommon::hashToJsonObject
+#define jsonToList GlobalCommon::jsonToKVList
 #define jload(x) QJsonDocument::fromJson(x).object()
 #define jdump(x) QJsonDocument(x).toJson()
 
@@ -96,7 +97,7 @@ HResponse GE::onApiAuthLogin(request_)
     if (user["password"].toString() != GlobalCommon::hashPassword(bodyStr("password"), user["salt"].toString()))
     {
         qInfo() << "Login: " << account << "try to login but password wrong";
-        return {{"message", "Wrong Password"}, StatusCode::Unauthorized};
+        return {StatusCode::Unauthorized};
     }
     qInfo() << "Login: " << account << "login success";
     return {{"access_token", getJwtToken(globalDataStaticPtr->jwt, account)}, StatusCode::Ok};
@@ -114,7 +115,7 @@ HResponse GE::onApiAuthRegister(request_)
     qInfo() << "Register: " << account << " " << password;
 
     if (databaseStaticPtr->containsUser(account))
-        return {{"message", "User Already Exists"}, StatusCode::Conflict};
+        return {StatusCode::Conflict};
     auto [salt, hash] = GlobalCommon::generateSaltAndHash(password);
     databaseStaticPtr->insertUser(account, hash, salt, account, "", "", defaultPhoto);
     return {StatusCode::Ok};
@@ -143,10 +144,11 @@ HResponse GE::onApiAuthSession(request_, session_)
 HResponse GE::onApiUserSetProfile(request_, session_)
 {
     __STATICsessionCache;
+    __STATICdatabase;
     __GETaccount;
 
     __LOADbody;
-    database.updateUser(account, KVList{{body["field"].toString(), body["value"].toVariant()}});
+    databaseStaticPtr->updateUser(account, jsonToList(body));
     return {StatusCode::Ok};
 }
 
@@ -160,7 +162,7 @@ HResponse GE::onApiUserSetPhoto(request_, session_)
 
     __GETaccount;
     __LOADheader;
-    auto fileName = headers["filename"];
+    auto fileName = headers["file"];
     auto withFile = headers["with_file"] == "true";
 
     if (!withFile)
@@ -177,15 +179,14 @@ HResponse GE::onApiUserSetPhoto(request_, session_)
     return {StatusCode::Ok};
 }
 
-HResponse GE::onApiUserGetUser(request_, session_)
+HResponse GE::onApiUserInfo(request_, session_)
 {
+    static auto keys = QStringList{"id", "nikename", "email", "photo", "phone"};
     __STATICdatabase;
     __STATICsessionCache;
 
     __GETuserId;
-    auto result = databaseStaticPtr->getUser(userId);
-    if (result.has_value())
-        return {StatusCode::NotFound};
+    auto result = databaseStaticPtr->getUser(userId, keys);
     return {hashToObj(result.value()), StatusCode::Ok};
 }
 
@@ -245,11 +246,13 @@ HResponse GE::onApiTaskCancel(request_, session_)
 HResponse GE::onApiTaskRequest(request_, session_)
 {
     __STATICglobalData;
-
+    __STATICsessionCache;
     __LOADbody;
+
+    __GETuserId;
     if (body.contains("gpu_count"))
         globalDataStaticPtr->waitQueue.newTask(
-            bodyInt("user_id"),
+            userId,
             bodyStr("machine_id"),
             bodyStr("containername"),
             bodyStr("command"),
@@ -261,7 +264,7 @@ HResponse GE::onApiTaskRequest(request_, session_)
         for (auto gpu : body["gpus"].toArray())
             gpus.append(gpu.toInt());
         globalDataStaticPtr->waitQueue.newTask(
-            bodyInt("user_id"),
+            userId,
             bodyStr("machine_id"),
             bodyStr("containername"),
             bodyStr("command"),
@@ -287,6 +290,7 @@ HResponse GE::onApiTaskUser(const QString &account, request_, session_)
         for (auto &gpuId : task.gpuIds)
             gpuids.append(gpuId);
         result.append(QJsonObject{
+            {"taskId", task.id},
             {"machine_id", task.machineId},
             {"duration", task.duration},
             {"containername", task.containerName},
@@ -310,6 +314,7 @@ HResponse GE::onApiTaskMachine(const QString &machineId, request_, session_)
         for (auto &gpuId : task.gpuIds)
             gpuids.append(gpuId);
         result.append(QJsonObject{
+            {"taskId", task.id},
             {"user_id", task.userId},
             {"duration", task.duration},
             {"containername", task.containerName},
@@ -351,7 +356,13 @@ void GE::onWSDisconnection(const QString &uuid)
 
 void GE::onWSMessageReceived(const QString &message, const QString &uuid)
 {
+    __STATICwsClients;
     auto msg_json = jload(message.toUtf8());
+    auto wsc = wsClientsStaticPtr->value(uuid);
+    if(msg_json["type"].toString() != "auth" and wsc->property("userId").isNull())
+        wsc->sendTextMessage(GlobalCommon::objectToString(QJsonObject{
+            {"type", "error"},
+            {"message", "Please verify your identity first"}}));
     std::invoke(_wsHandlers[msg_json["type"].toString()], msg_json["data"].toObject(), uuid);
 }
 
@@ -360,7 +371,7 @@ void GE::onWSHandleContainer(const QJsonObject &data, const QString &uuid)
     __STATICdatabase;
     __STATICglobalData;
     static auto *tcpClientsStaticPtr = &globalData.tcpClients;
-    // TODO: 检查是否有权限
+
     if (dataStr("opt") == "create")
     {
         auto image_ = databaseStaticPtr->getImage(data["image_id"].toInt());

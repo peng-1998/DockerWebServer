@@ -84,16 +84,19 @@ void global_init()
     // 设置路由
     globalData.httpServer.route("/api/auth/login", Method::Post, &GlobalEvent::onApiAuthLogin);
     globalData.httpServer.route("/api/auth/register", Method::Post, &GlobalEvent::onApiAuthRegister);
-    sessionDecoratedRoute("/api/auth/logout", Method::Post, &GlobalEvent::onApiAuthLogout);
+    sessionDecoratedRoute("/api/auth/logout", Method::Post | Method::Get, &GlobalEvent::onApiAuthLogout);
     sessionDecoratedRoute("/api/auth/session", Method::Get, &GlobalEvent::onApiAuthSession);
     sessionDecoratedRoute("/api/user/set_profile", Method::Post, &GlobalEvent::onApiUserSetProfile);
     sessionDecoratedRoute("/api/user/set_photo", Method::Post, &GlobalEvent::onApiUserSetPhoto);
-    sessionDecoratedRoute("/api/user/get_user", Method::Get, GlobalEvent::onApiUserGetUser);
+    sessionDecoratedRoute("/api/user/info", Method::Get, GlobalEvent::onApiUserInfo);
     sessionDecoratedRoute("/api/machines/info", Method::Get, &GlobalEvent::onApiMachinesInfo);
     sessionDecoratedRoute("/api/admin/all_users", Method::Get, &GlobalEvent::onApiAdminAllUsers);
     sessionDecoratedRoute("/api/admin/all_images", Method::Get, &GlobalEvent::onApiAdminAllImages);
     sessionDecoratedRoute("/api/admin/all_containers", Method::Get, &GlobalEvent::onApiAdminAllContainers);
     sessionDecoratedRoute("/api/task/cancel", Method::Post, &GlobalEvent::onApiTaskCancel);
+    sessionDecoratedRoute("/api/task/request", Method::Post, &GlobalEvent::onApiTaskRequest);
+    sessionDecoratedRoute("/api/task/user/<account>", Method::Get, &GlobalEvent::onApiTaskUser);
+    sessionDecoratedRoute("/api/task/machine/<machineId>", Method::Get, &GlobalEvent::onApiTaskMachine);
 
     // 更改qt的日志输出
     qInstallMessageHandler(
