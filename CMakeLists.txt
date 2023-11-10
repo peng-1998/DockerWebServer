@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(DWS LANGUAGES CXX)
 
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

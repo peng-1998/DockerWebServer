@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../tools/jsonwebtoken/src/qjsonwebtoken.h"
+#include "../tools/logger.hpp"
+#include "../tools/globalconfig.h"
 #include <QHash>
 #include <QJsonObject>
 #include <QObject>
@@ -30,6 +32,7 @@ public:
     WaitQueue waitQueue;
     QJsonWebToken jwt;
     DataBase database;
+    Logger logger;
 
 
     QHash<QString, QSharedPointer<QWebSocket>> wsClients;
@@ -45,7 +48,8 @@ private:
         wsServer("", QWebSocketServer::NonSecureMode, this),
         tcpServer(this),
         waitQueue(this),
-        heartbeatTimer(this)
+        heartbeatTimer(this),
+        logger(QString::fromStdString(GlobalConfig::instance()["logPath"].as<std::string>()))
     {};
     GlobalData(const GlobalData &) = delete;
     GlobalData &operator=(const GlobalData &) = delete;

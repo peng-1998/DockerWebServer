@@ -94,4 +94,12 @@ void global_init()
     sessionDecoratedRoute("/api/admin/all_images", Method::Get, &GlobalEvent::onApiAdminAllImages);
     sessionDecoratedRoute("/api/admin/all_containers", Method::Get, &GlobalEvent::onApiAdminAllContainers);
     sessionDecoratedRoute("/api/task/cancel", Method::Post, &GlobalEvent::onApiTaskCancel);
+
+    // 更改qt的日志输出
+    qInstallMessageHandler(
+        [](QtMsgType type, const QMessageLogContext &context, const QString &msg)
+        {
+            static Logger *const logger_ptr = &GlobalData::instance().logger;
+            logger_ptr->write(type, context, msg);
+        });
 }

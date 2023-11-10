@@ -71,28 +71,36 @@ QString getJwtToken(QJsonWebToken &jwt, const QString &identity)
 {
     static int duration = globalConfig["JWT"]["duration"].as<int>();
 
-    jwt.appendClaim("identity", identity); // 设置验证信息：account
-    jwt.appendClaim("exp",
-                    QString::number(QDateTime::currentDateTime().addDays(duration).toSecsSinceEpoch())); // 设置过期时间
-    auto token = jwt.getToken();                                                                         // 生成token
-    jwt.removeClaim("identity");                                                                         // 清除验证信息
+    jwt.appendClaim("identity", identity);                                                                      // 设置验证信息：account
+    jwt.appendClaim("exp", QString::number(QDateTime::currentDateTime().addDays(duration).toSecsSinceEpoch())); // 设置过期时间
+    auto token = jwt.getToken();                                                                                // 生成token
+    jwt.removeClaim("identity");                                                                                // 清除验证信息
     jwt.removeClaim("exp");
     return token;
 }
 
 HResponse GE::onApiAuthLogin(request_)
 {
+
     static QStringList sel{"password", "salt"};
+    __STATICglobalData;
     __STATICdatabase;
 
     __LOADbody;
     auto account = bodyStr("account");
     if (!databaseStaticPtr->containsUser(account))
+    {
+        qInfo() << "Login: " << account << "try to login but user not found";
         return {{"message", "User Not Found"}, StatusCode::NotFound};
+    }
     auto user = databaseStaticPtr->getUser(account, sel).value();
     if (user["password"].toString() != GlobalCommon::hashPassword(bodyStr("password"), user["salt"].toString()))
+    {
+        qInfo() << "Login: " << account << "try to login but password wrong";
         return {{"message", "Wrong Password"}, StatusCode::Unauthorized};
-    return {{"access_token", getJwtToken(globalData.jwt, account)}, StatusCode::Ok};
+    }
+    qInfo() << "Login: " << account << "login success";
+    return {{"access_token", getJwtToken(globalDataStaticPtr->jwt, account)}, StatusCode::Ok};
 }
 
 HResponse GE::onApiAuthRegister(request_)
@@ -103,6 +111,9 @@ HResponse GE::onApiAuthRegister(request_)
     __LOADbody;
     auto account = bodyStr("account");
     auto password = bodyStr("password");
+
+    qInfo() << "Register: " << account << " " << password;
+
     if (databaseStaticPtr->containsUser(account))
         return {{"message", "User Already Exists"}, StatusCode::Conflict};
     auto [salt, hash] = GlobalCommon::generateSaltAndHash(password);
@@ -146,6 +157,7 @@ HResponse GE::onApiUserSetPhoto(request_, session_)
     __STATICglobalData;
     __STATICdatabase;
     static auto customPhotoPath = toQStr(globalConfig["customPhotoPath"].as<std::string>());
+    static auto defaultPhotoPath = toQStr(globalConfig["defaultPhotoPath"].as<std::string>());
 
     __GETaccount;
     __LOADheader;
@@ -154,7 +166,7 @@ HResponse GE::onApiUserSetPhoto(request_, session_)
 
     if (!withFile)
     {
-        databaseStaticPtr->updateUser(account, KVList{{"photo", toQStr(globalConfig["defaultPhotoPath"].as<std::string>()) + "/" + fileName}});
+        databaseStaticPtr->updateUser(account, KVList{{"photo", defaultPhotoPath + "/" + fileName}});
         return {StatusCode::Ok};
     }
     auto savePath = customPhotoPath + "/" + account + ".png";
@@ -587,7 +599,7 @@ void GE::onTcpHandleHeartbeat(const QJsonObject &data, const QString &machineId)
 void GE::onCheckHeartbeat()
 {
     static auto *tcpClients = &globalData.tcpClients;
-    static auto heartbeatTimeout = globalConfig["heartbeatTimeout"].as<int>();
+    static auto heartbeatTimeout = globalConfig["TCP"]["heartbeatTimeout"].as<int>();
 
     if (tcpClients->isEmpty())
         return;
